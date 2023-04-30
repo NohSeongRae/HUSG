@@ -31,6 +31,6 @@ def get_boundary(city_name, location):
 
     print("Boundary 추출 완료")
 
-    filenum = len(polygon)
+    filenum = len(polygons)
 
     return filenum
