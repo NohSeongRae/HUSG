@@ -1,36 +1,87 @@
+from shapely.geometry import Polygon, LineString
+from shapely.geometry import shape
 import osmnx as ox
+import json
 import geopandas as gpd
-import networkx as nx
-from shapely.geometry import Polygon
+from concurrent.futures import ThreadPoolExecutor
 
 def get_boundary(city_name, location):
-    custom_filter = '["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street"]'
-    graph = ox.graph_from_place(location, network_type="all", simplify=False, custom_filter=custom_filter)
+    city_boundary = ox.geocode_to_gdf(location)
 
-    simple_graph = nx.Graph(graph)
-    simple_graph = simple_graph.to_undirected()
+    city_boundary_geojson = json.loads(city_boundary.to_json())
 
-    cycles = nx.cycle_basis(simple_graph)
+    polygon = shape(city_boundary_geojson['features'][0]['geometry'])
 
-    polygons = []
-    for cycle in cycles:
-        coords = []
-        for node in cycle:
-            node_data = simple_graph.nodes[node]
-            if 'x' in node_data and 'y' in node_data:
-                coords.append((node_data['x'], node_data['y']))
+    roads_filename = city_name + "_dataset/" + city_name + "_roads.geojson"
+    with open(roads_filename) as file:
+        data = json.load(file)
 
-        if len(coords) >= 3:
-            polygon = Polygon(coords)
-            polygons.append(polygon)
+    linestrings = []
+    features = data['features']
+    for feature in features:
+        geometry = feature['geometry']
+        if geometry['type'] == 'LineString':
+            coordinates = geometry['coordinates']
+            linestring = LineString(coordinates)
+            linestrings.append(linestring)
 
-    for j in range(len(polygons)):
-        gdf = gpd.GeoDataFrame(geometry=[polygons[j]])
-        polygon_filename = city_name + '_dataset/Boundaries/' + city_name + f'_boundaries{j+1}.geojson'
-        gdf.to_file(polygon_filename, driver='GeoJSON')
 
-    print("Boundary 추출 완료")
+    def divide_polygon(polygon, linestrings):
+        result_polygons = []
 
-    filenum = len(polygons)
+        for linestring in linestrings:
+            buffered_linestring = linestring.buffer(0.000019, cap_style=3)
+            result_polygon = polygon.difference(buffered_linestring)
+            result_polygons.append(result_polygon)
 
-    return filenum
+        return result_polygons
+
+
+    result_polygons = divide_polygon(polygon, linestrings)
+
+    polys = []
+
+    for result_polygon in result_polygons:
+        polys.append(result_polygon)
+
+    result_poly = polys[0]
+
+    print("intersection 시작")
+
+    # progress_flags = {}
+
+    def intersection_operation(i):
+        return polys[i].intersection(result_poly)
+
+    if __name__ == '__main__':
+        with ThreadPoolExecutor() as executor:
+            results = executor.map(intersection_operation, range(1, len(polys)))
+        executor.shutdown()
+
+        for result in results:
+            result_poly = result_poly.intersection(result)
+
+    print("intersection 끝")
+
+    poly_list = []
+    if result_poly.geom_type == "MultiPolygon":
+        for poly in result_poly.geoms:
+            poly_list.append(poly)
+    else:
+        poly_list.append(result_poly)
+
+    print(len(poly_list))
+
+
+    def save_polygon(i):
+        poly = poly_list[i]
+        gdf = gpd.GeoDataFrame(geometry=[poly], columns=["POLYGON"])
+        polygon_filename = city_name + "_dataset/Boundaries_test/" + city_name + f"_boundaries{i}.geojson"
+        gdf.to_file(polygon_filename, driver="GeoJSON")
+
+    if __name__ == '__main__':
+        with ThreadPoolExecutor() as executor:
+            list(executor.map(save_polygon, range(len(poly_list))))
+
+    return len(poly_list)
+

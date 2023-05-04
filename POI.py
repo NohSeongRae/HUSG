@@ -1,29 +1,31 @@
 import json
 import geopandas as gpd
+from concurrent.futures import ProcessPoolExecutor
+
+def find_polygon_idx(point, polygons):
+    for polygon_idx, polygon in enumerate(polygons):
+        if point.within(polygon):
+            return polygon_idx
+    return None
+
+def process_point(point, polygons):
+    polygon_idx = find_polygon_idx(point, polygons)
+    return polygon_idx
 
 def POI(city_name):
     point_data_filepath = city_name + "_dataset/" + city_name + "_point_data.geojson"
     polygon_data_filepath = city_name + "_dataset/" + city_name + "_polygon_data.geojson"
 
     point_gdf = gpd.read_file(point_data_filepath)
-    points = []
-    for _, row in point_gdf.iterrows():
-        points.append(row['geometry'])
+    points = [row['geometry'] for _, row in point_gdf.iterrows()]
 
     polygon_gdf = gpd.read_file(polygon_data_filepath)
-    polygons = []
-    for _, row in polygon_gdf.iterrows():
-        polygons.append(row['geometry'])
+    polygons = [row['geometry'] for _, row in polygon_gdf.iterrows()]
 
-    index_mapping = {}
+    with ProcessPoolExecutor() as executor:
+        index_mapping = list(executor.map(process_point, points, [polygons] * len(points)))
 
-    for idx, point in enumerate(points):
-        found = False
-        for polygon_idx, polygon in enumerate(polygons):
-            if point.within(polygon):
-                index_mapping[idx] = polygon_idx
-                found = True
-                break
+    index_mapping = {idx: polygon_idx for idx, polygon_idx in enumerate(index_mapping) if polygon_idx is not None}
 
     polygon_filepath = city_name + '_dataset/' + city_name + '_polygon_data.geojson'
 

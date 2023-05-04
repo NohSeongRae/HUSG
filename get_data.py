@@ -6,8 +6,9 @@ from POI import POI
 from get_boundary import get_boundary
 from get_building import get_building
 
-city_name = ["budapest"]
-location = ["Budapest, Hungary"]
+city_name = ["firenze"]
+location = ["Firenze, Italy"]
+
 
 for i in range(len(city_name)):
     output_directories = [
@@ -22,6 +23,7 @@ for i in range(len(city_name)):
 
     data_download(city_name[i], location[i])
     extract(city_name[i])
-    POI(city_name[i])
-    filenum = get_boundary(city_name[i], location[i])
-    get_building(city_name[i], filenum)
+    if __name__=='__main__':
+        POI(city_name[i])
+        filenum = get_boundary(city_name[i], location[i])
+        get_building(city_name[i], filenum)

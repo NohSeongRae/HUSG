@@ -1,5 +1,8 @@
 import osmnx as ox
 import json
+import osmnx as ox
+import geopandas as gpd
+from shapely.geometry import LineString
 
 def data_download(city_name, location):
     tags = {
@@ -37,5 +40,17 @@ def data_download(city_name, location):
 
     with open(data_filepath, 'w') as f:
         json.dump(data, f)
+
+    tags = '["highway"~"motorway|trunk|primary|secondary|tertiary|street_limited|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street|residential"]'
+    graph = ox.graph_from_place(location, network_type="all", custom_filter=tags)
+
+    edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
+
+    edges["geometry"] = edges["geometry"].apply(lambda x: LineString(x))
+
+    gdf = gpd.GeoDataFrame(edges[["geometry"]], geometry="geometry")
+
+    output_file = city_name + "roads.geojson"
+    gdf.to_file(output_file, driver="GeoJSON")
 
     print("data download complete")
