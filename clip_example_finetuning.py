@@ -1,3 +1,4 @@
+import torch
 # Latest Update : 18 July 2022, 09:55 GMT+7
 
 # TO ADD :
