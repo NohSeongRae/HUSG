@@ -6,24 +6,23 @@ from POI import POI
 from get_boundary import get_boundary
 from get_building import get_building
 
-city_name = ["firenze"]
-location = ["Firenze, Italy"]
+city_name = "atlanta"
+location = "Atlanta, United States"
 
 
-for i in range(len(city_name)):
-    output_directories = [
-        city_name[i] + "_dataset",
-        city_name[i] + "_dataset/Boundaries",
-        city_name[i] + "_dataset/Buildings",
-    ]
+output_directories = [
+    city_name + "_dataset",
+    city_name + "_dataset/Boundaries",
+    city_name + "_dataset/Buildings",
+]
 
-    for directory in output_directories:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+for directory in output_directories:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    data_download(city_name[i], location[i])
-    extract(city_name[i])
-    if __name__=='__main__':
-        POI(city_name[i])
-        filenum = get_boundary(city_name[i], location[i])
-        get_building(city_name[i], filenum)
+# data_download(city_name, location)
+# extract(city_name)
+if __name__=='__main__':
+    POI(city_name)
+    filenum = get_boundary(city_name, location)
+    get_building(city_name, filenum)

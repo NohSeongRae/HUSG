@@ -50,7 +50,7 @@ def data_download(city_name, location):
 
     gdf = gpd.GeoDataFrame(edges[["geometry"]], geometry="geometry")
 
-    output_file = city_name + "roads.geojson"
+    output_file =  city_name + "_dataset/" + city_name + "_roads.geojson"
     gdf.to_file(output_file, driver="GeoJSON")
 
     print("data download complete")
