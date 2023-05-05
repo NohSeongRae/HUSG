@@ -3,7 +3,8 @@ from shapely.geometry import shape
 import osmnx as ox
 import json
 import geopandas as gpd
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 def get_boundary(city_name, location):
     city_boundary = ox.geocode_to_gdf(location)
@@ -48,17 +49,14 @@ def get_boundary(city_name, location):
 
     print("intersection 시작")
 
-    # progress_flags = {}
-
     def intersection_operation(i):
         return polys[i].intersection(result_poly)
 
-    if __name__ == '__main__':
-        with ThreadPoolExecutor() as executor:
-            results = executor.map(intersection_operation, range(1, len(polys)))
-        executor.shutdown()
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(intersection_operation, i) for i in range(1, len(polys))]
 
-        for result in results:
+        for future in as_completed(futures):
+            result = future.result()
             result_poly = result_poly.intersection(result)
 
     print("intersection 끝")
@@ -76,12 +74,10 @@ def get_boundary(city_name, location):
     def save_polygon(i):
         poly = poly_list[i]
         gdf = gpd.GeoDataFrame(geometry=[poly], columns=["POLYGON"])
-        polygon_filename = city_name + "_dataset/Boundaries_test/" + city_name + f"_boundaries{i}.geojson"
+        polygon_filename = city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i}.geojson"
         gdf.to_file(polygon_filename, driver="GeoJSON")
 
-    if __name__ == '__main__':
-        with ThreadPoolExecutor() as executor:
-            list(executor.map(save_polygon, range(len(poly_list))))
+    with ThreadPoolExecutor() as executor:
+        executor.map(save_polygon, range(len(poly_list)))
 
     return len(poly_list)
-

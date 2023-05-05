@@ -22,8 +22,9 @@ def POI(city_name):
     polygon_gdf = gpd.read_file(polygon_data_filepath)
     polygons = [row['geometry'] for _, row in polygon_gdf.iterrows()]
 
-    with ProcessPoolExecutor() as executor:
-        index_mapping = list(executor.map(process_point, points, [polygons] * len(points)))
+    if __name__ == '__main__':
+        with ProcessPoolExecutor() as executor:
+            index_mapping = list(executor.map(process_point, points, [polygons] * len(points)))
 
     index_mapping = {idx: polygon_idx for idx, polygon_idx in enumerate(index_mapping) if polygon_idx is not None}
 
