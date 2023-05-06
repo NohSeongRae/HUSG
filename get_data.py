@@ -6,8 +6,8 @@ from POI import POI
 from get_boundary import get_boundary
 from get_building import get_building
 
-city_name = "littlerock"
-location = "Little Rock, United States"
+city_name = "portland"
+location = "Portland, Oregon, United States"
 
 
 output_directories = [
@@ -23,6 +23,6 @@ for directory in output_directories:
 
 # data_download(city_name, location)
 # extract(city_name)
-# POI(city_name)
+POI(city_name)
 # filenum = get_boundary(city_name, location)
-get_building(city_name, 4696)
+# get_building(city_name, filenum)

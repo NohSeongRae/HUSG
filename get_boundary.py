@@ -82,4 +82,5 @@ def get_boundary(city_name, location):
 
     executor.shutdown()
 
+    print("boundary 추출 완료")
     return len(poly_list)
