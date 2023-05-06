@@ -80,4 +80,6 @@ def get_boundary(city_name, location):
     with ThreadPoolExecutor() as executor:
         executor.map(save_polygon, range(len(poly_list)))
 
+    executor.shutdown()
+
     return len(poly_list)

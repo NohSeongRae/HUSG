@@ -24,5 +24,5 @@ for directory in output_directories:
 # data_download(city_name, location)
 # extract(city_name)
 # POI(city_name)
-filenum = get_boundary(city_name, location)
-# get_building(city_name, filenum)
+# filenum = get_boundary(city_name, location)
+get_building(city_name, 4696)
