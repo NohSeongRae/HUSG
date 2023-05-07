@@ -1,9 +1,9 @@
 import json
 import geopandas as gpd
+from cityname import city_name, location
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import freeze_support
 from rtree import index
-
 
 def find_polygon_idx(point, polygons):
     for polygon_idx, polygon in enumerate(polygons):
@@ -67,7 +67,5 @@ def POI(city_name, process_point_func, num_process=1):
 
 
 if __name__ == "__main__":
-    city_name = "littlerock"
-
     freeze_support()
     POI(city_name, process_point, num_process=5)
