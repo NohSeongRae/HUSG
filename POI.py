@@ -1,6 +1,9 @@
 import json
 import geopandas as gpd
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import freeze_support
+from rtree import index
+
 
 def find_polygon_idx(point, polygons):
     for polygon_idx, polygon in enumerate(polygons):
@@ -8,11 +11,14 @@ def find_polygon_idx(point, polygons):
             return polygon_idx
     return None
 
-def process_point(point, polygons):
+
+def process_point(args):
+    point, polygons, idx = args
     polygon_idx = find_polygon_idx(point, polygons)
     return polygon_idx
 
-def POI(city_name):
+
+def POI(city_name, process_point_func, num_process=1):
     point_data_filepath = city_name + "_dataset/" + city_name + "_point_data.geojson"
     polygon_data_filepath = city_name + "_dataset/" + city_name + "_polygon_data.geojson"
 
@@ -22,36 +28,46 @@ def POI(city_name):
     polygon_gdf = gpd.read_file(polygon_data_filepath)
     polygons = [row['geometry'] for _, row in polygon_gdf.iterrows()]
 
-    if __name__ == "__main__":
-        with ProcessPoolExecutor() as executor:
-            index_mapping = list(executor.map(process_point, points, [polygons] * len(points)))
+    idx = index.Index()
+    for i, polygon in enumerate(polygons):
+        idx.insert(i, polygon.bounds)
 
-        index_mapping = {idx: polygon_idx for idx, polygon_idx in enumerate(index_mapping) if polygon_idx is not None}
+    with ProcessPoolExecutor(max_workers=num_process) as executor:
+        index_mapping = list(executor.map(process_point_func, zip(points, [polygons] * len(points), [idx] * len(points))))
 
-        polygon_filepath = city_name + '_dataset/' + city_name + '_polygon_data.geojson'
+    index_mapping = {idx: polygon_idx for idx, polygon_idx in enumerate(index_mapping) if polygon_idx is not None}
 
-        with open(polygon_filepath, 'r', encoding='UTF-8') as file:
-            polygon_json = json.load(file)
+    polygon_filepath = city_name + '_dataset/' + city_name + '_polygon_data.geojson'
 
-        point_filepath = city_name + '_dataset/' + city_name + '_point_data.geojson'
+    with open(polygon_filepath, 'r', encoding='UTF-8') as file:
+        polygon_json = json.load(file)
 
-        with open(point_filepath, 'r', encoding='UTF-8') as file:
-            point_json = json.load(file)
+    point_filepath = city_name + '_dataset/' + city_name + '_point_data.geojson'
 
-        max_index = len(polygon_json['features']) - 1
+    with open(point_filepath, 'r', encoding='UTF-8') as file:
+        point_json = json.load(file)
 
-        for source_index, target_index in index_mapping.items():
-            if target_index <= max_index:
-                properties_to_add = point_json['features'][source_index]['properties']
-                for key, value in properties_to_add.items():
-                    if key not in polygon_json['features'][target_index]['properties']:
-                        polygon_json['features'][target_index]['properties'][key] = value
-            else:
-                print(f"Skipping index {target_index} because it's out of range.")
+    max_index = len(polygon_json['features']) - 1
 
-        combined_filepath = city_name + '_dataset/' + city_name + '_polygon_data_combined.geojson'
+    for source_index, target_index in index_mapping.items():
+        if target_index <= max_index:
+            properties_to_add = point_json['features'][source_index]['properties']
+            for key, value in properties_to_add.items():
+                if key not in polygon_json['features'][target_index]['properties']:
+                    polygon_json['features'][target_index]['properties'][key] = value
+        else:
+            print(f"Skipping index {target_index} because it's out of range.")
 
-        with open(combined_filepath, "w") as outfile:
-            json.dump(polygon_json, outfile)
+    combined_filepath = city_name + '_dataset/' + city_name + '_polygon_data_combined.geojson'
 
-        print("POI 합치기 완료")
+    with open(combined_filepath, "w") as outfile:
+        json.dump(polygon_json, outfile)
+
+    print("POI 합치기 완료")
+
+
+if __name__ == "__main__":
+    city_name = "littlerock"
+
+    freeze_support()
+    POI(city_name, process_point, num_process=5)
