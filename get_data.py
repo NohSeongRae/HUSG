@@ -6,8 +6,8 @@ from POI import POI
 from get_boundary import get_boundary
 from get_building import get_building
 
-city_name = "portland"
-location = "Portland, Oregon, United States"
+city_name = "littlerock"
+location = "Little Rock, United States"
 
 
 output_directories = [
