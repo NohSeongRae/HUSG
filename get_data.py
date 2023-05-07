@@ -20,9 +20,9 @@ for directory in output_directories:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-# data_download(city_name, location)
-# extract(city_name)
-POI(city_name)
+data_download(city_name, location)
+extract(city_name)
+# POI(city_name)
 filenum = get_boundary(city_name, location)
-get_building(city_name, filenum)
+# get_building(city_name, filenum)
 

@@ -43,7 +43,7 @@ def data_download(city_name, location):
 
     """
 
-    tags = '["highway"~"motorway|trunk|primary|secondary|tertiary|street_limited|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street|residential"]'
+    tags = '["highway"~"unclassified|motorway|trunk|primary|secondary|tertiary|street_limited|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street|residential"]'
 
     place_gdf = ox.geocode_to_gdf(location)
 
@@ -60,7 +60,7 @@ def data_download(city_name, location):
     gdf.to_file(output_file, driver="GeoJSON")
 
     """
-    tags = '["highway"~"motorway|trunk|primary|secondary|tertiary|street_limited|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street|residential"]'
+    tags = '["highway"~"unclassified|motorway|trunk|primary|secondary|tertiary|street_limited|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|living_street|residential"]'
     graph = ox.graph_from_place(location, network_type="all", custom_filter=tags)
 
     edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
