@@ -101,7 +101,7 @@ def get_boundary(city_name, location):
     def save_polygon(i):
         poly = poly_list[i]
         gdf = gpd.GeoDataFrame(geometry=[poly], columns=["POLYGON"])
-        polygon_filename = city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i}.geojson"
+        polygon_filename = city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i+1}.geojson"
         gdf.to_file(polygon_filename, driver="GeoJSON")
 
     with ThreadPoolExecutor() as executor:
