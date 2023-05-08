@@ -1,2 +1,2 @@
-city_name = "philadelphia"
-location = "Philadelphia, United States"
+city_name = "budapest"
+location = "Budapest, Hungary"

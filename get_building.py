@@ -19,10 +19,9 @@ def process_boundary(city_name, i, filenum, data_geojson):
         if geom.within(boundary_polygon):
             intersections["features"].append(feature)
 
-    if len(intersections["features"]) > 0:
-        building_filename = city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
-        with open(building_filename, 'w', encoding='UTF-8') as outfile:
-            json.dump(intersections, outfile)
+    building_filename = city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
+    with open(building_filename, 'w', encoding='UTF-8') as outfile:
+        json.dump(intersections, outfile)
 
 
 def get_building(city_name):

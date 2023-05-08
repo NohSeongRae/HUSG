@@ -11,12 +11,12 @@ def add_key(city_name):
     files = os.listdir(dir_path)
     filenum = len(files)
 
-    for i in range(1, filenum+1):
-        building_filename = city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
+    for j in range(1, filenum+1):
+        building_filename = city_name + '_dataset/Buildings/' + city_name + f'_buildings{j}.geojson'
         with open(building_filename, "r", encoding='UTF8') as infile:
             whole_geojson_data = json.load(infile)
 
-        for i in range (len(whole_geojson_data['features'])):
+        for i in range(len(whole_geojson_data['features'])):
             properties = whole_geojson_data['features'][i]['properties']
             # building
             if properties.get("building") != None:

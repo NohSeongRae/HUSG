@@ -6,10 +6,10 @@ import os
 def NLD(city_name):
     city_name = city_name.capitalize()
 
-    dir_path = f'{city_name}_dataset/Buildings/'
+    dir_path = f'{city_name}_dataset/Image/'
     files = os.listdir(dir_path)
     num_file = len(files)
-    
+
     result_list = []
 
     for i in range(1, num_file):
