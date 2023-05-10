@@ -6,8 +6,10 @@ import json
 import geopandas as gpd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 def get_boundary(city_name, location):
-    # Largest subgraph 추출
+    # 전체 roads geojson -> Largest subgraph 추출
+
     roads_filename = city_name + "_dataset/" + city_name + "_roads.geojson"
 
     with open(roads_filename, "r") as file:
@@ -15,24 +17,33 @@ def get_boundary(city_name, location):
 
     gdf = gpd.GeoDataFrame.from_features(data["features"])
 
+    # LineString에 해당하는 것들만 edges 에 넣기
     edges = gdf[gdf["geometry"].apply(lambda x: isinstance(x, LineString))]
 
+    # 위 edges 변수에 담긴 edge들을 가지는 Graph G 정의
+    # 즉 G는 LineString에 해당하는 것들만 담긴 전체 road graph임
     G = nx.Graph()
     G.add_edges_from([(row["u"], row["v"]) for _, row in edges.iterrows()])
-
+    # graph들을 list에 넣음
     connected_components = list(nx.connected_components(G))
-
+    # 가장 edge 수가 많은 graph를 largest_subgraph_nodes 변수에 할당
     largest_subgraph_nodes = max(connected_components, key=len)
 
+    """
     for component in connected_components:
         if component != largest_subgraph_nodes:
             for node in component:
                 G.remove_node(node)
+    """
 
-    largest_subgraph_edges_gdf = edges[edges.apply(lambda row: row['u'] in largest_subgraph_nodes and row['v'] in largest_subgraph_nodes, axis=1)]
-
+    # largest subgraph를 geopandasframe 형태로 생성
+    largest_subgraph_edges_gdf = edges[
+        edges.apply(lambda row: row['u'] in largest_subgraph_nodes and row['v'] in largest_subgraph_nodes, axis=1)]
+    # geometry만 추출해서 geojson 파일로 만들기
     geometry_only = largest_subgraph_edges_gdf["geometry"].tolist()
 
+    # geom.__geo_interface__는 shapely 라이브러리의 함수 : type(linestring), linestring을 dictionary 형태로 반환해줌
+    # 이를 이용해 coordinates 정보만 따와서 geojson 파일로 저장
     geojson_data = {
         "type": "FeatureCollection",
         "features": [
@@ -40,18 +51,22 @@ def get_boundary(city_name, location):
         ],
     }
 
+    # 원래의 roads geojson 파일 덮어쓰기
     with open(roads_filename, "w") as file:
         json.dump(geojson_data, file)
 
+    # osmnx를 통해 특정 도시의 geodataframe 얻기
     city_boundary = ox.geocode_to_gdf(location)
-
     city_boundary_geojson = json.loads(city_boundary.to_json())
 
+    # osmnx에는 boundary만 얻을 수 있는 함수는 없음
+    # city_boundary에 저장되는 정보는 도시 전체에 대한 geodataframe이고, 여기서 가장 맨 첫줄에 저장되는 정보가 도시 전체 boundary에 해당
     polygon = shape(city_boundary_geojson['features'][0]['geometry'])
 
     with open(roads_filename) as file:
         data = json.load(file)
 
+    # data_download.py에서 저장한 road geojson 파일의 linestring 선들 얻기
     linestrings = []
     features = data['features']
     for feature in features:
@@ -63,11 +78,14 @@ def get_boundary(city_name, location):
 
     result_polygon = polygon
 
+    # difference : 차집합을 찾는 함수 (여기선 polygon - linestring)
+    # buffer : linestring에 두께를 줌 (두께의 크기, cap_style=3는 linestring의 모양(끝부분이 각지도록하기))
     def buffered_difference(polygon, linestring):
         buffered_linestring = linestring.buffer(0.000019, cap_style=3)
         return polygon.difference(buffered_linestring)
 
     def process_linestrings(polygon, linestrings, num_threads=4):
+        # 나눠진 chunk 들에 대해 각각 buffered_difference 연산(polygon-linestring)을 수행
         def worker(polygon, linestrings_chunk):
             for linestring in linestrings_chunk:
                 polygon = buffered_difference(polygon, linestring)
@@ -75,10 +93,11 @@ def get_boundary(city_name, location):
 
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             chunk_size = len(linestrings) // num_threads
+            # chunks에 0~chunk_size / chunk_size~2*chunk_size / 2*chunk_size~3*chunk_size ... 넣기
             chunks = [linestrings[i:i + chunk_size] for i in range(0, len(linestrings), chunk_size)]
-
+            # 각각의 chunk들을 input으로 넣어줘서 병렬로 task가 수행되도록 함
             tasks = [executor.submit(worker, polygon, chunk) for chunk in chunks]
-
+            # 완료되면 result_polygons에 담기
             result_polygons = []
             for future in as_completed(tasks):
                 result_polygons.append(future.result())
@@ -87,23 +106,32 @@ def get_boundary(city_name, location):
 
     result_polygons = process_linestrings(polygon, linestrings)
 
+    # len(result_polygons) == num_threads
+    # 병렬로 처리되어 잘린 polygon들의 합집합을 구함
     final_polygon = result_polygons[0]
     for i in range(1, len(result_polygons)):
         final_polygon = final_polygon.intersection(result_polygons[i])
 
+    # 난도질 당한 polygon은 자동으로 data type이 multipolygon으로 할당됨
+    # 이 multipolygon의 조각들을 빼 poly_list에 저장
+    # 즉 poly_list에는 모든 boundary가 shapely 라이브러리의 'polygon' 데이터 타입으로 저장됨
     poly_list = []
+    # multipolygon인 경우 그 multipolygon에 속하는 polygon들을 떼어내어 poly_list에 넣어주기
     if final_polygon.geom_type == "MultiPolygon":
         for poly in final_polygon.geoms:
             poly_list.append(poly)
     else:
+        # 단일 polygon이면 그냥 넣기
         poly_list.append(final_polygon)
 
+    # poly_list에 담긴 polygon들을 하나씩 geojson 형태로 저장
     def save_polygon(i):
         poly = poly_list[i]
         gdf = gpd.GeoDataFrame(geometry=[poly], columns=["POLYGON"])
-        polygon_filename = city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i+1}.geojson"
+        polygon_filename = city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i + 1}.geojson"
         gdf.to_file(polygon_filename, driver="GeoJSON")
 
+    # 파일 저장을 병렬로 처리해주는 코드
     with ThreadPoolExecutor() as executor:
         executor.map(save_polygon, range(len(poly_list)))
 
