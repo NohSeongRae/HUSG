@@ -55,12 +55,11 @@ def get_boundary(city_name, location):
     with open(roads_filename, "w") as file:
         json.dump(geojson_data, file)
 
-    # osmnx를 통해 특정 도시의 geodataframe 얻기
+    # osmnx를 통해 특정 도시의 boundary geodataframe 얻기
     city_boundary = ox.geocode_to_gdf(location)
     city_boundary_geojson = json.loads(city_boundary.to_json())
 
-    # osmnx에는 boundary만 얻을 수 있는 함수는 없음
-    # city_boundary에 저장되는 정보는 도시 전체에 대한 geodataframe이고, 여기서 가장 맨 첫줄에 저장되는 정보가 도시 전체 boundary에 해당
+    # boundary를 polygon 형태로 만들기
     polygon = shape(city_boundary_geojson['features'][0]['geometry'])
 
     with open(roads_filename) as file:
