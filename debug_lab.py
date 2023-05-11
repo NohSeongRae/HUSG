@@ -5,7 +5,7 @@ print(clip.available_models())
 device = "cuda" if torch.cuda.is_available() else "cpu"
 test_model, preprocess=clip.load('ViT-B/32', device=device, jit=False)
 
-test_image=preprocess(Image.open('schedule.png')).unsqueeze(0).to(device)
+test_image=preprocess(Image.open('clip/schedule.png')).unsqueeze(0).to(device)
 text=clip.tokenize(["a middle school", "a high school", "a college"]).to(device)
 
 with torch.no_grad():
