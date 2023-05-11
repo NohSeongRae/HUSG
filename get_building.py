@@ -2,7 +2,7 @@ import json
 from shapely.geometry import shape
 import concurrent.futures
 import os
-
+from rtree import index
 
 def process_boundary(city_name, i, filenum, data_geojson):
     # boundary file을 하나씩 읽기
@@ -30,6 +30,10 @@ def process_boundary(city_name, i, filenum, data_geojson):
     # 진짜 속하는지 찾기 - R-tree의 intersection함수에서 겹친다고(포함관계) 판단된 경우에 대해서만 수행
     # 이 과정이 정확히 왜 필요한지 궁금함. intersecting_indices = list(idx.intersection(boundary_polygon.bounds))가 실제로는 포함관계가 아닌데 포함관계라고 인식하는 경우가 있는건가?
     # 만약 그렇다면, 어떤 경우에 그런건지 여기에 주석으로 달아두셈
+
+    # R-tree의 경우 기본적으로 polygon을 감싸는 bounding box를 만들어서 연산함
+    # 그렇기에 idx.intersection은 bounding box간의 겹치거나 포함관계를 판단하므로
+    # "polygon"이 정말 포함관계인지 판단하는 과정이 필요
     for intersecting_index in intersecting_indices:
         feature = data_geojson["features"][intersecting_index]
         # r-tree에 의해 선택된 building_polygon이 boundary_polygon에 속하는지를 검사 (within)
