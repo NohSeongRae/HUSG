@@ -8,13 +8,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def get_boundary(city_name, location):
+    """
     # 전체 roads geojson -> Largest subgraph 추출
+    :param city_name: processing city name
+    :param location: city full name for distinguishing duplicated city name
+    :return: None
+    """
 
     roads_filename = city_name + "_dataset/" + city_name + "_roads.geojson"
 
     with open(roads_filename, "r") as file:
         data = json.load(file)
-
+    # data json파일에서 property와 geometry를 추출해서 gdf에 저장
     gdf = gpd.GeoDataFrame.from_features(data["features"])
 
     # LineString에 해당하는 것들만 edges 에 넣기
@@ -75,21 +80,43 @@ def get_boundary(city_name, location):
             linestring = LineString(coordinates)
             linestrings.append(linestring)
 
-    result_polygon = polygon
+    # result_polygon이 쓰이지 않는거같아서 주석처리함
+    # result_polygon = polygon
 
     # difference : 차집합을 찾는 함수 (여기선 polygon - linestring)
     # buffer : linestring에 두께를 줌 (두께의 크기, cap_style=3는 linestring의 모양(끝부분이 각지도록하기))
     def buffered_difference(polygon, linestring):
-        buffered_linestring = linestring.buffer(0.000019, cap_style=3)
+        """
+        #linestring으로 polygon 자르기
+        :param polygon: city boundary
+        :param linestring: road segment
+        :return: 주어진 road segment로 잘린 polygon
+        """
+        buffered_linestring = linestring.buffer(0.000019, cap_style=3)  # 0.000019는 경험적으로 산출된건지?
         return polygon.difference(buffered_linestring)
 
     def process_linestrings(polygon, linestrings, num_threads=4):
+        """
+        4개의 thread를 이용하여 buffered_difference 함수를 전체 linestring에 대해 병렬적으로 처리함
+        :param polygon: city boundary
+        :param linestrings: road segment
+        :param num_threads: 4
+        :return: 모든 road segment에 대해 잘린 city boundary
+        """
+
         # 나눠진 chunk 들에 대해 각각 buffered_difference 연산(polygon-linestring)을 수행
         def worker(polygon, linestrings_chunk):
+            """
+            각 thread에 들어가는 함수. 주어진 road segment chunk를 순회하며 buffered_difference함수를 실행한다.
+            :param polygon:city boundary
+            :param linestrings_chunk: road segment chunck. thread에 들어가는 각 chunck는 중복되지 않는다.
+            :return:주어진 road segment chunck에 대해 잘린 city boundary
+            """
             for linestring in linestrings_chunk:
                 polygon = buffered_difference(polygon, linestring)
             return polygon
 
+        # 병렬 처리, num_thread=4
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             chunk_size = len(linestrings) // num_threads
             # chunks에 0~chunk_size / chunk_size~2*chunk_size / 2*chunk_size~3*chunk_size ... 넣기
@@ -111,7 +138,7 @@ def get_boundary(city_name, location):
     for i in range(1, len(result_polygons)):
         final_polygon = final_polygon.intersection(result_polygons[i])
 
-    # 난도질 당한 polygon은 자동으로 data type이 multipolygon으로 할당됨
+    # 여러개의 linestring에 대해 잘린 polygon은 자동으로 data type이 multipolygon으로 할당됨
     # 이 multipolygon의 조각들을 빼 poly_list에 저장
     # 즉 poly_list에는 모든 boundary가 shapely 라이브러리의 'polygon' 데이터 타입으로 저장됨
     poly_list = []
@@ -125,6 +152,11 @@ def get_boundary(city_name, location):
 
     # poly_list에 담긴 polygon들을 하나씩 geojson 형태로 저장
     def save_polygon(i):
+        """
+        주어진 i번째 polygon을 geojson형태로 저장
+        :param i: ploy_list의 i번째 폴리곤
+        :return: None
+        """
         poly = poly_list[i]
         gdf = gpd.GeoDataFrame(geometry=[poly], columns=["POLYGON"])
         polygon_filename = city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i + 1}.geojson"

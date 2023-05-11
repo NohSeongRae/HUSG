@@ -1,6 +1,7 @@
 import json
 import os
 
+
 # city_name = "firenze"
 
 def NLD(city_name):

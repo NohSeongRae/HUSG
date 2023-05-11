@@ -5,7 +5,8 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 # city_name = "firenze"
-figsize = (10,10)
+figsize = (10, 10)
+
 
 def add_key(city_name):
     # 파일 수 세기
@@ -14,7 +15,7 @@ def add_key(city_name):
     filenum = len(files)
 
     # building data들 하나씩 불러오기
-    for j in range(1, filenum+1):
+    for j in range(1, filenum + 1):
         building_filename = city_name + '_dataset/Buildings/' + city_name + f'_buildings{j}.geojson'
         with open(building_filename, "r", encoding='UTF8') as infile:
             whole_geojson_data = json.load(infile)
@@ -37,7 +38,7 @@ def add_key(city_name):
 
             # amenity
             if properties.get("amenity") != None:
-                if properties["amenity"]=='marketplace':
+                if properties["amenity"] == 'marketplace':
                     properties["key"] = "supermarket"
                 if properties["amenity"] in ['restaurant', 'fast_food', 'cafe', 'bar', 'pub']:
                     properties["key"] = "restaurant"
@@ -82,7 +83,6 @@ def add_key(city_name):
                 if properties['amenity'] in ['library']:
                     properties['key'] = 'library'
 
-
             # office
             if properties.get("office") != None:
                 if properties["office"] in ['government']:
@@ -99,7 +99,7 @@ def add_key(city_name):
                 properties["key"] = "government_office"
 
             # militray
-            if properties.get("military")  != None:
+            if properties.get("military") != None:
                 properties["key"] = "military"
 
             # landuse
@@ -204,7 +204,6 @@ def get_square_bounds(geojson_path):
     lower = square_coords[2][1]
 
     return left, upper, right, lower
-
 
 
 def image(city_name):

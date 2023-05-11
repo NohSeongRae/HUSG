@@ -22,12 +22,14 @@ def process_boundary(city_name, i, filenum, data_geojson):
     for pos, feature in enumerate(data_geojson["features"]):
         # geom에 담기는 정보는 building polygon
         geom = shape(feature["geometry"])
-        idx.insert(pos, geom.bounds)
+        idx.insert(pos, geom.bounds)  # geom.bound??? 가 뭐임? coords인가? 주석 추가해주셈
 
     # R-tree를 사용하여 겹치는(포함관계인) 객체 찾기
     intersecting_indices = list(idx.intersection(boundary_polygon.bounds))
 
     # 진짜 속하는지 찾기 - R-tree의 intersection함수에서 겹친다고(포함관계) 판단된 경우에 대해서만 수행
+    # 이 과정이 정확히 왜 필요한지 궁금함. intersecting_indices = list(idx.intersection(boundary_polygon.bounds))가 실제로는 포함관계가 아닌데 포함관계라고 인식하는 경우가 있는건가?
+    # 만약 그렇다면, 어떤 경우에 그런건지 여기에 주석으로 달아두셈
     for intersecting_index in intersecting_indices:
         feature = data_geojson["features"][intersecting_index]
         # r-tree에 의해 선택된 building_polygon이 boundary_polygon에 속하는지를 검사 (within)
@@ -49,6 +51,7 @@ def get_building(city_name):
     # building data 불러오기
     data_filepath = city_name + '_dataset/' + city_name + "_polygon_data_combined.geojson"
 
+    # data_geojson은 building이 building data를 포함함
     with open(data_filepath, "r", encoding='UTF-8') as file:
         data_geojson = json.load(file)
 

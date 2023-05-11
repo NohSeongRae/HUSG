@@ -9,6 +9,7 @@ from get_buildinglevel import get_buildinglevel
 
 commercial, education, emergency, financial, government, healthcare, landuse, natural, public, sport, water, residence = get_buildinglevel()
 
+
 def polar_angle(origin, point):
     delta_x = point[0] - origin[0]
     delta_y = point[1] - origin[1]
@@ -22,7 +23,9 @@ def sort_points_ccw(points):
     sorted_indices = np.argsort(angles)
     return points[sorted_indices]
 
+
 new_coords = []
+
 
 def extract_polygon_coordinates(geom):
     # normalize
@@ -35,6 +38,7 @@ def extract_polygon_coordinates(geom):
     geom = Polygon(new_coords)
     return list(geom.exterior.coords)
 
+
 def graph_dataloader(city_name):
     dir_path = city_name + '_dataset/Buildings/'
     files = os.listdir(dir_path)
@@ -43,7 +47,7 @@ def graph_dataloader(city_name):
     graph_list = []
     graph_features_list = []
 
-    for i in range(1, num_file+1):
+    for i in range(1, num_file + 1):
         geojson_filepath = city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
         gdf = gpd.read_file(geojson_filepath)
 
@@ -86,7 +90,7 @@ def graph_dataloader(city_name):
             G.add_node(i, pos=point)
 
         for i in range(len(sorted_points)):
-            G.add_edge(i, (i+1) % len(sorted_points))
+            G.add_edge(i, (i + 1) % len(sorted_points))
 
         if G.number_of_nodes() > 0:
             graph_list.append(G)
