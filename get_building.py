@@ -22,7 +22,7 @@ def process_boundary(city_name, i, filenum, data_geojson):
     for pos, feature in enumerate(data_geojson["features"]):
         # geom에 담기는 정보는 building polygon
         geom = shape(feature["geometry"])
-        idx.insert(pos, geom.bounds)  # geom.bound??? 가 뭐임? coords인가? 주석 추가해주셈
+        idx.insert(pos, geom.bounds)  # r-tree를 이용하기 위해 bounding box의 coord 추출
 
     # R-tree를 사용하여 겹치는(포함관계인) 객체 찾기
     intersecting_indices = list(idx.intersection(boundary_polygon.bounds))
