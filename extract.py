@@ -1,5 +1,5 @@
 import json
-
+import filepath
 
 def extract(city_name):
     """
@@ -9,8 +9,7 @@ def extract(city_name):
     """
 
     # 기본이 되는 data인 data_geojson은 모든 feature를 담고있다.
-    data_filepath = f"{city_name}_dataset/{city_name}_all_features.geojson"
-    with open(data_filepath, "r", encoding="UTF-8") as file:
+    with open(filepath.data_filepath, "r", encoding="UTF-8") as file:
         data_geojson = json.load(file)
 
     # geojson data 틀
@@ -33,12 +32,12 @@ def extract(city_name):
 
     # 저장 - None data 저장을 막기 위해 json 이용
     # point feature 저장
-    point_data_filepath = f"{city_name}_dataset/{city_name}_point_data.geojson"
-    with open(point_data_filepath, "w", encoding="UTF-8") as outfile:
+
+    with open(filepath.point_data_filepath, "w", encoding="UTF-8") as outfile:
         json.dump(point_features, outfile)
     # polygon feature 저장
-    polygon_data_filepath = f"{city_name}_dataset/{city_name}_polygon_data.geojson"
-    with open(polygon_data_filepath, "w", encoding="UTF-8") as outfile:
+
+    with open(filepath.polygon_data_filepath, "w", encoding="UTF-8") as outfile:
         json.dump(polygon_features, outfile)
 
     print("Extract point / polygon data complete")

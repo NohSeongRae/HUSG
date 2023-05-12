@@ -5,6 +5,7 @@ import osmnx as ox
 import json
 import geopandas as gpd
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import filepath
 
 
 def get_boundary(city_name, location):
@@ -15,9 +16,7 @@ def get_boundary(city_name, location):
     :return: None
     """
 
-    roads_filename = city_name + "_dataset/" + city_name + "_roads.geojson"
-
-    with open(roads_filename, "r") as file:
+    with open(filepath.roads_filename, "r") as file:
         data = json.load(file)
     # data json파일에서 property와 geometry를 추출해서 gdf에 저장
     gdf = gpd.GeoDataFrame.from_features(data["features"])
@@ -57,7 +56,7 @@ def get_boundary(city_name, location):
     }
 
     # 원래의 roads geojson 파일 덮어쓰기
-    with open(roads_filename, "w") as file:
+    with open(filepath.roads_filename, "w") as file:
         json.dump(geojson_data, file)
 
     # osmnx를 통해 특정 도시의 boundary geodataframe 얻기
@@ -67,7 +66,7 @@ def get_boundary(city_name, location):
     # boundary를 polygon 형태로 만들기
     polygon = shape(city_boundary_geojson['features'][0]['geometry'])
 
-    with open(roads_filename) as file:
+    with open(filepath.roads_filename) as file:
         data = json.load(file)
 
     # data_download.py에서 저장한 road geojson 파일의 linestring 선들 얻기
@@ -159,7 +158,7 @@ def get_boundary(city_name, location):
         """
         poly = poly_list[i]
         gdf = gpd.GeoDataFrame(geometry=[poly], columns=["POLYGON"])
-        polygon_filename = city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i + 1}.geojson"
+        polygon_filename = '2023_cityteam/' + city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i + 1}.geojson"
         gdf.to_file(polygon_filename, driver="GeoJSON")
 
     # 파일 저장을 병렬로 처리해주는 코드

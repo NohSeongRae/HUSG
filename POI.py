@@ -1,9 +1,8 @@
 import geopandas as gpd
 import pandas as pd
-from cityname import city_name
 import json
 from concurrent import futures
-
+import filepath
 
 def process_chunk(chunk_points, polygons):
     """
@@ -18,11 +17,8 @@ def process_chunk(chunk_points, polygons):
     return gpd.sjoin(chunk_points, polygons, how="left", predicate="within")
 
 if __name__ == '__main__':
-    polygon_filepath = city_name + '_dataset/' + city_name + '_polygon_data.geojson'
-    point_filepath = city_name + '_dataset/' + city_name + '_point_data.geojson'
-
-    polygons = gpd.read_file(polygon_filepath)
-    points = gpd.read_file(point_filepath)
+    polygons = gpd.read_file(filepath.polygon_filepath)
+    points = gpd.read_file(filepath.point_filepath)
 
     num_chunks = 5
     # 병렬 처리를 위한 point data 분할
@@ -43,15 +39,14 @@ if __name__ == '__main__':
             # point index - polygon index mapping
             index_mapping[i] = int(row['index_right'])
 
-
     """
     index_mapping을 기반으로 point data와 polygon data 병합 
     :return: polygon, point 가 합쳐진 geojson 파일 
     """
-    with open(polygon_filepath, 'r', encoding='UTF-8') as file:
+    with open(filepath.polygon_filepath, 'r', encoding='UTF-8') as file:
         polygon_json = json.load(file)
 
-    with open(point_filepath, 'r', encoding='UTF-8') as file:
+    with open(filepath.point_filepath, 'r', encoding='UTF-8') as file:
         point_json = json.load(file)
 
     # source_index = point index / target_index = polygon_index
@@ -63,9 +58,7 @@ if __name__ == '__main__':
             if key not in polygon_json['features'][target_index]['properties']:
                 polygon_json['features'][target_index]['properties'][key] = value
 
-        combined_filepath = city_name + '_dataset/' + city_name + '_polygon_data_combined.geojson'
-
-    with open(combined_filepath, "w") as outfile:
+    with open(filepath.combined_filepath, "w") as outfile:
         json.dump(polygon_json, outfile)
 
 print("POI 합치기 완료")

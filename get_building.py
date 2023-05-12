@@ -1,70 +1,40 @@
-import json
-from shapely.geometry import shape
-import concurrent.futures
 import os
-from rtree import index
+import geopandas as gpd
+import concurrent.futures
 
-def process_boundary(city_name, i, filenum, data_geojson):
-    # boundary file을 하나씩 읽기
+def process_boundary(city_name, i, data_filepath):
+    # boundary file 불러오기
     boundary_filename = city_name + '_dataset/Boundaries/' + city_name + f'_boundaries{i}.geojson'
+    boundary_gdf = gpd.read_file(boundary_filename)
+    data_gdf = gpd.read_file(data_filepath)
 
-    with open(boundary_filename, "r", encoding='UTF-8') as file:
-        boundary_geojson = json.load(file)
+    """
+    # boundary polygon과 building polygon의 공간 관계를 파악해 boundary polygon 내에 속하는 building polygon 찾기
+    # geopandas의 sjoin 함수는 r-tree를 기반으로 탐색을 수행
+    # how="left", predicate="within"은 왼쪽 param(chunk_points)가 오른쪽 param(polygons)에 속하는지(within)를 판단하는 것을 의미
+    :param chunk_points: POI chunk
+    :param polygons: building
+    :return: GeoDataFrame 형태로 point, polygon index 정보 반환 - 각각의 point가 어떤 index의 polygon에 속하는지
+     (columns: index(point), geometry(point), index_right(polygon index))
+    """
 
-    # boundary_polygon에 boundary의 coordinate을 추출해서 shapely의 polygon data로 만들기
-    # + ) features : [{"geometry": [coords]}] features는 list안에 dictionary가 존재하는 형태임
-    boundary_polygon = shape(boundary_geojson["features"][0]["geometry"])
-    intersections = {"type": "FeatureCollection", "features": []}
+    intersections = gpd.sjoin(data_gdf, boundary_gdf, how="left", predicate='within')
 
-    # R-tree index 생성
-    # 지금은 r-tree에 하나씩 넣고 있는 방식인데 이 부분은 한번에 넣을 수 있도록 POI 수정하면서 함께 수정할 예정
-    idx = index.Index()
-    for pos, feature in enumerate(data_geojson["features"]):
-        # geom에 담기는 정보는 building polygon
-        geom = shape(feature["geometry"])
-        idx.insert(pos, geom.bounds)  # r-tree를 이용하기 위해 bounding box의 coord 추출
-
-    # R-tree를 사용하여 겹치는(포함관계인) 객체 찾기
-    intersecting_indices = list(idx.intersection(boundary_polygon.bounds))
-
-    # 진짜 속하는지 찾기 - R-tree의 intersection함수에서 겹친다고(포함관계) 판단된 경우에 대해서만 수행
-    # 이 과정이 정확히 왜 필요한지 궁금함. intersecting_indices = list(idx.intersection(boundary_polygon.bounds))가 실제로는 포함관계가 아닌데 포함관계라고 인식하는 경우가 있는건가?
-    # 만약 그렇다면, 어떤 경우에 그런건지 여기에 주석으로 달아두셈
-
-    # R-tree의 경우 기본적으로 polygon을 감싸는 bounding box를 만들어서 연산함
-    # 그렇기에 idx.intersection은 bounding box간의 겹치거나 포함관계를 판단하므로
-    # "polygon"이 정말 포함관계인지 판단하는 과정이 필요
-    for intersecting_index in intersecting_indices:
-        feature = data_geojson["features"][intersecting_index]
-        # r-tree에 의해 선택된 building_polygon이 boundary_polygon에 속하는지를 검사 (within)
-        if geom.within(boundary_polygon):
-            # 속하면 intersection 이라는 이름의 geojson 형태에 추가하기
-            intersections["features"].append(feature)
-
-    # building geojson 으로 저장
-    building_filename = city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
-    with open(building_filename, 'w', encoding='UTF-8') as outfile:
-        json.dump(intersections, outfile)
-
+    if not intersections.empty:  # building이 하나라도 존재하는 경우에만 저장
+        building_filename = city_name + '_dataset/' + 'Buildings/' + city_name + f'_buildings{i}.geojson'
+        intersections.to_file(building_filename, driver='GeoJSON')
 
 def get_building(city_name):
-    # Boundary가 몇개 추출되었는지를 파악 (filenum == boundary 수)
-    dir_path = f'{city_name}_dataset/Boundaries/'
+    dir_path = city_name + '_dataset/Boundaries/'
     files = os.listdir(dir_path)
     filenum = len(files)
-    # building data 불러오기
+
     data_filepath = city_name + '_dataset/' + city_name + "_polygon_data_combined.geojson"
 
-    # data_geojson은 building이 building data를 포함함
-    with open(data_filepath, "r", encoding='UTF-8') as file:
-        data_geojson = json.load(file)
-
-    # process_boundary 함수의 실행을 병렬로 처리
-    # ThreadPoolExecutor()의 경우 사용가능한 thread에서 task들(process_boundary)을 병렬로 처리하고
-    # 다 처리했으면 그다음거 가져와서 처리하고 이런식이라고 함
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
         futures = []
         for i, _ in enumerate(range(1, filenum), start=1):
-            # process_boundary(city_name, i, filenum, data_geojson)을 넣어주면
-            # process_boundary에서는 i번째 boundary에 대한 building data를 추출하고 저장
-            futures.append(executor.submit(process_boundary, city_name, i, filenum, data_geojson))
+            futures.append(executor.submit(process_boundary, city_name, i, data_filepath))
+
+if __name__ == '__main__':
+    get_building('littlerock')
