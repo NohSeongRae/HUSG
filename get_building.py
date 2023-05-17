@@ -1,43 +1,48 @@
 import os
-import geopandas as gpd
-import concurrent.futures
 import json
+import geopandas as gpd
+import filepath
+from concurrent.futures import ProcessPoolExecutor
 
+city_name = "portland"
 
-def process_boundary(city_name, i, data_filepath):
-    # boundary file 불러오기
-    boundary_filename = city_name + '_dataset/Boundaries/' + city_name + f'_boundaries{i}.geojson'
-    boundary_gdf = gpd.read_file(boundary_filename)
-    data_gdf = gpd.read_file(data_filepath)
+dir_path = "./2023_City_Team/" + city_name + '_dataset/Boundaries/'
+files = os.listdir(dir_path)
+filenum = len(files)
 
-    intersections = gpd.sjoin(data_gdf, boundary_gdf, how="left", predicate='within')
+with open(filepath.combined_filepath, "r") as f:
+    geojson_polygons = json.load(f)
 
-    if not intersections.empty:  # building이 하나라도 존재하는 경우에만 저장
-        building_filename = city_name + '_dataset/' + 'Buildings/' + city_name + f'_buildings{i}.geojson'
+polygons_gdf = gpd.GeoDataFrame.from_features(geojson_polygons['features'])
 
-        # Geopandas dataframe을 GeoJSON 형식으로 변환
-        geojson = json.loads(intersections.to_json())
+def process_boundary(i):
+    boundary_filename = "./2023_City_Team/" + city_name + '_dataset/Boundaries/' + city_name + f'_boundaries{i}.geojson'
+    with open(boundary_filename, "r") as f:
+        geojson_boundary = json.load(f)
 
-        # null 값을 가진 features 제거
-        geojson['features'] = [feature for feature in geojson['features'] if feature['properties'] is not None]
+    if geojson_boundary['type'] == 'Feature':
+        geojson_boundary = [geojson_boundary]
 
-        # GeoJSON 데이터를 파일로 저장
-        with open(building_filename, 'w') as f:
-            json.dump(geojson, f)
+    boundary_gdf = gpd.GeoDataFrame.from_features(geojson_boundary)
 
+    inside_boundary = gpd.sjoin(polygons_gdf, boundary_gdf, how='inner', predicate='within')
 
-def get_building(city_name):
-    dir_path = city_name + '_dataset/Boundaries/'
-    files = os.listdir(dir_path)
-    filenum = len(files)
+    inside_polygons_gdf = polygons_gdf[polygons_gdf.index.isin(inside_boundary.index)]
 
-    data_filepath = city_name + '_dataset/' + city_name + "_polygon_data_combined.geojson"
+    geojson_polygons_clean = json.loads(inside_polygons_gdf.to_json())
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=5) as executor:
-        futures = []
-        for i, _ in enumerate(range(1, filenum), start=1):
-            futures.append(executor.submit(process_boundary, city_name, i, data_filepath))
+    for feature in geojson_polygons_clean['features']:
+        feature['properties'] = {k: v for k, v in feature['properties'].items() if v is not None}
 
+    building_filepath = "./2023_City_Team/" + city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
 
-if __name__ == '__main__':
-    get_building('littlerock')
+    if geojson_polygons_clean['features']:
+        with open(building_filepath, 'w') as f:
+            json.dump(geojson_polygons_clean, f)
+
+    return inside_boundary.index
+
+if __name__ == "__main__":
+    with ProcessPoolExecutor() as executor:
+        for inside_boundary_indices in executor.map(process_boundary, range(1, filenum + 1)):
+            polygons_gdf = polygons_gdf[~polygons_gdf.index.isin(inside_boundary_indices)]

@@ -3,7 +3,7 @@ import json
 import osmnx as ox
 import geopandas as gpd
 from shapely.geometry import LineString
-
+import filepath
 
 def data_download(city_name, location):
     """
@@ -44,10 +44,8 @@ def data_download(city_name, location):
             feature["properties"] = {k: v for k, v in feature["properties"].items() if v is not None}
             data["features"].append(feature)
 
-    data_filepath = city_name + "_dataset/" + city_name + "_all_features.geojson"
-
     # 파일 저장
-    with open(data_filepath, 'w') as f:
+    with open(filepath.data_filepath, 'w') as f:
         json.dump(data, f)
 
     """
@@ -82,7 +80,6 @@ def data_download(city_name, location):
     # geodataframe에 geometry field 추가 (맞는지 확인 부탁)
     gdf = gpd.GeoDataFrame(edges[["geometry"]], geometry="geometry")
 
-    output_file = city_name + "_dataset/" + city_name + "_roads.geojson"
-    gdf.to_file(output_file, driver="GeoJSON")
+    gdf.to_file(filepath.roads_filepath, driver="GeoJSON")
 
     print("data download complete")

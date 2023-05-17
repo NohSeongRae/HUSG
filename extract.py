@@ -33,11 +33,11 @@ def extract(city_name):
     # 저장 - None data 저장을 막기 위해 json 이용
     # point feature 저장
 
-    with open(filepath.point_data_filepath, "w", encoding="UTF-8") as outfile:
+    with open(filepath.point_filepath, "w", encoding="UTF-8") as outfile:
         json.dump(point_features, outfile)
     # polygon feature 저장
 
-    with open(filepath.polygon_data_filepath, "w", encoding="UTF-8") as outfile:
+    with open(filepath.polygon_filepath, "w", encoding="UTF-8") as outfile:
         json.dump(polygon_features, outfile)
 
     print("Extract point / polygon data complete")
