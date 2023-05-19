@@ -25,7 +25,7 @@ if __name__ == '__main__':
     chunk_size = len(points) // num_chunks
     chunks = [points[i:i+chunk_size] for i in range(0, len(points), chunk_size)]
     # process_chunk 함수를 병렬적으로 처리
-    with futures.ProcessPoolExecutor() as executor:
+    with futures.ProcessPoolExecutor(max_workers=5) as executor:
         results = [executor.submit(process_chunk, chunk, polygons) for chunk in chunks]
     # 병렬처리 결과물을 합침
     joined = pd.concat([result.result() for result in results])
@@ -61,4 +61,4 @@ if __name__ == '__main__':
     with open(filepath.combined_filepath, "w") as outfile:
         json.dump(polygon_json, outfile)
 
-print("POI 합치기 완료")
+    print("POI 합치기 완료")

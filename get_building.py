@@ -3,8 +3,7 @@ import json
 import geopandas as gpd
 import filepath
 from concurrent.futures import ProcessPoolExecutor
-
-city_name = "portland"
+from cityname import city_name
 
 dir_path = "./2023_City_Team/" + city_name + '_dataset/Boundaries/'
 files = os.listdir(dir_path)
@@ -43,6 +42,6 @@ def process_boundary(i):
     return inside_boundary.index
 
 if __name__ == "__main__":
-    with ProcessPoolExecutor() as executor:
-        for inside_boundary_indices in executor.map(process_boundary, range(1, filenum + 1)):
+    with ProcessPoolExecutor(max_workers=5) as executor:
+        for inside_boundary_indices in executor.map(process_boundary, range(1, filenum+1)):
             polygons_gdf = polygons_gdf[~polygons_gdf.index.isin(inside_boundary_indices)]
