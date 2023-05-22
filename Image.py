@@ -5,8 +5,6 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 # city_name = "firenze"
-figsize = (10, 10)
-
 
 def add_key(city_name):
     # 파일 수 세기
@@ -286,13 +284,13 @@ def image(city_name):
                 # get_square_bounds 함수에서 만든 정사각형으로 이미지 자르기
                 gdf_cut = gdf.cx[xmin:xmax, ymin:ymax]
                 # 원하는 크기로 시각화
-                fig, ax = plt.subplots(figsize=figsize)
+                fig, ax = plt.subplots(figsize=(2.24, 2.24), dpi=100)
 
                 with open(boundary_filename, "r", encoding='UTF-8') as file:
                     boundary_data = json.load(file)
                 # boundary 시각화
                 boundary_gdf = gpd.GeoDataFrame.from_features(boundary_data, crs="EPSG:4326")
-                boundary_gdf.plot(ax=ax, color='white', edgecolor='black')
+                boundary_gdf.plot(ax=ax, color='white', edgecolor='black', linewidth=0.3)
                 # building_block 시각화
                 gdf_cut.plot(color=gdf_cut['color'], alpha=0.5, ax=ax)
 
@@ -301,4 +299,4 @@ def image(city_name):
 
                 # 배경 투명으로 해서 저장
                 image_filename = "./2023_City_Team/" + city_name + '_dataset/Image/' + city_name + f'_buildings_image{index}.png'
-                plt.savefig(image_filename, dpi=300, transparent=True)
+                plt.savefig(image_filename, dpi=100, transparent=True)

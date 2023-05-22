@@ -1,14 +1,11 @@
 import geopandas as gpd
 from shapely.geometry import Polygon
-from shapely.ops import cascaded_union
 import numpy as np
-import matplotlib.pyplot as plt
 import networkx as nx
 import os
 from get_buildinglevel import get_buildinglevel
 
 commercial, education, emergency, financial, government, healthcare, landuse, natural, public, sport, water, residence = get_buildinglevel()
-
 
 def polar_angle(origin, point):
     delta_x = point[0] - origin[0]
@@ -40,7 +37,7 @@ def extract_polygon_coordinates(geom):
 
 
 def graph_dataloader(city_name):
-    dir_path = city_name + '_dataset/Buildings/'
+    dir_path = "./2023_City_Team/" + city_name + '_dataset/Buildings/'
     files = os.listdir(dir_path)
     num_file = len(files)
 
@@ -48,7 +45,7 @@ def graph_dataloader(city_name):
     graph_features_list = []
 
     for i in range(1, num_file + 1):
-        geojson_filepath = city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
+        geojson_filepath = "./2023_City_Team/" + city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
         gdf = gpd.read_file(geojson_filepath)
 
         polygons = []
@@ -125,4 +122,8 @@ def graph_dataloader(city_name):
                     building_level = residence
                 graph_features_list.append([(centroid.x, centroid.y), coord, width_height, building_level, semantic])
 
+    print(graph_features_list)
+
     return graph_list, graph_features_list
+
+graph_dataloader('littlerock')
