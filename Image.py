@@ -249,7 +249,7 @@ def image(city_name):
                 elif key_value in ["doctor", "dentist", "clinic", "hospital", "pharmacy", "alternative"]:
                     colors[key_value] = [0.9607843137254902, 0.8784313725490196, 0.8784313725490196, 1]
                 # landuse
-                elif key_value in ["park", "cemetery", "argriculture", "solid_waste"]:
+                elif key_value in ["park", "cemetery", "agriculture", "solid_waste"]:
                     # color = [184, 235, 173, 100]
                     colors[key_value] = [0.42745098039215684, 0.6196078431372549, 0.19607843137254902, 1]
                 # natural
