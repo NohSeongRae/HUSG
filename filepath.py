@@ -1,18 +1,24 @@
+import os
 from cityname import city_name
 
-data_filepath = f"./2023_City_Team/{city_name}_dataset/{city_name}_all_features.geojson"
-polygon_filepath = f'./2023_City_Team/{city_name}_dataset/{city_name}_polygon_data.geojson'
-point_filepath = f'./2023_City_Team/{city_name}_dataset/{city_name}_point_data.geojson'
-combined_filepath = f'./2023_City_Team/{city_name}_dataset/{city_name}_polygon_data_combined.geojson'
-roads_filepath = f'./2023_City_Team/{city_name}_dataset/{city_name}_roads.geojson'
-buildinglevel_filepath = f'./2023_City_Team/{city_name}_dataset/{city_name}_buildinglevel.geojson'
-graph_filepath = f'./2023_City_Team/{city_name}_dataset/{city_name}_graph.csv'
+data_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'{city_name}_all_features.geojson')
+polygon_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'{city_name}_polygon_data.geojson')
+point_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'{city_name}_point_data.geojson')
+combined_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'{city_name}_polygon_data_combined.geojson')
+roads_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'{city_name}_roads.geojson')
+buildinglevel_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'{city_name}_buildinglevel.geojson')
+graph_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'{city_name}_graph.csv')
+
+dataset = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset')
+boundaries = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
+buildings = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings')
+nld = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'NLD')
+image = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Image')
 
 output_directories = [
-    f'./2023_City_Team/{city_name}_dataset/',
-    f'./2023_City_Team/{city_name}_dataset/Boundaries',
-    f'./2023_City_Team/{city_name}_dataset/Buildings',
-    f'./2023_City_Team/{city_name}_dataset/NLD',
-    f'./2023_City_Team/{city_name}_dataset/Image'
+    dataset,
+    boundaries,
+    buildings,
+    nld,
+    image
 ]
-
