@@ -5,7 +5,7 @@ import filepath
 from concurrent.futures import ProcessPoolExecutor
 from cityname import city_name
 
-dir_path = "./2023_City_Team/" + city_name + '_dataset/Boundaries/'
+dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
 files = os.listdir(dir_path)
 filenum = len(files)
 
@@ -15,7 +15,9 @@ with open(filepath.combined_filepath, "r") as f:
 polygons_gdf = gpd.GeoDataFrame.from_features(geojson_polygons['features'])
 
 def process_boundary(i):
-    boundary_filename = "./2023_City_Team/" + city_name + '_dataset/Boundaries/' + city_name + f'_boundaries{i}.geojson'
+    boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+                                    'Boundaries', f'{city_name}_boundaries{i}.geojson')
+
     with open(boundary_filename, "r") as f:
         geojson_boundary = json.load(f)
 
@@ -33,7 +35,8 @@ def process_boundary(i):
     for feature in geojson_polygons_clean['features']:
         feature['properties'] = {k: v for k, v in feature['properties'].items() if v is not None}
 
-    building_filepath = "./2023_City_Team/" + city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
+    building_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings',
+                 f'{city_name}_buildings{i}.geojson')
 
     if geojson_polygons_clean['features']:
         with open(building_filepath, 'w') as f:

@@ -23,14 +23,16 @@ def remove_duplicate_coordinates(features):
 def NLD(city_name):
     city_name = city_name.capitalize()
 
-    dir_path = "./2023_City_Team/" + f'{city_name}_dataset/Boundaries/'
+    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
     files = os.listdir(dir_path)
     filenum = len(files)
 
     result_list = []
 
     for i in range(1, filenum+1):
-        building_filename = "./2023_City_Team/" + f'{city_name}_dataset/Buildings/{city_name}_buildings{i}.geojson'
+        building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+                                         'Buildings', f'{city_name}_buildings{i}.geojson')
+
         if os.path.exists(building_filename):
             with open(building_filename, "r", encoding='UTF-8') as file:
                 building_data = json.load(file)
@@ -75,7 +77,8 @@ def NLD(city_name):
         final_result = '\n'.join(result_list)
         final_result = re.sub('\n+', '\n', final_result)
 
-        nld_filename = "./2023_City_Team/" + f'{city_name}_dataset/NLD/' + city_name + "_NLD.txt"
+        nld_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
+                                      f'{city_name}_dataset', 'NLD', f'{city_name}_NLD.txt')
 
         with open(nld_filename, 'w') as f:
             f.write(final_result)

@@ -6,7 +6,7 @@ import json
 import geopandas as gpd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import filepath
-
+import os
 
 def get_boundary(city_name, location):
     """
@@ -149,6 +149,8 @@ def get_boundary(city_name, location):
         # 단일 polygon이면 그냥 넣기
         poly_list.append(final_polygon)
 
+    print(len(poly_list))
+
     # poly_list에 담긴 polygon들을 하나씩 geojson 형태로 저장
     def save_polygon(i):
         """
@@ -158,7 +160,10 @@ def get_boundary(city_name, location):
         """
         poly = poly_list[i]
         gdf = gpd.GeoDataFrame(geometry=[poly], columns=["POLYGON"])
-        polygon_filename = '2023_City_Team/' + city_name + "_dataset/Boundaries/" + city_name + f"_boundaries{i + 1}.geojson"
+
+        polygon_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries',
+                     f'{city_name}_boundaries{i+1}.geojson')
+
         gdf.to_file(polygon_filename, driver="GeoJSON")
 
     # 파일 저장을 병렬로 처리해주는 코드

@@ -50,7 +50,7 @@ def extract_polygon_coordinates(geom):
 
 
 def graph_dataloader(city_name):
-    dir_path = "./2023_City_Team/" + city_name + '_dataset/Boundaries/'
+    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
     files = os.listdir(dir_path)
     num_file = len(files)
 
@@ -69,7 +69,9 @@ def graph_dataloader(city_name):
     group = 1
 
     for i in range(1, num_file + 1):
-        geojson_filepath = "./2023_City_Team/" + city_name + '_dataset/Buildings/' + city_name + f'_buildings{i}.geojson'
+        geojson_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+                                         'Buildings', f'{city_name}_buildings{i}.geojson')
+
         if os.path.exists(geojson_filepath):
             gdf = gpd.read_file(geojson_filepath)
 
