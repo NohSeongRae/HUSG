@@ -4,8 +4,6 @@ import json
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
-# city_name = "firenze"
-
 def add_key(city_name):
     # 파일 수 세기
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
@@ -13,13 +11,14 @@ def add_key(city_name):
     filenum = len(files)
 
     # building data들 하나씩 불러오기
-    for j in range(1, filenum + 1):
+    for j in range(1, filenum+1):
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                          'Buildings', f'{city_name}_buildings{j}.geojson')
 
         if os.path.exists(building_filename):
             with open(building_filename, "r", encoding='UTF8') as infile:
                 whole_geojson_data = json.load(infile)
+                print(j)
             # categorize를 위해 key값 추가하기 (key = category)
             for i in range(len(whole_geojson_data['features'])):
                 properties = whole_geojson_data['features'][i]['properties']
@@ -208,7 +207,7 @@ def get_square_bounds(geojson_path):
 
 
 def image(city_name):
-    add_key(city_name)
+    # add_key(city_name)
 
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
     files = os.listdir(dir_path)
@@ -217,7 +216,6 @@ def image(city_name):
     index = 0
 
     for i in range(1, filenum + 1):
-
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                          'Buildings', f'{city_name}_buildings{i}.geojson')
 
@@ -305,6 +303,8 @@ def image(city_name):
                 # 배경 투명으로 해서 저장
 
                 image_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
-                                                 f'{city_name}_dataset', 'Image', f'{city_name}_buildings_image{index}.png')
+                                                f'{city_name}_dataset', 'Image', f'{city_name}_buildings_image{index}.png')
 
                 plt.savefig(image_filename, dpi=100, transparent=True)
+
+# image('littlerock')

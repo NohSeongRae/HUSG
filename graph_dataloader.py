@@ -6,10 +6,9 @@ import os
 import filepath
 from get_buildinglevel import get_buildinglevel
 import pandas as pd
-
+import matplotlib.pyplot as plt
 
 commercial, education, emergency, financial, government, healthcare, landuse, natural, public, sport, water, residence = get_buildinglevel()
-
 
 def polar_angle(origin, point):
     delta_x = point[0] - origin[0]
@@ -122,6 +121,19 @@ def graph_dataloader(city_name):
 
             sorted_points = sort_points_ccw(points)
 
+            if i==2:
+                plt.scatter(sorted_points[:, 0], sorted_points[:, 1], color='blue')
+
+                # Plot index of each point
+                for i, point in enumerate(sorted_points):
+                    plt.text(point[0], point[1], str(i))
+
+                # Connect points in order
+                plt.plot(np.append(sorted_points[:, 0], sorted_points[0, 0]),
+                         np.append(sorted_points[:, 1], sorted_points[0, 1]), 'r-')
+
+                plt.show()
+
             G = nx.Graph()
 
             for i, point in enumerate(sorted_points):
@@ -134,6 +146,8 @@ def graph_dataloader(city_name):
                 graph_list.append(G)
                 for node in G.nodes:
                     data = G.nodes[node]
+                    if i == 2:
+                        print(centroid)
                     centroid = data['centroid']
                     width = data['width']
                     height = data['height']
@@ -187,9 +201,14 @@ def graph_dataloader(city_name):
         'semantic': semantic_list
     })
 
+    df = df.drop_duplicates(subset=['centroid.x', 'centroid.y'])
+
     df.to_csv(filepath.graph_filepath, index=False)
 
     return graph_list, graph_features_list
 
-from cityname import city_name
-graph_dataloader(city_name)
+# from cityname import city_name
+# graph_dataloader(city_name)
+
+if __name__ == '__main__':
+    graph_dataloader('firenze')
