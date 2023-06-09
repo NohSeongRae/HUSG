@@ -14,13 +14,16 @@ for directory in filepath.output_directories:
         os.makedirs(directory)
 
 # building, boundry 내 파일들 제거
-if os.path.isfile(filepath.buildings):
-    os.remove(filepath.buildings)
-    print("building files deleted")
 
-if os.path.isfile(filepath.boundaries):
-    os.remove(filepath.boundaries)
-    print("boundary files deleted")
+for filename in os.listdir(filepath.buildings):
+    file_path = os.path.join(filepath.buildings, filename)
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+
+for filename in os.listdir(filepath.boundaries):
+    file_path = os.path.join(filepath.boundaries, filename)
+    if os.path.isfile(file_path):
+        os.remove(file_path)
 
 print(f"get_data start: {location}")
 data_download(city_name, location)
