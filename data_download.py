@@ -49,7 +49,7 @@ def data_download(city_name, location):
         json.dump(data, f)
 
     # 유효한 tag집합에 대해 osmnx에서 road network 다운로드
-    tags = '["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential' \
+    tags = '["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|unclassified' \
            '|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link' \
            '|living_street|service|pedestrian|road|busway"]'
 
