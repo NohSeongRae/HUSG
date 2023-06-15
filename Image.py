@@ -205,6 +205,17 @@ def get_square_bounds(geojson_path):
 
     return left, upper, right, lower
 
+commercial_color = [0.9294117647058824, 0.8313725490196079, 0.5607843137254902, 1]
+education_color = [0.8901960784313725, 0.8117647058823529, 0.6549019607843137, 1]
+emergency_color = [0.9607843137254902, 0.8784313725490196, 0.8784313725490196, 1]
+financial_color = [0.8980392156862745, 0.9019607843137255, 0.9215686274509803, 1]
+government_color = [1.0, 0.8509803921568627, 0.4, 1]
+healthcare_color = [0.9607843137254902, 0.8784313725490196, 0.8784313725490196, 1]
+public_color = [0.9411764705882353, 0.9019607843137255, 0.8196078431372549, 1]
+sport_color = [0.7803921568627451, 0.7803921568627451, 0.7058823529411765, 1]
+water_color = [0.6, 0.8666666666666667, 1.0, 1]
+residence_color = [0.803921568627451, 0.7647058823529411, 0.7411764705882353, 1]
+
 
 def image(city_name):
     # add_key(city_name)
@@ -235,41 +246,34 @@ def image(city_name):
                 key_value = feature["properties"].get("key")
                 # commercial
                 if key_value in ["shop", "supermarket", "restaurant", "tourism", "accommodation"]:
-                    colors[key_value] = [0.9294117647058824, 0.8313725490196079, 0.5607843137254902, 1]
+                    colors[key_value] = commercial_color
                 # education
                 elif key_value in ["kindergarten", "school", "college", "university"]:
-                    colors[key_value] = [0.8901960784313725, 0.8117647058823529, 0.6549019607843137, 1]
-                    # emergency
+                    colors[key_value] = education_color
+                # emergency
                 elif key_value in ["police_station", "ambulance_station", "fire_station"]:
-                    colors[key_value] = [0.9607843137254902, 0.8784313725490196, 0.8784313725490196, 1]
+                    colors[key_value] = emergency_color
                 # financial
                 elif key_value in ["bank", "bureau_de_change"]:
-                    colors[key_value] = [0.8980392156862745, 0.9019607843137255, 0.9215686274509803, 1]
+                    colors[key_value] = financial_color
                 # government
                 elif key_value in ["government_office", "embassy", "military", "post_office"]:
-                    colors[key_value] = [1.0, 0.8509803921568627, 0.4, 1]
+                    colors[key_value] = government_color
                 # healthcare
                 elif key_value in ["doctor", "dentist", "clinic", "hospital", "pharmacy", "alternative"]:
-                    colors[key_value] = [0.9607843137254902, 0.8784313725490196, 0.8784313725490196, 1]
-                # landuse
-                elif key_value in ["park", "cemetery", "agriculture", "solid_waste"]:
-                    # color = [184, 235, 173, 100]
-                    colors[key_value] = [0.42745098039215684, 0.6196078431372549, 0.19607843137254902, 1]
-                # natural
-                elif key_value in ["forest", "grassland", "grass"]:
-                    colors[key_value] = [0.42745098039215684, 0.6196078431372549, 0.19607843137254902, 1]
+                    colors[key_value] = healthcare_color
                 # public
                 elif key_value in ["place_of_worship", "community_centre", "library", "historic", "toilet"]:
-                    colors[key_value] = [0.9411764705882353, 0.9019607843137255, 0.8196078431372549, 1]
+                    colors[key_value] = public_color
                 # sport
                 elif key_value in ["stadium", "swimming_pool", "pitch", "sport_centre"]:
-                    colors[key_value] = [0.7803921568627451, 0.7803921568627451, 0.7058823529411765, 1]
+                    colors[key_value] = sport_color
                 # water
                 elif key_value in ["reservoir", "waterway", "coastline", "water_body", "wetland"]:
-                    colors[key_value] = [0.6, 0.8666666666666667, 1.0, 1]
+                    colors[key_value] = water_color
                 # residence
                 elif key_value in ["residence"]:
-                    colors[key_value] = [0.803921568627451, 0.7647058823529411, 0.7411764705882353, 1]
+                    colors[key_value] = residence_color
                 else:
                     colors[key_value] = [1, 1, 1, 0]
                     # continue

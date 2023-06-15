@@ -1,32 +1,49 @@
 import geopandas as gpd
 from shapely.geometry import Polygon
 import numpy as np
-import networkx as nx
 import os
+import pandas as pd
+import json
+
 import filepath
 from get_buildinglevel import get_buildinglevel
-import pandas as pd
-import matplotlib.pyplot as plt
 
-commercial, education, emergency, financial, government, healthcare, landuse, natural, public, sport, water, residence = get_buildinglevel()
+def get_building_level(semantics, json_filepath):
+    levels = get_buildinglevel()
 
-def polar_angle(origin, point):
-    delta_x = point[0] - origin[0]
-    delta_y = point[1] - origin[1]
-    angle = np.arctan2(delta_y, delta_x)
-    return angle if angle >= 0 else 2 * np.pi + angle
+    category_mapping = {
+        "commercial": levels[0],
+        "education": levels[1],
+        "emergency": levels[2],
+        "financial": levels[3],
+        "government": levels[4],
+        "healthcare": levels[5],
+        "landuse": levels[6],
+        "natural": levels[7],
+        "public": levels[8],
+        "sport": levels[9],
+        "water": levels[10],
+        "residence": levels[11]
+    }
 
+    building_level_list = []
 
-def sort_points_ccw(points):
-    if len(points) == 0:
-        return []
+    with open(json_filepath, 'r') as file:
+        data = json.load(file)
 
-    centroid = np.mean(points, axis=0)
-    angles = np.array([polar_angle(centroid, point) for point in points])
-    sorted_indices = np.argsort(angles)
-    return points[sorted_indices]
+    building_level_dict = {}
+    for category_list in data:
+        for item in category_list[0]:
+            for category in category_list[1].split():  # assuming categories are space-separated
+                if category in category_mapping:
+                    building_level_dict[item] = category_mapping[category]
+                else:
+                    print(f"Unexpected category: {category}")
 
-new_coords = []
+    building_levels = [building_level_dict.get(semantic, None) for semantic in semantics]
+
+    return building_levels
+
 
 def extract_polygon_coordinates(geom):
     minx, miny, maxx, maxy = geom.bounds
@@ -47,168 +64,93 @@ def extract_polygon_coordinates(geom):
 
     return list(Polygon(new_coords).exterior.coords)
 
-
 def graph_dataloader(city_name):
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
     files = os.listdir(dir_path)
     num_file = len(files)
 
-    graph_list = []
-    graph_features_list = []
-
     centroidx_list = []
     centroidy_list = []
+    group_list = []
     width_list = []
     height_list = []
     semantic_list = []
-    coord_list = []
-    buildinglevel_list = []
-    group_list = []
+    coords_list = []
+    building_level_list = []
 
     group = 1
 
     for i in range(1, num_file + 1):
-        geojson_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                         'Buildings', f'{city_name}_buildings{i}.geojson')
+        geojson_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings', f'{city_name}_buildings{i}.geojson')
 
         if os.path.exists(geojson_filepath):
             gdf = gpd.read_file(geojson_filepath)
 
             polygons = []
             semantics = []
+            coords = []
 
             for _, row in gdf.iterrows():
                 geom = row['geometry']
-                coords = extract_polygon_coordinates(geom)
-                polygons.append(coords)
+                polygon_coords = extract_polygon_coordinates(geom)
+                polygons.append(polygon_coords)
                 semantic = row['key']
                 semantics.append(semantic)
+                coords.append(polygon_coords)
 
             polygon_objects = [Polygon(p) for p in polygons]
-
             mbrs = [p.minimum_rotated_rectangle for p in polygon_objects]
 
             widths = []
             heights = []
 
             for mbr in mbrs:
-                coords = np.array(mbr.exterior.coords)
-                width = np.linalg.norm(coords[0] - coords[1])
-                height = np.linalg.norm(coords[1] - coords[2])
+                mbr_coords = np.array(mbr.exterior.coords)
+                width = np.linalg.norm(mbr_coords[0] - mbr_coords[1])
+                height = np.linalg.norm(mbr_coords[1] - mbr_coords[2])
                 widths.append(width)
                 heights.append(height)
 
             centroids = [p.centroid for p in polygon_objects]
 
-            point_list = []
+            attr_list = []
 
-            attributes = {}
-            for idx, (centroid, width, height, semantic, coords) in enumerate(
-                    zip(centroids, widths, heights, semantics, polygons)):
-                attributes[idx] = {
-                    'centroid': centroid,
+            for idx, (centroid, width, height, semantic, polygon_coords) in enumerate(
+                    zip(centroids, widths, heights, semantics, coords)):
+                attr = {
+                    'centroid.x': centroid.x,
+                    'centroid.y': centroid.y,
                     'width': width,
                     'height': height,
                     'semantic': semantic,
-                    'coords': coords,
+                    'coords': polygon_coords,
+                    'group': group
                 }
+                attr_list.append(attr)
 
-            for idx, centroid in enumerate(centroids):
-                point_list.append((centroid.x, centroid.y))
+            centroidx_list.extend([attr['centroid.x'] for attr in attr_list])
+            centroidy_list.extend([attr['centroid.y'] for attr in attr_list])
+            group_list.extend([attr['group'] for attr in attr_list])
+            width_list.extend([attr['width'] for attr in attr_list])
+            height_list.extend([attr['height'] for attr in attr_list])
+            semantic_list.extend([attr['semantic'] for attr in attr_list])
+            coords_list.extend([attr['coords'] for attr in attr_list])
 
-            point_list = list(set(point_list))
-            points = np.array(point_list)
+            building_level_list.extend(get_building_level(semantics, filepath.category_filepath))
 
-            sorted_points = sort_points_ccw(points)
+            group += 1
 
-            if i==2:
-                plt.scatter(sorted_points[:, 0], sorted_points[:, 1], color='blue')
+    df = pd.DataFrame()
+    df['centroid.x'] = centroidx_list
+    df['centroid.y'] = centroidy_list
+    df['group'] = group_list
+    df['width'] = width_list
+    df['height'] = height_list
+    df['semantic'] = semantic_list
+    df['coords'] = coords_list
+    df['building_level'] = building_level_list
 
-                # Plot index of each point
-                for i, point in enumerate(sorted_points):
-                    plt.text(point[0], point[1], str(i))
+    return df
 
-                # Connect points in order
-                plt.plot(np.append(sorted_points[:, 0], sorted_points[0, 0]),
-                         np.append(sorted_points[:, 1], sorted_points[0, 1]), 'r-')
-
-                plt.show()
-
-            G = nx.Graph()
-
-            for i, point in enumerate(sorted_points):
-                G.add_node(i, pos=point, **attributes[i])
-
-            for i in range(len(sorted_points)):
-                G.add_edge(i, (i + 1) % len(sorted_points))
-
-            if G.number_of_nodes() > 0:
-                graph_list.append(G)
-                for node in G.nodes:
-                    data = G.nodes[node]
-                    if i == 2:
-                        print(centroid)
-                    centroid = data['centroid']
-                    width = data['width']
-                    height = data['height']
-                    semantic = data['semantic']
-                    coord = data['coords']
-                    if semantic in ['shop', 'supermarket', 'restaurant', 'tourism', 'accommodation']:
-                        building_level = commercial
-                    if semantic in ['kindergarten', 'school', 'college', 'university']:
-                        building_level = education
-                    if semantic in ['police_station', 'ambulance_station', 'fire_station']:
-                        building_level = emergency
-                    if semantic in ['bank', 'bureau_de_change']:
-                        building_level = financial
-                    if semantic in ['government_office', 'embassy', 'military', 'post_office']:
-                        building_level = government
-                    if semantic in ['doctor', 'dentist', 'clinic', 'hospital', 'pharmacy', 'alternative']:
-                        building_level = healthcare
-                    if semantic in ['park', 'cemetery', 'agriculture', 'solid_waste']:
-                        building_level = landuse
-                    if semantic in ['forest', 'grassland']:
-                        building_level = natural
-                    if semantic in ['place_of_worship', 'community_centre', 'library', 'historic', 'toilet']:
-                        building_level = public
-                    if semantic in ['stadium', 'swimming_pool', 'pitch', 'sport_centre']:
-                        building_level = sport
-                    if semantic in ['reservoir', 'waterway', 'coastline', 'water_body', 'wetland']:
-                        building_level = water
-                    if semantic in ['residence']:
-                        building_level = residence
-
-                    centroidx_list.append(centroid.x)
-                    centroidy_list.append(centroid.y)
-                    coord_list.append(coord)
-                    width_list.append(width)
-                    height_list.append(height)
-                    buildinglevel_list.append(building_level)
-                    semantic_list.append(semantic)
-                    group_list.append(group)
-                    # graph_features_list.append([centroid.x, centroid.y, coord, width, height, building_level, semantic])
-
-                group += 1
-
-    df = pd.DataFrame({
-        'group': group_list,
-        'centroid.x': centroidx_list,
-        'centroid.y': centroidy_list,
-        'coord': coord_list,
-        'width': width_list,
-        'height': height_list,
-        'building_level': buildinglevel_list,
-        'semantic': semantic_list
-    })
-
-    df = df.drop_duplicates(subset=['centroid.x', 'centroid.y'])
-
-    df.to_csv(filepath.graph_filepath, index=False)
-
-    return graph_list, graph_features_list
-
-# from cityname import city_name
-# graph_dataloader(city_name)
-
-if __name__ == '__main__':
-    graph_dataloader('firenze')
+df = graph_dataloader('littlerock')
+df.to_csv(filepath.graph_filepath, index=False)
