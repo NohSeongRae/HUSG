@@ -18,12 +18,10 @@ def get_building_level(semantics, json_filepath):
         "financial": levels[3],
         "government": levels[4],
         "healthcare": levels[5],
-        "landuse": levels[6],
-        "natural": levels[7],
-        "public": levels[8],
-        "sport": levels[9],
-        "water": levels[10],
-        "residence": levels[11]
+        "natural": levels[6],
+        "public": levels[7],
+        "sport": levels[8],
+        "residence": levels[9]
     }
 
     building_level_list = []

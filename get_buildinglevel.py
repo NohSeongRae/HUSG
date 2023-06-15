@@ -1,5 +1,10 @@
 import json
 import filepath
+import variables
+
+"""
+category 구분을 위한 key 값 추가
+"""
 
 building_filename = filepath.combined_filepath
 
@@ -8,77 +13,34 @@ with open(building_filename, "r", encoding='UTF8') as infile:
 
 for i in range(len(whole_geojson_data['features'])):
     properties = whole_geojson_data['features'][i]['properties']
+
     # building
     if properties.get("building") != None:
         properties["key"] = "residence"
-        if properties["building"] in ['civic']:
-            properties["key"] = "government_office"
+        if properties["building"] in variables.residence:
+            properties["key"] = variables.residence[properties["building"]]
 
     # shop
     if properties.get("shop") != None:
         properties["key"] = "shop"
-        if properties["shop"] in ['convenience', 'supermarket']:
-            properties["key"] = "supermarket"
-        if properties["shop"] in ['herbalist', 'nutrition_supplements']:
-            properties["key"] = "alternative"
+        if properties["shop"] in variables.shop:
+            properties["key"] = variables.shop[properties["shop"]]
 
     # amenity
     if properties.get("amenity") != None:
-        if properties["amenity"] == 'marketplace':
-            properties["key"] = "supermarket"
-        if properties["amenity"] in ['restaurant', 'fast_food', 'cafe', 'bar', 'pub']:
-            properties["key"] = "restaurant"
-        if properties["amenity"] in ['kindergarten']:
-            properties["key"] = "kindergarten"
-        if properties["amenity"] in ['school']:
-            properties["key"] = "school"
-        if properties["amenity"] in ['college']:
-            properties["key"] = "college"
-        if properties["amenity"] in ['university']:
-            properties["key"] = "university"
-        if properties["amenity"] in ['police']:
-            properties["key"] = "police_station"
-        if properties["amenity"] in ['fire_station']:
-            properties["key"] = "fire_station"
-        if properties["amenity"] in ['bank']:
-            properties["key"] = "bank"
-        if properties["amenity"] in ['bureau_de_change']:
-            properties["key"] = "bureau_de_change"
-        if properties["amenity"] in ['court_house', 'townhall']:
-            properties["key"] = "government_office"
-        if properties["amenity"] in ['embassy']:
-            properties['key'] = 'embassy'
-        if properties["amenity"] in ['post_office']:
-            properties['key'] = 'post_office'
-        if properties["amenity"] in ['doctors']:
-            properties['key'] = 'clinic'
-        if properties["amenity"] in ['dentist']:
-            properties['key'] = 'clinic'
-        if properties["amenity"] in ['clinic']:
-            properties['key'] = 'clinic'
-        if properties["amenity"] in ['hospital']:
-            properties['key'] = 'hospital'
-        if properties["amenity"] in ['pharmacy']:
-            properties['key'] = 'pharmacy'
-        if properties["amenity"] in ['grave_yard']:
-            properties['key'] = 'cemetery'
-        if properties["amenity"] in ['place_of_worship']:
-            properties['key'] = 'place_of_worship'
-        if properties['amenity'] in ['community_centre']:
-            properties['key'] = 'community_centre'
-        if properties['amenity'] in ['library']:
-            properties['key'] = 'library'
+        if properties["amenity"] in variables.amenity:
+            properties["key"] = variables.amenity[properties["amenity"]]
 
     # office
     if properties.get("office") != None:
-        if properties["office"] in ['government']:
-            properties["key"] = 'government_office'
+        if properties["office"] in variables.office:
+            properties["key"] = variables.office[properties["office"]]
 
     # tourism
     if properties.get("tourism") != None:
         properties["key"] = "tourism"
-        if properties["tourism"] in ['hotel', 'chalet', 'guest_house', 'hostel', 'motel']:
-            properties["key"] = "accommodation"
+        if properties["tourism"] in variables.tourism:
+            properties["key"] = variables.tourism[properties["tourism"]]
 
     # government
     if properties.get("government") != None:
@@ -88,62 +50,28 @@ for i in range(len(whole_geojson_data['features'])):
     if properties.get("military") != None:
         properties["key"] = "military"
 
-    # landuse
-    if properties.get("landuse") != None:
-        if properties["landuse"] in ['military']:
-            properties["key"] = "military"
-        if properties["landuse"] in ['cemetery']:
-            properties["key"] = "cemetery"
-        if properties["landuse"] in ['farmland', 'farmyard', 'greenhouse_horticulture']:
-            properties["key"] = "agriculture"
-        if properties["landuse"] in ['landfill']:
-            properties["key"] = "solid_waste"
-        if properties["landuse"] in ['forest']:
-            properties["key"] = "forest"
-        if properties["landuse"] in ['reservoir']:
-            properties["key"] = "reservoir"
-
     # health_care
     if properties.get("healthcare") != None:
-        if properties["healthcare"] in ['alternative']:
-            properties["key"] = "alternative"
+        if properties["healthcare"] in variables.healthcare:
+            properties["key"] = variables.healthcare
 
     # leisure
     if properties.get("leisure") != None:
-        if properties["leisure"] in ['park']:
-            properties["key"] = "park"
-        if properties["leisure"] in ['stadium']:
-            properties["key"] = "stadium"
-        if properties["leisure"] in ['swimming_pool']:
-            properties["key"] = "swimming_pool"
-        if properties["leisure"] in ['pitch']:
-            properties["key"] = "pitch"
-        if properties["leisure"] in ['sport_centre']:
-            properties["key"] = "sport_centre"
-
-    # natural
-    if properties.get("natural") != None:
-        if properties["natural"] in ['water']:
-            properties["key"] = "water_body"
-        if properties["natural"] in ['grassland']:
-            properties["key"] = "grassland"
-        if properties["natural"] in ["wetland"]:
-            properties["key"] = "wetland"
-        if properties["natural"] in ["water"]:
-            properties["key"] = "reservoir"
+        if properties["leisure"] in variables.leisure:
+            properties["key"] = variables.leisure[properties["leisure"]]
 
     # historic
     if properties.get("historic") != None:
         properties["key"] = "historic"
 
-    # water
-    if properties.get("water") != None:
-        if properties["water"] in ["reservoir"]:
-            properties["key"] = "reservoir"
 
-    # waterway
-    if properties.get("waterway") != None:
-        properties["key"] = "waterway"
+"""
+1) building geojson에 category 구분을 위한 key값 추가 
+2) height -> building:levels
+geojson 파일에서 building의 높이를 나타내는 속성은 "building:levels"와 "height" 두가지
+이 두가지를 "building:levels"라는 하나의 속성으로 합침 
+ex. height: 3 -> building:levels: 3 
+"""
 
 filtered_features = []
 for feature in whole_geojson_data["features"]:
@@ -172,15 +100,25 @@ with open(filepath.buildinglevel_filepath, "w") as f:
 import json
 
 def get_buildinglevel():
+    """
+    각 category 별 평균 building:levels를 반환
+    -> 각 category 별 평균 building:levels = 각 category 별 (building:levels가 존재하는 경우 building:levels의 총합) / (building:levels 속성이 존재하는 건물의 수)
+    :return: category별 평균 높이의 list [commercial, education, emergency, financial, government, healthcare, natural, public, sport, residence]
+    """
+
     with open(filepath.buildinglevel_filepath, 'r') as f:
         data = json.load(f)
 
+    # category file은 각 key가 어떤 category에 할당하는지에 대해 작성해놓은 json파일
     with open(filepath.category_filepath, 'r') as f:
         category_keys = json.load(f)
 
     category_sums = [0] * len(category_keys)
     category_counts = [0] * len(category_keys)
 
+    # building:levels 속성이 존재하는 경우 각 카테고리 별로 총합을 구함
+    # levels : building:levels가 존재하는 경우 building:levels의 총합
+    # keys : building:levels 속성이 존재하는 건물의 수
     for feature in data['features']:
         properties = feature['properties']
         if properties.get("building:levels") is not None:
@@ -193,6 +131,7 @@ def get_buildinglevel():
                         category_counts[i] += 1
                         break
 
+    # category 내에서 모든 building에 building:levels가 없는 경우 분모가 0이므로 예외 처리
     category_avgs = [category_sums[i] // category_counts[i] if category_counts[i] != 0 else 0 for i in range(len(category_sums))]
     return category_avgs
 
