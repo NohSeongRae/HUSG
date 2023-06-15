@@ -4,6 +4,9 @@ import json
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
+import filepath
+import variables
+
 def add_key(city_name):
     # 파일 수 세기
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
@@ -25,137 +28,43 @@ def add_key(city_name):
                 # building
                 if properties.get("building") != None:
                     properties["key"] = "residence"
-                    if properties["building"] in ['civic']:
-                        properties["key"] = "government_office"
-
+                    if properties["building"] in variables.residence:
+                        properties["key"] = variables.residence[properties["building"]]
                 # shop
                 if properties.get("shop") != None:
                     properties["key"] = "shop"
-                    if properties["shop"] in ['convenience', 'supermarket']:
-                        properties["key"] = "supermarket"
-                    if properties["shop"] in ['herbalist', 'nutrition_supplements']:
-                        properties["key"] = "alternative"
-
+                    if properties["shop"] in variables.shop:
+                        properties["key"] = variables.shop[properties["shop"]]
                 # amenity
                 if properties.get("amenity") != None:
-                    if properties["amenity"] == 'marketplace':
-                        properties["key"] = "supermarket"
-                    if properties["amenity"] in ['restaurant', 'fast_food', 'cafe', 'bar', 'pub']:
-                        properties["key"] = "restaurant"
-                    if properties["amenity"] in ['kindergarten']:
-                        properties["key"] = "kindergarten"
-                    if properties["amenity"] in ['school']:
-                        properties["key"] = "school"
-                    if properties["amenity"] in ['college']:
-                        properties["key"] = "college"
-                    if properties["amenity"] in ['university']:
-                        properties["key"] = "university"
-                    if properties["amenity"] in ['police']:
-                        properties["key"] = "police_station"
-                    if properties["amenity"] in ['fire_station']:
-                        properties["key"] = "fire_station"
-                    if properties["amenity"] in ['bureau_de_change']:
-                        properties["key"] = "bureau_de_change"
-                    if properties["amenity"] in ['court_house', 'townhall']:
-                        properties["key"] = "government_office"
-                    if properties["amenity"] in ['embassy']:
-                        properties['key'] = 'embassy'
-                    if properties["amenity"] in ['post_office']:
-                        properties['key'] = 'post_office'
-                    if properties["amenity"] in ['doctors']:
-                        properties['key'] = 'clinic'
-                    if properties["amenity"] in ['dentist']:
-                        properties['key'] = 'clinic'
-                    if properties["amenity"] in ['clinic']:
-                        properties['key'] = 'clinic'
-                    if properties["amenity"] in ['hospital']:
-                        properties['key'] = 'hospital'
-                    if properties["amenity"] in ['pharmacy']:
-                        properties['key'] = 'pharmacy'
-                    if properties["amenity"] in ['grave_yard']:
-                        properties['key'] = 'cemetery'
-                    if properties["amenity"] in ['place_of_worship']:
-                        properties['key'] = 'place_of_worship'
-                    if properties['amenity'] in ['community_centre']:
-                        properties['key'] = 'community_centre'
-                    if properties['amenity'] in ['library']:
-                        properties['key'] = 'library'
-
+                    if properties["amenity"] in variables.amenity:
+                        properties["key"] = variables.amenity[properties["amenity"]]
                 # office
                 if properties.get("office") != None:
-                    if properties["office"] in ['government']:
-                        properties["key"] = 'government_office'
-
+                    if properties["office"] in variables.office:
+                        properties["key"] = variables.office[properties["office"]]
                 # tourism
                 if properties.get("tourism") != None:
                     properties["key"] = "tourism"
-                    if properties["tourism"] in ['hotel', 'chalet', 'guest_house', 'hostel', 'motel']:
-                        properties["key"] = "accommodation"
-
+                    if properties["tourism"] in variables.tourism:
+                        properties["key"] = variables.tourism[properties["tourism"]]
                 # government
                 if properties.get("government") != None:
                     properties["key"] = "government_office"
-
                 # militray
                 if properties.get("military") != None:
                     properties["key"] = "military"
-
-                # landuse
-                if properties.get("landuse") != None:
-                    if properties["landuse"] in ['military']:
-                        properties["key"] = "military"
-                    if properties["landuse"] in ['cemetery']:
-                        properties["key"] = "cemetery"
-                    if properties["landuse"] in ['farmland', 'farmyard', 'greenhouse_horticulture']:
-                        properties["key"] = "agriculture"
-                    if properties["landuse"] in ['landfill']:
-                        properties["key"] = "solid_waste"
-                    if properties["landuse"] in ['forest']:
-                        properties["key"] = "forest"
-                    if properties["landuse"] in ['reservoir']:
-                        properties["key"] = "reservoir"
-
                 # health_care
                 if properties.get("healthcare") != None:
-                    if properties["healthcare"] in ['alternative']:
-                        properties["key"] = "alternative"
-
+                    if properties["healthcare"] in variables.healthcare:
+                        properties["key"] = variables.healthcare
                 # leisure
                 if properties.get("leisure") != None:
-                    if properties["leisure"] in ['park']:
-                        properties["key"] = "park"
-                    if properties["leisure"] in ['stadium']:
-                        properties["key"] = "stadium"
-                    if properties["leisure"] in ['swimming_pool']:
-                        properties["key"] = "swimming_pool"
-                    if properties["leisure"] in ['pitch']:
-                        properties["key"] = "pitch"
-                    if properties["leisure"] in ['sport_centre']:
-                        properties["key"] = "sport_centre"
-
-                # natural
-                if properties.get("natural") != None:
-                    if properties["natural"] in ['water']:
-                        properties["key"] = "water_body"
-                    if properties["natural"] in ['grassland']:
-                        properties["key"] = "grassland"
-                    if properties["natural"] in ["wetland"]:
-                        properties["key"] = "wetland"
-                    if properties["natural"] in ["water"]:
-                        properties["key"] = "reservoir"
-
+                    if properties["leisure"] in variables.leisure:
+                        properties["key"] = variables.leisure[properties["leisure"]]
                 # historic
                 if properties.get("historic") != None:
                     properties["key"] = "historic"
-
-                # water
-                if properties.get("water") != None:
-                    if properties["water"] in ["reservoir"]:
-                        properties["key"] = "reservoir"
-
-                # waterway
-                if properties.get("waterway") != None:
-                    properties["key"] = "waterway"
 
             # visualize를 위해서는 key값(catgory)만 필요하므로 이에 해당하는 것들만 저장하기
             filtered_features = []
@@ -231,36 +140,8 @@ def image(city_name):
 
             for feature in building_data["features"]:
                 key_value = feature["properties"].get("key")
-                # commercial
-                if key_value in ["shop", "supermarket", "restaurant", "tourism", "accommodation"]:
-                    colors[key_value] = commercial_color
-                # education
-                elif key_value in ["kindergarten", "school", "college", "university"]:
-                    colors[key_value] = education_color
-                # emergency
-                elif key_value in ["police_station", "ambulance_station", "fire_station"]:
-                    colors[key_value] = emergency_color
-                # financial
-                elif key_value in ["bank", "bureau_de_change"]:
-                    colors[key_value] = financial_color
-                # government
-                elif key_value in ["government_office", "embassy", "military", "post_office"]:
-                    colors[key_value] = government_color
-                # healthcare
-                elif key_value in ["doctor", "dentist", "clinic", "hospital", "pharmacy", "alternative"]:
-                    colors[key_value] = healthcare_color
-                # public
-                elif key_value in ["place_of_worship", "community_centre", "library", "historic", "toilet"]:
-                    colors[key_value] = public_color
-                # sport
-                elif key_value in ["stadium", "swimming_pool", "pitch", "sport_centre"]:
-                    colors[key_value] = sport_color
-                # water
-                elif key_value in ["reservoir", "waterway", "coastline", "water_body", "wetland"]:
-                    colors[key_value] = water_color
-                # residence
-                elif key_value in ["residence"]:
-                    colors[key_value] = residence_color
+                if key_value in variables.category_color:
+                    colors[key_value] = variables.category_color[key_value]
                 else:
                     colors[key_value] = [1, 1, 1, 0]
                     # continue

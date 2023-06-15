@@ -19,18 +19,14 @@ def data_download(city_name, location):
         "emergency": True,
         "healthcare": True,
         "historic": True,
-        "landuse": True,
         "leisure": True,
         "man_made": True,
         "military": True,
-        "natural": True,
         "office": True,
         "place": True,
         "shop": True,
         "sport": True,
-        "tourism": True,
-        "water": True,
-        "waterway": True
+        "tourism": True
     }
 
     data = {"type": "FeatureCollection", "features": []}
