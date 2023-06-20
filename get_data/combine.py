@@ -1,10 +1,21 @@
-from shapely.geometry import Polygon
-from shapely.wkt import loads, dumps
 import os
-import json
-import geojson
+import geopandas as gpd
+import sys
 
-city_name = "singapore"
+current_script_path = os.path.dirname(os.path.abspath(__file__))
+husg_directory_path = os.path.dirname(current_script_path)
+sys.path.append(husg_directory_path)
+
+from etc.cityname import city_name
+from add_key import add_key
+
+add_key(city_name)
+
+directory = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+                         'Combined_Buildings')
+
+if not os.path.exists(directory):
+    os.makedirs(directory)
 
 dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
 files = os.listdir(dir_path)
@@ -15,68 +26,28 @@ index = 0
 for i in range(1, filenum + 1):
     building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                      'Buildings', f'{city_name}_buildings{i}.geojson')
+
     if os.path.exists(building_filename):
         index += 1
-        with open(building_filename, "r", encoding='UTF-8') as file:
-            building_data = json.load(file)
+        # Use geopandas to read the GeoJSON file
+        gdf = gpd.read_file(building_filename)
 
-        if not building_data["features"]:
+        if gdf.empty:
             continue
 
-        colors = {}
-        polygons = []
-        keys = []
+        # Dissolve the polygons into single one by the 'key' attribute
+        if gdf['key'].apply(lambda x: isinstance(x, list)).any():
+            gdf['key'] = gdf['key'].apply(lambda x: x[0] if isinstance(x, list) else x)
 
-        for feature in building_data["features"]:
-            geometry = feature["geometry"].get("coordinates")
-            key = feature["properties"].get("key")
-            polygon = Polygon(geometry[0])
-            polygons.append(polygon)
-            keys.append(key)
+        gdf_dissolved = gdf.dissolve(by='key')
 
-        polygon_index_map = {dumps(p): i for i, p in enumerate(polygons)}
+        # gdf_dissolved = gdf.dissolve(by='key')
 
-        polygon_strings = set(polygon_index_map.keys())
-
-        polygons_unique = [loads(ps) for ps in polygon_strings]
-        indexes_unique = [polygon_index_map[ps] for ps in polygon_strings]
-
-        polygons = polygons_unique
-        combined_polygons = polygons_unique
-        combined_keys = []
-
-        for i in range(len(polygons)):
-            combined_keys.append(keys[indexes_unique[i]])
-
-        indexes_to_remove = []
-
-        for i in range(len(polygons)):
-            for j in range(i + 1, len(polygons)):
-                if polygons[i].contains(polygons[j]):
-                    indexes_to_remove.append(i)
-                    if combined_keys[j] == "residence":
-                        combined_keys[j] = combined_keys[i]
-                elif polygons[j].contains(polygons[i]):
-                    indexes_to_remove.append(j)
-                    if combined_keys[i] == "residence":
-                        combined_keys[i] = combined_keys[j]
-
-        indexes_to_remove = list(set(indexes_to_remove))
-        indexes_to_remove.sort(reverse=True)
-
-        for idx in indexes_to_remove:
-            del combined_keys[idx]
-            del combined_polygons[idx]
-
-        geojson_polygons = [geojson.Feature(geometry=polygon, properties={"key": key}) for polygon, key in zip(combined_polygons, combined_keys)]
-
-        feature_collection = geojson.FeatureCollection(geojson_polygons)
-
+        # Output the dissolved GeoDataFrame into a new GeoJSON file
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                          'Combined_Buildings', f'{city_name}_buildings{index}.geojson')
 
-        with open(building_filename, 'w') as f:
-             json.dump(feature_collection, f)
+        gdf_dissolved.to_file(building_filename, driver='GeoJSON')
 
 import shutil
 

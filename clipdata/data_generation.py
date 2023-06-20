@@ -1,9 +1,13 @@
-from etc.cityname import city_name, location
-# from get_building import get_building
-from Image import image, add_key
+import os
+import sys
+
+current_script_path = os.path.dirname(os.path.abspath(__file__))
+husg_directory_path = os.path.dirname(current_script_path)
+sys.path.append(husg_directory_path)
+
+from etc.cityname import city_name
+from Image import image
 from NLD import NLD
 
-# get_building(city_name)
-# add_key('barcelona')
 image(city_name)
 NLD(city_name)
