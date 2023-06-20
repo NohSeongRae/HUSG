@@ -18,4 +18,3 @@ def check_intersection(polygons):
                 intersection_polygons.append({sorted_polygons[i][0]: sorted_polygons[j][0]})
 
     return intersection_polygons
-

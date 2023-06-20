@@ -148,11 +148,6 @@ def image(city_name):
             polygons = []
 
             for feature in building_data["features"]:
-                geometry = feature["geometry"].get("coordinates")
-                polygon = Polygon(geometry[0])
-                polygons.append(polygon)
-
-                intersection_polygons = check_intersection(polygons)
 
                 ## ADD
 

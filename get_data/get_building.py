@@ -3,6 +3,10 @@ import sys
 import json
 import geopandas as gpd
 
+current_script_path = os.path.dirname(os.path.abspath(__file__))
+husg_directory_path = os.path.dirname(current_script_path)
+sys.path.append(husg_directory_path)
+
 from etc import filepath as filepath
 from etc.cityname import city_name
 
