@@ -72,6 +72,7 @@ def add_key(city_name):
             filtered_features = []
             for feature in whole_geojson_data["features"]:
                 key_value = feature["properties"].get("key")
+                print(key_value)
                 if key_value:
                     feature["properties"] = {"key": key_value}
                     filtered_features.append(feature)
@@ -81,3 +82,4 @@ def add_key(city_name):
             with open(building_filename, "w") as f:
                 json.dump(whole_geojson_data, f)
 
+add_key('firenze')

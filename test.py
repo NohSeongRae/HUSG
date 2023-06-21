@@ -1,10 +1,22 @@
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, shape
 from shapely.wkt import loads, dumps
 import os
 import json
 import geojson
+import sys
 
-city_name = "singapore"
+current_script_path = os.path.dirname(os.path.abspath(__file__))
+husg_directory_path = os.path.dirname(current_script_path)
+sys.path.append(husg_directory_path)
+
+from etc.cityname import city_name
+
+directory = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Combined_Buildings')
+
+if not os.path.exists(directory):
+    os.makedirs(directory)
+
+add_key(city_name)
 
 dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
 files = os.listdir(dir_path)
@@ -27,12 +39,18 @@ for i in range(1, filenum + 1):
         polygons = []
         keys = []
 
-        for feature in building_data["features"]:
-            geometry = feature["geometry"].get("coordinates")
+        for feature in building_data['features']:
+            geometry = shape(feature['geometry'])
             key = feature["properties"].get("key")
-            polygon = Polygon(geometry[0])
-            polygons.append(polygon)
-            keys.append(key)
+
+            if geometry.geom_type == 'Polygon':
+                polygons.append(geometry)
+                keys.append(key)
+
+            elif geometry.geom_type == 'MultiPolygon':
+                for polygon in geometry.geoms:
+                    polygons.append(polygon)
+                    keys.append(key)
 
         polygon_index_map = {dumps(p): i for i, p in enumerate(polygons)}
 
@@ -68,22 +86,26 @@ for i in range(1, filenum + 1):
             del combined_keys[idx]
             del combined_polygons[idx]
 
-        geojson_polygons = [geojson.Feature(geometry=polygon, properties={"key": key}) for polygon, key in zip(combined_polygons, combined_keys)]
+        geojson_polygons = [geojson.Feature(geometry=polygon, properties={"key": key}) for polygon, key in
+                            zip(combined_polygons, combined_keys)]
 
         feature_collection = geojson.FeatureCollection(geojson_polygons)
 
-        building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+        building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
+                                         f'{city_name}_dataset',
                                          'Combined_Buildings', f'{city_name}_buildings{index}.geojson')
 
         with open(building_filename, 'w') as f:
-             json.dump(feature_collection, f)
-
+            json.dump(feature_collection, f)
+"""
 import shutil
 
 dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings')
 if os.path.exists(dir):
     shutil.rmtree(dir)
 
-temp_dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Combined_Buildings')
+temp_dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+                        'Combined_Buildings')
 
 os.rename(temp_dir, dir)
+"""

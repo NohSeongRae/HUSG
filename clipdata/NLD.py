@@ -2,7 +2,6 @@ import json
 import os
 import re
 
-
 def remove_duplicate_coordinates(features):
     seen_coordinates = set()
     new_features = []

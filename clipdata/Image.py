@@ -53,7 +53,7 @@ def image(city_name):
 
     for i in range(1, filenum + 1):
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                         'Buildings', f'{city_name}_buildings{i}.geojson')
+                                         'Combined_Buildings', f'{city_name}_buildings{i}.geojson')
 
         boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                          'Boundaries', f'{city_name}_boundaries{i}.geojson')
@@ -73,6 +73,8 @@ def image(city_name):
                 ## ADD
 
                 key_value = feature["properties"].get("key")
+                print(i)
+                print(key_value)
                 if key_value in variables.category_color:
                     colors[key_value] = variables.category_color[key_value]
                 else:
@@ -100,6 +102,7 @@ def image(city_name):
                 boundary_gdf = gpd.GeoDataFrame.from_features(boundary_data, crs="EPSG:4326")
                 boundary_gdf.plot(ax=ax, color='white', edgecolor='black', linewidth=0.3)
                 # building_block 시각화
+                gdf_cut = gdf_cut.dropna(subset=['color'])
                 gdf_cut.plot(color=gdf_cut['color'], alpha=0.5, ax=ax)
 
                 ax.set_axis_off()
