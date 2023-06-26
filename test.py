@@ -16,7 +16,7 @@ directory = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{c
 if not os.path.exists(directory):
     os.makedirs(directory)
 
-add_key(city_name)
+# add_key(city_name)
 
 dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
 files = os.listdir(dir_path)
@@ -29,6 +29,7 @@ for i in range(1, filenum + 1):
                                      'Buildings', f'{city_name}_buildings{i}.geojson')
     if os.path.exists(building_filename):
         index += 1
+        print(building_filename)
         with open(building_filename, "r", encoding='UTF-8') as file:
             building_data = json.load(file)
 
@@ -63,21 +64,30 @@ for i in range(1, filenum + 1):
         combined_polygons = polygons_unique
         combined_keys = []
 
-        for i in range(len(polygons)):
-            combined_keys.append(keys[indexes_unique[i]])
+        for polygon in range(len(polygons)):
+            combined_keys.append(keys[indexes_unique[polygon]])
 
         indexes_to_remove = []
+        image_to_remove = []
 
-        for i in range(len(polygons)):
-            for j in range(i + 1, len(polygons)):
-                if polygons[i].contains(polygons[j]):
-                    indexes_to_remove.append(i)
+        overlaps_flag = False
+        for k in range(len(polygons)):
+            for j in range(k + 1, len(polygons)):
+                if polygons[k].contains(polygons[j]):
+                    indexes_to_remove.append(k)
                     if combined_keys[j] == "residence":
-                        combined_keys[j] = combined_keys[i]
-                elif polygons[j].contains(polygons[i]):
+                        combined_keys[j] = combined_keys[k]
+                elif polygons[j].contains(polygons[k]):
                     indexes_to_remove.append(j)
-                    if combined_keys[i] == "residence":
-                        combined_keys[i] = combined_keys[j]
+                    if combined_keys[k] == "residence":
+                        combined_keys[k] = combined_keys[j]
+                elif polygons[k].overlaps(polygons[j]):
+                    overlaps_flag = True
+                    break
+            if overlaps_flag:
+                break
+        if overlaps_flag:
+            pass
 
         indexes_to_remove = list(set(indexes_to_remove))
         indexes_to_remove.sort(reverse=True)
@@ -93,19 +103,8 @@ for i in range(1, filenum + 1):
 
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
                                          f'{city_name}_dataset',
-                                         'Combined_Buildings', f'{city_name}_buildings{index}.geojson')
+                                         'Combined_Buildings', f'{city_name}_buildings{i}.geojson')
 
-        with open(building_filename, 'w') as f:
-            json.dump(feature_collection, f)
-"""
-import shutil
-
-dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings')
-if os.path.exists(dir):
-    shutil.rmtree(dir)
-
-temp_dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                        'Combined_Buildings')
-
-os.rename(temp_dir, dir)
-"""
+        if overlaps_flag == False:
+            with open(building_filename, 'w') as f:
+                json.dump(feature_collection, f)

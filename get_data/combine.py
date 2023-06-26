@@ -30,7 +30,7 @@ for i in range(1, filenum + 1):
                                      'Buildings', f'{city_name}_buildings{i}.geojson')
     if os.path.exists(building_filename):
         index += 1
-        #print(building_filename)
+        print(building_filename)
         with open(building_filename, "r", encoding='UTF-8') as file:
             building_data = json.load(file)
 
@@ -69,7 +69,9 @@ for i in range(1, filenum + 1):
             combined_keys.append(keys[indexes_unique[polygon]])
 
         indexes_to_remove = []
+        image_to_remove = []
 
+        overlaps_flag = False
         for k in range(len(polygons)):
             for j in range(k + 1, len(polygons)):
                 if polygons[k].contains(polygons[j]):
@@ -80,6 +82,13 @@ for i in range(1, filenum + 1):
                     indexes_to_remove.append(j)
                     if combined_keys[k] == "residence":
                         combined_keys[k] = combined_keys[j]
+                elif polygons[k].overlaps(polygons[j]):
+                    overlaps_flag = True
+                    break
+            if overlaps_flag:
+                break
+        if overlaps_flag:
+            pass
 
         indexes_to_remove = list(set(indexes_to_remove))
         indexes_to_remove.sort(reverse=True)
@@ -97,17 +106,6 @@ for i in range(1, filenum + 1):
                                          f'{city_name}_dataset',
                                          'Combined_Buildings', f'{city_name}_buildings{i}.geojson')
 
-        with open(building_filename, 'w') as f:
-            json.dump(feature_collection, f)
-"""
-import shutil
-
-dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings')
-if os.path.exists(dir):
-    shutil.rmtree(dir)
-
-temp_dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                        'Combined_Buildings')
-
-os.rename(temp_dir, dir)
-"""
+        if overlaps_flag == False:
+            with open(building_filename, 'w') as f:
+                json.dump(feature_collection, f)

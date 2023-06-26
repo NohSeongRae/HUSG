@@ -21,7 +21,7 @@ def add_key(city_name):
                                          'Buildings', f'{city_name}_buildings{j}.geojson')
 
         if os.path.exists(building_filename):
-            print(building_filename)
+            # print(building_filename)
             with open(building_filename, "r", encoding='UTF8') as infile:
                 whole_geojson_data = json.load(infile)
                 # print(j)

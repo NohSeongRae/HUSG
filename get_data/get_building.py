@@ -34,7 +34,6 @@ def process_boundary(i):
     boundary_gdf = gpd.GeoDataFrame.from_features(geojson_boundary)
 
     inside_boundary = gpd.sjoin(polygons_gdf, boundary_gdf, how='inner', predicate='within')
-    # intersection_gdf = gpd.overlay(polygons_gdf, boundary_gdf, how='intersection', keep_geom_type=False)
 
     inside_polygons_gdf = polygons_gdf[polygons_gdf.index.isin(inside_boundary.index)]
     geojson_polygons_clean = json.loads(inside_polygons_gdf.to_json())
