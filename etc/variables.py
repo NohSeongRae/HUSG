@@ -1,15 +1,15 @@
-residence = {
+residence_dict = {
     'civic': 'government_office'
 }
 
-shop = {
+shop_dict = {
     'convenience': 'supermarket',
     'supermarket': 'supermarket',
     'herbalist': 'alternative',
     'nutrition_supplements': 'alternative',
 }
 
-amenity = {
+amenity_dict = {
     'marketplace': 'supermarket',
     'restaurant': 'restaurant',
     'fast_food': 'restaurant',
@@ -39,11 +39,11 @@ amenity = {
     'library': 'library'
 }
 
-office = {
+office_dict = {
     'government': 'government_office',
 }
 
-tourism = {
+tourism_dict = {
     'hotel': 'accommodation',
     'chalet': 'accommodation',
     'guest_house': 'accommodation',
@@ -51,12 +51,11 @@ tourism = {
     'motel': 'accommodation',
 }
 
-healthcare = {
+healthcare_dict = {
     'alternative': 'alternative'
 }
 
-leisure = {
-    'park': 'park',
+leisure_dict = {
     'stadium': 'stadium',
     'swimming_pool': 'swimming_pool',
     'pitch': 'pitch',

@@ -33,8 +33,8 @@ def extract(city_name):
             # polygon인 경우 우리가 정의한 category에 속하는 것들의 key값이 존재하는 경우만 저장
             properties = feature["properties"]
             if any(key in properties for key in
-                   ["building", "shop", "amenity", "office", "tourism", "government", "military", "landuse",
-                    "healthcare", "leisure", "natural", "historic", "water", "waterway"]):
+                   ["building", "shop", "amenity", "office", "tourism", "government", "military",
+                    "healthcare", "leisure", "historic"]):
                 polygon_features["features"].append(feature)
 
     # 저장 - None data 저장을 막기 위해 json 이용

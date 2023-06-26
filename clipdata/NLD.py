@@ -30,7 +30,7 @@ def NLD(city_name):
 
     for i in range(1, filenum+1):
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                         'Buildings', f'{city_name}_buildings{i}.geojson')
+                                         'Combined_Buildings', f'{city_name}_buildings{i}.geojson')
 
         if os.path.exists(building_filename):
             with open(building_filename, "r", encoding='UTF-8') as file:

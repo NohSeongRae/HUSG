@@ -33,9 +33,13 @@ def process_boundary(i):
 
     boundary_gdf = gpd.GeoDataFrame.from_features(geojson_boundary)
 
-    intersection_gdf = gpd.overlay(polygons_gdf, boundary_gdf, how='intersection', keep_geom_type=False)
+    inside_boundary = gpd.sjoin(polygons_gdf, boundary_gdf, how='inner', predicate='within')
+    # intersection_gdf = gpd.overlay(polygons_gdf, boundary_gdf, how='intersection', keep_geom_type=False)
 
-    geojson_polygons_clean = json.loads(intersection_gdf.to_json())
+    inside_polygons_gdf = polygons_gdf[polygons_gdf.index.isin(inside_boundary.index)]
+    geojson_polygons_clean = json.loads(inside_polygons_gdf.to_json())
+
+    # geojson_polygons_clean = json.loads(intersection_gdf.to_json())
 
     for feature in geojson_polygons_clean['features']:
         feature['properties'] = {k: v for k, v in feature['properties'].items() if v is not None}
@@ -47,7 +51,7 @@ def process_boundary(i):
         with open(building_filepath, 'w') as f:
             json.dump(geojson_polygons_clean, f)
 
-    return intersection_gdf.index
+    return inside_boundary.index
 
 if __name__ == "__main__":
     with ProcessPoolExecutor(max_workers=5) as executor:

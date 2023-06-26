@@ -30,6 +30,7 @@ for i in range(1, filenum + 1):
                                      'Buildings', f'{city_name}_buildings{i}.geojson')
     if os.path.exists(building_filename):
         index += 1
+        #print(building_filename)
         with open(building_filename, "r", encoding='UTF-8') as file:
             building_data = json.load(file)
 
@@ -94,7 +95,7 @@ for i in range(1, filenum + 1):
 
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
                                          f'{city_name}_dataset',
-                                         'Combined_Buildings', f'{city_name}_buildings{index}.geojson')
+                                         'Combined_Buildings', f'{city_name}_buildings{i}.geojson')
 
         with open(building_filename, 'w') as f:
             json.dump(feature_collection, f)

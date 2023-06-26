@@ -19,7 +19,7 @@ for directory in filepath.output_directories:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-# building, boundry 내 파일들 제거
+# building, boundry, image, nld내 모든 파일들 제거
 
 for filename in os.listdir(filepath.buildings):
     file_path = os.path.join(filepath.buildings, filename)
@@ -28,6 +28,16 @@ for filename in os.listdir(filepath.buildings):
 
 for filename in os.listdir(filepath.boundaries):
     file_path = os.path.join(filepath.boundaries, filename)
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+
+for filename in os.listdir(filepath.image):
+    file_path = os.path.join(filepath.image, filename)
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+
+for filename in os.listdir(filepath.nld):
+    file_path = os.path.join(filepath.nld, filename)
     if os.path.isfile(file_path):
         os.remove(file_path)
 

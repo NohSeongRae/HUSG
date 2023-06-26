@@ -64,53 +64,51 @@ def image(city_name):
             with open(building_filename, "r", encoding='UTF-8') as file:
                 building_data = json.load(file)
 
-            # 시각화를 위한 key값(category)에 따른 색깔 할당
             colors = {}
             polygons = []
 
             for feature in building_data["features"]:
-
-                ## ADD
-
                 key_value = feature["properties"].get("key")
-                print(i)
-                print(key_value)
                 if key_value in variables.category_color:
                     colors[key_value] = variables.category_color[key_value]
-                else:
-                    colors[key_value] = [1, 1, 1, 0]
-                    # continue
 
             if not building_data["features"]:
                 continue
             else:
                 index += 1
                 gdf = gpd.read_file(building_filename)
-                # colors dictionary는 {'key':'color'}의 형태
-                # key값에 따른 색상정보 저장하기
+                for key in range(len(gdf)):
+                    if isinstance(gdf.loc[key, 'key'], list):
+                        gdf.loc[key, 'key'] = 'hospital'
                 gdf['color'] = gdf['key'].map(colors)
 
                 xmin, ymin, xmax, ymax = (left, upper, right, lower)
-                # get_square_bounds 함수에서 만든 정사각형으로 이미지 자르기
                 gdf_cut = gdf.cx[xmin:xmax, ymin:ymax]
-                # 원하는 크기로 시각화
+
+                # Check if GeoDataFrame is empty
+                if gdf_cut.empty:
+                    print(f"{building_filename} resulted in an empty GeoDataFrame after applying filter, skipping...")
+                    continue
+
                 fig, ax = plt.subplots(figsize=(2.24, 2.24), dpi=100)
 
                 with open(boundary_filename, "r", encoding='UTF-8') as file:
                     boundary_data = json.load(file)
-                # boundary 시각화
                 boundary_gdf = gpd.GeoDataFrame.from_features(boundary_data, crs="EPSG:4326")
                 boundary_gdf.plot(ax=ax, color='white', edgecolor='black', linewidth=0.3)
-                # building_block 시각화
+
                 gdf_cut = gdf_cut.dropna(subset=['color'])
+                # Check if GeoDataFrame is empty after dropna
+                if gdf_cut.empty:
+                    print(f"{building_filename} resulted in an empty GeoDataFrame after dropna, skipping...")
+                    continue
+
                 gdf_cut.plot(color=gdf_cut['color'], alpha=0.5, ax=ax)
 
                 ax.set_axis_off()
-                # print(index, i)
-
-                # 배경 투명으로 해서 저장
 
                 image_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
-                                                f'{city_name}_dataset', 'Image', f'{city_name}_buildings_image{index}.png')
+                                              f'{city_name}_dataset', 'Image',
+                                              f'{city_name}_buildings_image{index}.png')
 
                 plt.savefig(image_filename, dpi=100, transparent=True)
