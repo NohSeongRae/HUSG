@@ -10,6 +10,7 @@ husg_directory_path = os.path.dirname(current_script_path)
 sys.path.append(husg_directory_path)
 
 from etc import variables as variables
+from cal_area_ratio import getarearatio
 
 # 자를 영역 추출
 def get_square_bounds(geojson_path):
@@ -50,6 +51,8 @@ def image(city_name):
     filenum = len(files)
 
     index = 0
+
+    under10percent = getarearatio(city_name)
 
     for i in range(1, filenum + 1):
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
@@ -103,7 +106,7 @@ def image(city_name):
                     print(f"{building_filename} resulted in an empty GeoDataFrame after dropna, skipping...")
                     continue
 
-                gdf_cut.plot(color=gdf_cut['color'], alpha=0.5, ax=ax, edgecolor='white', linewidth=0.1)
+                gdf_cut.plot(color=gdf_cut['color'], alpha=0.5, ax=ax, edgecolor='white', linewidth=0.5)
 
                 ax.set_axis_off()
 
@@ -111,4 +114,5 @@ def image(city_name):
                                               f'{city_name}_dataset', 'Image',
                                               f'{city_name}_buildings_image{index}.png')
 
-                plt.savefig(image_filename, dpi=100, transparent=True)
+                if index not in under10percent:
+                    plt.savefig(image_filename, dpi=100, transparent=True)

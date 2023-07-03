@@ -12,7 +12,7 @@ husg_directory_path = os.path.dirname(current_script_path)
 sys.path.append(husg_directory_path)
 
 from etc import variables as variables
-
+from etc.cityname import city_name
 
 index_li = []
 building_list = []
@@ -150,7 +150,7 @@ def calarearatio(city_name):
 
 
 def getarearatio(city_name):
-    calarearatio(city_name='firenze')
+    calarearatio(city_name)
     filenames = []
     for i in range(len(index_li)):
         if (building_list[i]/boundary_list[i])*100 < 10:
@@ -158,12 +158,11 @@ def getarearatio(city_name):
 
     return filenames
 
-calarearatio(city_name='minneapolis')
-
 count = 0
 
-for i in range(3337):
-    if (building_list[i]/boundary_list[i])*100 < 10:
-        count += 1
-    print(f"area ratio: {(building_list[i]/boundary_list[i])*100}, filename: {index_li[i]}")
-    # print(count)
+if __name__ == "__main__":
+    for i in range(3337):
+        if (building_list[i]/boundary_list[i])*100 < 10:
+            count += 1
+        print(f"area ratio: {(building_list[i]/boundary_list[i])*100}, filename: {index_li[i]}")
+        # print(count)
