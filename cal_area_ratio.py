@@ -73,8 +73,6 @@ def calarearatio(city_name):
                 building_data = json.load(file)
 
             colors = {}
-            polygons = []
-
             for feature in building_data["features"]:
                 key_value = feature["properties"].get("key")
                 if key_value in variables.category_color:
@@ -85,35 +83,23 @@ def calarearatio(city_name):
             else:
                 index += 1
                 gdf = gpd.read_file(building_filename)
-                for key in range(len(gdf)):
-                    if isinstance(gdf.loc[key, 'key'], list):
-                        gdf.loc[key, 'key'] = 'hospital'
                 gdf['color'] = gdf['key'].map(colors)
 
                 xmin, ymin, xmax, ymax = (left, upper, right, lower)
                 gdf_cut = gdf.cx[xmin:xmax, ymin:ymax]
 
-                # Check if GeoDataFrame is empty
                 if gdf_cut.empty:
                     print(f"{building_filename} resulted in an empty GeoDataFrame after applying filter, skipping...")
                     continue
 
-                # fig, ax = plt.subplots(figsize=(2.24, 2.24), dpi=100)
-
                 with open(boundary_filename, "r", encoding='UTF-8') as file:
                     boundary_data = json.load(file)
-                boundary_gdf = gpd.GeoDataFrame.from_features(boundary_data, crs="EPSG:4326")
-                # boundary_gdf.plot(ax=ax, color='white', edgecolor='black', linewidth=0.3)
 
                 gdf_cut = gdf_cut.dropna(subset=['color'])
                 # Check if GeoDataFrame is empty after dropna
                 if gdf_cut.empty:
                     print(f"{building_filename} resulted in an empty GeoDataFrame after dropna, skipping...")
                     continue
-
-                # gdf_cut.plot(color=gdf_cut['color'], alpha=0.5, ax=ax)
-
-                # ax.set_axis_off()
 
                 building_polygons = []
 
@@ -139,10 +125,6 @@ def calarearatio(city_name):
 
                 building_list.append(building_area)
                 boundary_list.append(boundary_area)
-
-                image_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
-                                              f'{city_name}_dataset', 'Image',
-                                              f'{city_name}_buildings_image{index}.png')
 
                 index_li.append(index)
 

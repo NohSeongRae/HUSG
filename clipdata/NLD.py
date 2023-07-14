@@ -19,7 +19,8 @@ def remove_duplicate_coordinates(features):
     return new_features
 
 
-def NLD(city_name):
+def NLD(city_name, filelist):
+    print("list : ", filelist)
     city_name = city_name.capitalize()
 
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')

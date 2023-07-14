@@ -7,7 +7,7 @@ sys.path.append(husg_directory_path)
 
 from etc.cityname import city_name
 from Image import image
-from NLD import NLD
+# from NLDtest import NLD
 
 image(city_name)
-NLD(city_name)
+# NLD(city_name, filelist)

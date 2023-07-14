@@ -10,6 +10,7 @@ husg_directory_path = os.path.dirname(current_script_path)
 sys.path.append(husg_directory_path)
 
 from etc import variables as variables
+from etc import filepath as filepath
 from cal_area_ratio import getarearatio
 
 # 자를 영역 추출
@@ -46,11 +47,13 @@ def get_square_bounds(geojson_path):
 
 
 def image(city_name):
+    name_list = []
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
     files = os.listdir(dir_path)
     filenum = len(files)
 
     index = 0
+    filesaveindex = 1
 
     under10percent = getarearatio(city_name)
 
@@ -112,7 +115,22 @@ def image(city_name):
 
                 image_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
                                               f'{city_name}_dataset', 'Image',
-                                              f'{city_name}_buildings_image{index}.png')
+                                              f'{city_name}_buildings_image{filesaveindex}.png')
 
                 if index not in under10percent:
+                    name_list.append(i)
+                    filesaveindex += 1
                     plt.savefig(image_filename, dpi=100, transparent=True)
+
+    # print(name_list)
+
+    import csv
+
+
+
+    with open(filepath.removed_filepath, 'w', newline='') as file:
+        writer = csv.writer(file)
+        for number in name_list:
+            writer.writerow([number])
+
+    return name_list
