@@ -167,33 +167,29 @@ def block_category(city_name):
             plt.clf()
         # building
         else:
-            list_range = range(min(category_list[i]), max(category_list[i]) + 2)
-            thirds = len(list_range) // 25
-            first_hist_ylim = None
-            for j in range(25):
-                start = list_range.start + j * thirds
-                end = list_range.start + (j + 1) * thirds if j < 24 else list_range.stop
-                counts, bins = np.histogram(category_list[i], bins=range(start, end))  # 빈도 계산
-                all_counts.extend(counts)  # 계산된 빈도수를 all_counts에 추가
+            list_min = min(category_list[i])
+            list_max = max(category_list[i])
+            # bins is now a list of 31 values, which creates 30 intervals
+            bins = np.linspace(list_min, list_max + 1, num=31)
+            all_counts = []
+            for bin_start, bin_end in zip(bins[:-1], bins[1:]):
+                in_this_bin = [x for x in category_list[i] if bin_start <= x < bin_end]  # Find elements in this bin
+                all_counts.extend(in_this_bin)
 
-                valid_bins = bins[:-1][counts >= 2]  # 빈도가 2 이상인 bin 선택
-                valid_counts = counts[counts >= 2]  # 빈도가 2 이상인 빈도 선택
-                if len(valid_bins) > 0:  # 빈도가 2 이상인 데이터가 있는 경우에만 그림을 그립니다.
-                    plt.bar(valid_bins, valid_counts, align='edge', width=np.diff(bins)[0] * 0.9,
-                            color='skyblue')  # 필터링된 데이터로 히스토그램 그리기, 막대 색깔을 skyblue로 설정
-                    plt.title(f"{category_semantic[i]} ({j + 1})")
+                if len(in_this_bin) > 1:  # Plot only if there are more than one elements in this bin
+                    plt.hist(in_this_bin, bins=range(int(bin_start), int(bin_end) + 2),
+                             color='skyblue', align='mid')  # Create the histogram
+                    plt.title(f"{category_semantic[i]}")
                     plt.xlabel('number')
                     plt.ylabel('count')
-                    plt.xticks(range(start, end), fontsize=7)  # x축 라벨의 글꼴 크기를 8로 설정
-                    for bin, count in zip(valid_bins, valid_counts):  # 필터링된 데이터로 텍스트 추가
-                        plt.text(bin, count, str(int(count)), fontsize=8, ha='left')  # 텍스트 크기를 8로 설정
+                    plt.xticks(range(int(bin_start), int(bin_end) + 2), fontsize=7)  # set x-axis label font size to 8
 
-                    if first_hist_ylim is None:
-                        first_hist_ylim = plt.ylim()  # get the y limit of the first histogram
-                    else:
-                        plt.ylim(first_hist_ylim)  # set the y limit to match the first histogram
+                    for num in in_this_bin:  # Add text for each valid number
+                        plt.text(num, in_this_bin.count(num), str(int(in_this_bin.count(num))), fontsize=8, ha='left')
 
-                    plt.savefig(f"{category_filepath[i]}_{j + 1}.png")
+                    plt.xlim([list_min, list_max + 1])  # Set x-axis limits to match the first histogram
+
+                    plt.savefig(f"{category_filepath[i]}.png")
                     plt.clf()
 
             plt.hist(all_counts, bins=range(min(all_counts), max(all_counts) + 2), color='skyblue', rwidth=0.8)
