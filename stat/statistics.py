@@ -9,8 +9,13 @@ from etc.cityname import city_name
 from lengtharea import lengtharea
 from lengthnum import lengthnum
 from ratio import ratio
-from block import block_category
-from stat.density import density
+from blocksemantic import block_category
+from density import density
+
+from etc import filepath as filepath
+
+if not os.path.exists(filepath.stat):
+    os.makedirs(filepath.stat)
 
 lengtharea(city_name)
 lengthnum(city_name)

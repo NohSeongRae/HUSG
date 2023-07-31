@@ -1,8 +1,9 @@
 import json
 import os
-import re
 import sys
 import math
+import numpy as np
+from collections import Counter
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -108,7 +109,6 @@ def block_category(city_name):
                     for feature in features:
 
                         key = feature['properties']['key']
-                        # for stats
 
                         if key in variables.commercial:
                             commercial += 1
@@ -139,22 +139,20 @@ def block_category(city_name):
                     sport_list.append(sport)
                     building_list.append(building)
 
-    # print(commercial_list)
-    # print(building_list)
-
-    blocksemantic_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'blocksemantic')
-
-    if not os.path.exists(blocksemantic_filepath):
-        os.makedirs(blocksemantic_filepath)
+    if not os.path.exists(filepath.blocksemantic):
+        os.makedirs(filepath.blocksemantic)
 
     category_list = [commercial_list, education_list, emergency_list, financial_list, government_list, healthcare_list, public_list, sport_list, building_list]
     category_semantic = ["commercial", "education", "emergency", "financial", "government", "healthcare", "public", "sport", "building"]
     category_filepath = [filepath.commercial_filepath, filepath.education_filepath, filepath.emergency_filepath, filepath.financial_filepath,
                          filepath.government_filepath, filepath.healthcare_filepath, filepath.public_filepath, filepath.sport_filepath, filepath.building_filepath]
 
+    all_counts = []
+
     for i in range(len(category_list)):
+        # building 이 아닌 경우
         if i != len(category_list)-1:
-            counts, bins, patches = plt.hist(category_list[i], bins=range(min(category_list[i]), max(category_list[i]) + 2), align='left', rwidth=0.8)
+            counts, bins, patches = plt.hist(category_list[i], bins=range(min(category_list[i]), max(category_list[i]) + 2), align='left', rwidth=0.8, color='skyblue')
 
             plt.title(category_semantic[i])
             plt.xlabel('number')
@@ -165,47 +163,61 @@ def block_category(city_name):
             for count, bin, patch in zip(counts, bins, patches):
                 plt.text(bin, count, str(int(count)), fontsize=10, ha='left')
 
-            # plt.show()
-
             plt.savefig(category_filepath[i])
             plt.clf()
+        # building
         else:
             list_range = range(min(category_list[i]), max(category_list[i]) + 2)
             thirds = len(list_range) // 25
+            first_hist_ylim = None
             for j in range(25):
                 start = list_range.start + j * thirds
-                end = list_range.start + (j + 1) * thirds if j < 2 else list_range.stop
-                counts, bins, patches = plt.hist(category_list[i], bins=range(start, end), align='left', rwidth=0.8)
-                plt.title(f"{category_semantic[i]} ({j + 1} of 25)")
-                plt.xlabel('number')
-                plt.ylabel('count')
-                plt.xticks(range(start, end))
-                for count, bin, patch in zip(counts, bins, patches):
-                    plt.text(bin, count, str(int(count)), fontsize=10, ha='left')
+                end = list_range.start + (j + 1) * thirds if j < 24 else list_range.stop
+                counts, bins = np.histogram(category_list[i], bins=range(start, end))  # 빈도 계산
+                all_counts.extend(counts)  # 계산된 빈도수를 all_counts에 추가
 
-                plt.savefig(f"{category_filepath[i]}_{j + 1}.png")
-                plt.clf()
+                valid_bins = bins[:-1][counts >= 2]  # 빈도가 2 이상인 bin 선택
+                valid_counts = counts[counts >= 2]  # 빈도가 2 이상인 빈도 선택
+                if len(valid_bins) > 0:  # 빈도가 2 이상인 데이터가 있는 경우에만 그림을 그립니다.
+                    plt.bar(valid_bins, valid_counts, align='edge', width=np.diff(bins)[0] * 0.9,
+                            color='skyblue')  # 필터링된 데이터로 히스토그램 그리기, 막대 색깔을 skyblue로 설정
+                    plt.title(f"{category_semantic[i]} ({j + 1})")
+                    plt.xlabel('number')
+                    plt.ylabel('count')
+                    plt.xticks(range(start, end), fontsize=7)  # x축 라벨의 글꼴 크기를 8로 설정
+                    for bin, count in zip(valid_bins, valid_counts):  # 필터링된 데이터로 텍스트 추가
+                        plt.text(bin, count, str(int(count)), fontsize=8, ha='left')  # 텍스트 크기를 8로 설정
 
-    """
-    sum = commercial + education + emergency + financial + government + healthcare + public + sport + building
-    print("commercial num ", commercial)
-    print("commercial ", (commercial / sum) * 100)
-    print("education num ", education)
-    print("education ", (education / sum) * 100)
-    print("emergency num ", emergency)
-    print("emergency ", (emergency / sum) * 100)
-    print("financial num ", financial)
-    print("financial ", (financial / sum) * 100)
-    print("government num ", government)
-    print("government ", (government / sum) * 100)
-    print("healthcare num ", healthcare)
-    print("healthcare ", (healthcare / sum) * 100)
-    print("public num ", public)
-    print("public ", (public / sum) * 100)
-    print("sport num ", sport)
-    print("sport ", (sport / sum) * 100)
-    print("building num ", building)
-    print("building ", (building / sum) * 100)
-    """
+                    if first_hist_ylim is None:
+                        first_hist_ylim = plt.ylim()  # get the y limit of the first histogram
+                    else:
+                        plt.ylim(first_hist_ylim)  # set the y limit to match the first histogram
 
-# block_category(city_name)
+                    plt.savefig(f"{category_filepath[i]}_{j + 1}.png")
+                    plt.clf()
+
+            plt.hist(all_counts, bins=range(min(all_counts), max(all_counts) + 2), color='skyblue', rwidth=0.8)
+            counts, bins, patches = plt.hist(all_counts, bins=range(min(all_counts), max(all_counts) + 2),
+                                             color='skyblue')
+            # Filter the data
+            filtered_counts = [count for bin, count in zip(bins[:-1], counts) if bin in [0, 1, 2]]
+
+            plt.bar([0, 1, 2], filtered_counts, color='skyblue')
+            plt.title(f"Histogram of counts for {category_semantic[i]}")
+            plt.xlabel('count')
+            plt.ylabel('frequency')
+
+            # Set y-axis range to match maximum count
+            plt.xlim(0, 2)
+            plt.ylim(0, max(filtered_counts) if filtered_counts else 0)
+
+            # Set x-axis ticks
+            plt.xticks([0, 1, 2])
+
+            # Add frequency text on each bar
+            for x, count in zip([0, 1, 2], filtered_counts):
+                if count > 0:  # print frequency text only when the count is not 0
+                    plt.text(x, count, str(int(count)), fontsize=8, ha='center', va='bottom')
+
+            plt.savefig(f"{category_filepath[i]}_sub.png")
+            plt.clf()
