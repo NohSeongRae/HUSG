@@ -126,8 +126,6 @@ def image(city_name):
 
     import csv
 
-
-
     with open(filepath.removed_filepath, 'w', newline='') as file:
         writer = csv.writer(file)
         for number in name_list:
