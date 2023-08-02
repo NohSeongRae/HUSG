@@ -14,10 +14,11 @@ from add_key import add_key
 
 directory = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Combined_Buildings')
 
-for filename in os.listdir(directory):
-    file_path = os.path.join(directory, filename)
-    if os.path.isfile(file_path):
-        os.remove(file_path)
+if os.path.exists(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
 
 if not os.path.exists(directory):
     os.makedirs(directory)
