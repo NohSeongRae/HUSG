@@ -12,6 +12,7 @@ sys.path.append(husg_directory_path)
 
 from etc import filepath as filepath
 from get_buildinglevel import get_buildinglevel
+from etc.cityname import city_name
 
 def get_building_level(semantics, json_filepath):
     levels = get_buildinglevel()
@@ -65,7 +66,8 @@ def extract_polygon_coordinates(geom):
         lon_norm = 2 * ((lon - midy) / max_range)
         new_coords.append((lat_norm, lon_norm))
 
-    return list(Polygon(new_coords).exterior.coords)
+    return list(Polygon(new_coords).
+                exterior.coords)
 
 def graph_dataloader(city_name):
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
@@ -155,5 +157,5 @@ def graph_dataloader(city_name):
 
     return df
 
-df = graph_dataloader('littlerock')
+df = graph_dataloader(city_name)
 df.to_csv(filepath.graph_filepath, index=False)

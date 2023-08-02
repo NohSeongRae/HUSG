@@ -9,6 +9,7 @@ sys.path.append(husg_directory_path)
 from etc import filepath as filepath
 from etc import variables as variables
 
+
 """
 category 구분을 위한 key 값 추가
 """

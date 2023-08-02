@@ -47,6 +47,14 @@ def get_square_bounds(geojson_path):
 
 
 def image(city_name):
+    for filename in os.listdir(filepath.image):
+        file_path = os.path.join(filepath.image, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    if not os.path.exists(filepath.image):
+        os.makedirs(filepath.image)
+
     name_list = []
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
     files = os.listdir(dir_path)
@@ -121,6 +129,8 @@ def image(city_name):
                     name_list.append(i)
                     filesaveindex += 1
                     plt.savefig(image_filename, dpi=100, transparent=True)
+
+                    plt.close('all')
 
     # print(name_list)
 

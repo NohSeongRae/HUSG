@@ -148,11 +148,14 @@ def block_category(city_name):
                          filepath.government_filepath, filepath.healthcare_filepath, filepath.public_filepath, filepath.sport_filepath, filepath.building_filepath]
 
     all_counts = []
+    max_y = None
 
     for i in range(len(category_list)):
-        # building 이 아닌 경우
-        if i != len(category_list)-1:
-            counts, bins, patches = plt.hist(category_list[i], bins=range(min(category_list[i]), max(category_list[i]) + 2), align='left', rwidth=0.8, color='skyblue')
+        # For all categories other than "building"
+        if i != len(category_list) - 1:
+            counts, bins, patches = plt.hist(category_list[i],
+                                             bins=range(min(category_list[i]), max(category_list[i]) + 2), align='left',
+                                             rwidth=0.8, color='skyblue')
 
             plt.title(category_semantic[i])
             plt.xlabel('number')
@@ -165,55 +168,35 @@ def block_category(city_name):
 
             plt.savefig(category_filepath[i])
             plt.clf()
-        # building
+        # For "building"
         else:
             list_min = min(category_list[i])
             list_max = max(category_list[i])
-            # bins is now a list of 31 values, which creates 30 intervals
-            bins = np.linspace(list_min, list_max + 1, num=31)
-            all_counts = []
-            for bin_start, bin_end in zip(bins[:-1], bins[1:]):
-                in_this_bin = [x for x in category_list[i] if bin_start <= x < bin_end]  # Find elements in this bin
-                all_counts.extend(in_this_bin)
 
-                if len(in_this_bin) > 1:  # Plot only if there are more than one elements in this bin
-                    plt.hist(in_this_bin, bins=range(int(bin_start), int(bin_end) + 2),
-                             color='skyblue', align='mid')  # Create the histogram
-                    plt.title(f"{category_semantic[i]}")
+            bins = np.linspace(list_min, list_max + 1, num=31)
+
+            for j in range(len(bins) - 1):
+                bin_start = bins[j]
+                bin_end = bins[j + 1]
+                in_this_bin = [x for x in category_list[i] if bin_start <= x < bin_end]
+
+                if len(in_this_bin) > 1:
+                    counts, _, _ = plt.hist(in_this_bin, bins=range(int(bin_start), int(bin_end) + 2),
+                                            color='skyblue', align='mid', rwidth=0.8)
+
+                    if max_y is None:
+                        max_y = max(counts)
+
+                    plt.title(f"{category_semantic[i]}_{j}")
                     plt.xlabel('number')
                     plt.ylabel('count')
-                    plt.xticks(range(int(bin_start), int(bin_end) + 2), fontsize=7)  # set x-axis label font size to 8
+                    plt.xticks(range(int(bin_start), int(bin_end) + 2), fontsize=7)
 
-                    for num in in_this_bin:  # Add text for each valid number
+                    for num in in_this_bin:
                         plt.text(num, in_this_bin.count(num), str(int(in_this_bin.count(num))), fontsize=8, ha='left')
 
-                    plt.xlim([list_min, list_max + 1])  # Set x-axis limits to match the first histogram
+                    plt.ylim([0, max_y])
+                    plt.xlim([bin_start, bin_end])
 
-                    plt.savefig(f"{category_filepath[i]}.png")
+                    plt.savefig(f"{category_filepath[i]}_{j}.png")
                     plt.clf()
-
-            plt.hist(all_counts, bins=range(min(all_counts), max(all_counts) + 2), color='skyblue', rwidth=0.8)
-            counts, bins, patches = plt.hist(all_counts, bins=range(min(all_counts), max(all_counts) + 2),
-                                             color='skyblue')
-            # Filter the data
-            filtered_counts = [count for bin, count in zip(bins[:-1], counts) if bin in [0, 1, 2]]
-
-            plt.bar([0, 1, 2], filtered_counts, color='skyblue')
-            plt.title(f"Histogram of counts for {category_semantic[i]}")
-            plt.xlabel('count')
-            plt.ylabel('frequency')
-
-            # Set y-axis range to match maximum count
-            plt.xlim(0, 2)
-            plt.ylim(0, max(filtered_counts) if filtered_counts else 0)
-
-            # Set x-axis ticks
-            plt.xticks([0, 1, 2])
-
-            # Add frequency text on each bar
-            for x, count in zip([0, 1, 2], filtered_counts):
-                if count > 0:  # print frequency text only when the count is not 0
-                    plt.text(x, count, str(int(count)), fontsize=8, ha='center', va='bottom')
-
-            plt.savefig(f"{category_filepath[i]}_sub.png")
-            plt.clf()

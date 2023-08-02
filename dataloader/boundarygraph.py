@@ -4,6 +4,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import os
 import sys
+import json
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -20,13 +21,25 @@ def polar_angle(origin, point):
     return angle if angle >= 0 else 2 * np.pi + angle
 
 def graph_dataloader(city_name):
+    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
+    files = os.listdir(dir_path)
+    num_file = len(files)
 
     # CSV 파일 경로
     csv_filepath = filepath.graph_filepath
 
     city_name = 'minneapolis'
-    csv_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                  f'{city_name}_graph.csv')
+    # csv_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+    #                              f'{city_name}_graph.csv')
+
+    for i in range(1, num_file + 1):
+        boundary_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings', f'{city_name}_buildings{i}.geojson')
+
+        if os.path.exists(boundary_filepath):
+            with open(boundary_filepath, "r", encoding='UTF8') as infile:
+                boundary_geojsonfile = json.load(infile)
+
+        boundary_geojsonfile
 
     # CSV 파일 읽기
     df = pd.read_csv(csv_filepath)
@@ -42,7 +55,7 @@ def graph_dataloader(city_name):
 
         point_list = np.unique(point_list, axis=0)
 
-        print(point_list)
+
 
         # 좌표 정렬
         # x축과 양의 방향으로 가장 가까운 점부터 시작

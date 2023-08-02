@@ -14,6 +14,11 @@ from add_key import add_key
 
 directory = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Combined_Buildings')
 
+for filename in os.listdir(directory):
+    file_path = os.path.join(directory, filename)
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+
 if not os.path.exists(directory):
     os.makedirs(directory)
 
@@ -28,6 +33,7 @@ index = 0
 for i in range(1, filenum + 1):
     building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                      'Buildings', f'{city_name}_buildings{i}.geojson')
+
     if os.path.exists(building_filename):
         index += 1
         print(building_filename)
