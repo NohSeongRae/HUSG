@@ -17,8 +17,6 @@ from etc.cityname import city_name
 def get_building_level(semantics, json_filepath):
     levels = get_buildinglevel()
 
-    print(levels)
-
     category_mapping = {
         "commercial": levels[0],
         "education": levels[1],
