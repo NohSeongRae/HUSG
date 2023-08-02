@@ -9,6 +9,7 @@ sys.path.append(husg_directory_path)
 
 from etc import variables as variables
 
+
 def add_key(city_name):
     # 파일 수 세기
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
@@ -16,7 +17,7 @@ def add_key(city_name):
     filenum = len(files)
 
     # building data들 하나씩 불러오기
-    for j in range(1, filenum+1):
+    for j in range(1, filenum + 1):
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                          'Buildings', f'{city_name}_buildings{j}.geojson')
 
@@ -31,8 +32,6 @@ def add_key(city_name):
                 # building
                 if properties.get("building") != None:
                     properties["key"] = "residence"
-                    if properties["building"] in variables.residence_dict:
-                        properties["key"] = variables.residence_dict[properties["building"]]
                 # shop
                 if properties.get("shop") != None:
                     properties["key"] = "shop"
@@ -54,6 +53,9 @@ def add_key(city_name):
                 # government
                 if properties.get("government") != None:
                     properties["key"] = "government_office"
+                    if properties["government"] in variables.government_dict:
+                        properties["key"] = variables.shop_dict[properties["government"]]
+
                 # militray
                 if properties.get("military") != None:
                     properties["key"] = "military"
@@ -69,8 +71,28 @@ def add_key(city_name):
                 if properties.get("historic") != None:
                     properties["key"] = "historic"
 
-            # visualize를 위해서는 key값(catgory)만 필요하므로 이에 해당하는 것들만 저장하기
             filtered_features = []
+            for feature in whole_geojson_data["features"]:
+                if feature["properties"].get("building:levels") != None:
+                    building_level = feature["properties"]["building:levels"]
+                    key_value = feature["properties"].get("key")
+                    if key_value:
+                        feature["properties"] = {"key": key_value}
+                        feature["properties"]["building:levels"] = building_level
+                        filtered_features.append(feature)
+
+                if feature["properties"].get("height") != None:
+                    height = feature["properties"]["height"]
+                    key_value = feature["properties"].get("key")
+                    if key_value:
+                        feature["properties"] = {"key": key_value}
+                        feature["properties"]["building:levels"] = height
+                        filtered_features.append(feature)
+
+            # whole_geojson_data["features"] = filtered_features
+
+            # visualize를 위해서는 key값(catgory)만 필요하므로 이에 해당하는 것들만 저장하기
+            # filtered_features = []
             for feature in whole_geojson_data["features"]:
                 key_value = feature["properties"].get("key")
                 # print(key_value)

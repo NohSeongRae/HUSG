@@ -1,4 +1,4 @@
-residence_dict = {
+government_dict = {
     'civic': 'government_office'
 }
 

@@ -9,10 +9,11 @@ sys.path.append(husg_directory_path)
 from etc import filepath as filepath
 from etc import variables as variables
 
-
 """
 category 구분을 위한 key 값 추가
 """
+
+# building_filename = filepath.buildings
 
 building_filename = filepath.combined_filepath
 
@@ -25,30 +26,28 @@ for i in range(len(whole_geojson_data['features'])):
     # building
     if properties.get("building") != None:
         properties["key"] = "residence"
-        if properties["building"] in variables.residence:
-            properties["key"] = variables.residence[properties["building"]]
 
     # shop
     if properties.get("shop") != None:
         properties["key"] = "shop"
-        if properties["shop"] in variables.shop:
-            properties["key"] = variables.shop[properties["shop"]]
+        if properties["shop"] in variables.shop_dict:
+            properties["key"] = variables.shop_dict[properties["shop"]]
 
     # amenity
     if properties.get("amenity") != None:
-        if properties["amenity"] in variables.amenity:
-            properties["key"] = variables.amenity[properties["amenity"]]
+        if properties["amenity"] in variables.amenity_dict:
+            properties["key"] = variables.amenity_dict[properties["amenity"]]
 
     # office
     if properties.get("office") != None:
-        if properties["office"] in variables.office:
-            properties["key"] = variables.office[properties["office"]]
+        if properties["office"] in variables.office_dict:
+            properties["key"] = variables.office_dict[properties["office"]]
 
     # tourism
     if properties.get("tourism") != None:
         properties["key"] = "tourism"
-        if properties["tourism"] in variables.tourism:
-            properties["key"] = variables.tourism[properties["tourism"]]
+        if properties["tourism"] in variables.tourism_dict:
+            properties["key"] = variables.tourism_dict[properties["tourism"]]
 
     # government
     if properties.get("government") != None:
@@ -60,13 +59,13 @@ for i in range(len(whole_geojson_data['features'])):
 
     # health_care
     if properties.get("healthcare") != None:
-        if properties["healthcare"] in variables.healthcare:
-            properties["key"] = variables.healthcare
+        if properties["healthcare"] in variables.healthcare_dict:
+            properties["key"] = variables.healthcare_dict
 
     # leisure
     if properties.get("leisure") != None:
-        if properties["leisure"] in variables.leisure:
-            properties["key"] = variables.leisure[properties["leisure"]]
+        if properties["leisure"] in variables.leisure_dict:
+            properties["key"] = variables.leisure_dict[properties["leisure"]]
 
     # historic
     if properties.get("historic") != None:
@@ -111,7 +110,7 @@ def get_buildinglevel():
     """
     각 category 별 평균 building:levels를 반환
     -> 각 category 별 평균 building:levels = 각 category 별 (building:levels가 존재하는 경우 building:levels의 총합) / (building:levels 속성이 존재하는 건물의 수)
-    :return: category별 평균 높이의 list [commercial, education, emergency, financial, government, healthcare, natural, public, sport, residence]
+    :return: category별 평균 높이의 list [commercial, education, emergency, financial, government, healthcare, public, sport, residence]
     """
 
     with open(filepath.buildinglevel_filepath, 'r') as f:

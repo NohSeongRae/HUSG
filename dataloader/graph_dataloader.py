@@ -17,6 +17,8 @@ from etc.cityname import city_name
 def get_building_level(semantics, json_filepath):
     levels = get_buildinglevel()
 
+    print(levels)
+
     category_mapping = {
         "commercial": levels[0],
         "education": levels[1],
@@ -24,10 +26,9 @@ def get_building_level(semantics, json_filepath):
         "financial": levels[3],
         "government": levels[4],
         "healthcare": levels[5],
-        "natural": levels[6],
-        "public": levels[7],
-        "sport": levels[8],
-        "residence": levels[9]
+        "public": levels[6],
+        "sport": levels[7],
+        "residence": levels[8]
     }
 
     building_level_list = []
@@ -41,10 +42,10 @@ def get_building_level(semantics, json_filepath):
             for category in category_list[1].split():  # assuming categories are space-separated
                 if category in category_mapping:
                     building_level_dict[item] = category_mapping[category]
-                else:
-                    print(f"Unexpected category: {category}")
 
     building_levels = [building_level_dict.get(semantic, None) for semantic in semantics]
+
+    # print(building_levels)
 
     return building_levels
 
@@ -86,7 +87,7 @@ def graph_dataloader(city_name):
     group = 1
 
     for i in range(1, num_file + 1):
-        geojson_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings', f'{city_name}_buildings{i}.geojson')
+        geojson_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Combined_Buildings', f'{city_name}_buildings{i}.geojson')
 
         if os.path.exists(geojson_filepath):
             gdf = gpd.read_file(geojson_filepath)

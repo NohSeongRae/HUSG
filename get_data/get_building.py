@@ -38,8 +38,6 @@ def process_boundary(i):
     inside_polygons_gdf = polygons_gdf[polygons_gdf.index.isin(inside_boundary.index)]
     geojson_polygons_clean = json.loads(inside_polygons_gdf.to_json())
 
-    # geojson_polygons_clean = json.loads(intersection_gdf.to_json())
-
     for feature in geojson_polygons_clean['features']:
         feature['properties'] = {k: v for k, v in feature['properties'].items() if v is not None}
 
