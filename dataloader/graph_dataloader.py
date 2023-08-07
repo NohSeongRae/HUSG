@@ -158,3 +158,4 @@ def graph_dataloader(city_name):
 
 df = graph_dataloader(city_name)
 df.to_csv(filepath.graph_filepath, index=False)
+print("Step 9: Graph generation completed")

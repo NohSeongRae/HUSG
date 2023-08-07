@@ -10,4 +10,6 @@ from Image import image
 # from NLDtest import NLD
 
 image(city_name)
+print("Step 7: Image generation compeleted")
 # NLD(city_name, filelist)
+print("Step 8: NLD generated PASSED")

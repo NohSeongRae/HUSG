@@ -22,3 +22,6 @@ lengthnum(city_name)
 ratio(city_name)
 block_category(city_name)
 density(city_name)
+
+print("Step 10: Stat computation completed")
+print(f"{city_name} is ready")

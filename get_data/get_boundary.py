@@ -156,7 +156,7 @@ def get_boundary(city_name, location):
         # 단일 polygon이면 그냥 넣기
         poly_list.append(final_polygon)
 
-    print(len(poly_list))
+    print(f"Length of polygon list: {len(poly_list)}")
 
     # poly_list에 담긴 polygon들을 하나씩 geojson 형태로 저장
     def save_polygon(i):
@@ -179,4 +179,4 @@ def get_boundary(city_name, location):
 
     executor.shutdown()
 
-    print("boundary 추출 완료")
+    print("Step 3: Boundary extraction completed")

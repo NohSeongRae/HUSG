@@ -54,3 +54,4 @@ if __name__ == "__main__":
     with ProcessPoolExecutor(max_workers=5) as executor:
         for inside_boundary_indices in executor.map(process_boundary, range(1, filenum+1)):
             polygons_gdf = polygons_gdf[~polygons_gdf.index.isin(inside_boundary_indices)]
+    print("Step 5: Building extraction completed")

@@ -116,3 +116,5 @@ for i in range(1, filenum + 1):
         if overlaps_flag == False:
             with open(building_filename, 'w') as f:
                 json.dump(feature_collection, f)
+
+print("Step 6: Data combination completed")

@@ -70,4 +70,4 @@ def data_download(city_name, location):
 
     gdf.to_file(filepath.roads_filepath, driver="GeoJSON")
 
-    print("data download complete")
+    print("Step 1: Data download completed")

@@ -47,4 +47,4 @@ def extract(city_name):
     with open(filepath.polygon_filepath, "w", encoding="UTF-8") as outfile:
         json.dump(polygon_features, outfile)
 
-    print("Extract point / polygon data complete")
+    print("Step 2: Extract point / polygon data completed")

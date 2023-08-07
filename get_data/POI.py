@@ -68,4 +68,4 @@ if __name__ == '__main__':
     with open(filepath.combined_filepath, "w") as outfile:
         json.dump(polygon_json, outfile)
 
-    print("POI 합치기 완료")
+    print("Step 4: POI integration completed")
