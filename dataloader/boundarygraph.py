@@ -55,7 +55,7 @@ def graph_dataloader(city_name):
 
         point_list = np.unique(point_list, axis=0)
 
-
+        print(point_list)
 
         # 좌표 정렬
         # x축과 양의 방향으로 가장 가까운 점부터 시작
