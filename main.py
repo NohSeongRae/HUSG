@@ -4,8 +4,22 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
+import os
+import glob
+import pandas as pd
+
+city_name = 'milan'
 
 # 학습 코드
+
+# cycle graph 생성
+def create_cycle_adjacency_matrix(num_nodes):
+    adj = torch.zeros(num_nodes, num_nodes)
+    for i in range(num_nodes):
+        adj[i, (i+1)%num_nodes] = 1  # Connect to next node
+        adj[(i+1)%num_nodes, i] = 1  # Connect to previous node (for undirected graph)
+    return adj
+
 
 class GraphConvolutionalLayer(nn.Module):
     def __init__(self, input_dim, output_dim):
@@ -64,23 +78,36 @@ class VAE(nn.Module):
         recon = self.decoder(latent_vector, adj)
         return recon, mu, logvar
 
-# Dataset Definition
+# dataset
 class FloorDataset(Dataset):
-    def __init__(self, num_samples, feature_dim, adj_dim):
-        self.features = torch.randn((num_samples, adj_dim, feature_dim))
-        self.adjacency_matrix = torch.eye(adj_dim)
+    def __init__(self, csv_folder_path):
+        self.csv_files = glob.glob(f"{csv_folder_path}/*.csv")
+        self.adjacency_matrix = create_cycle_adjacency_matrix(592)  # 592x592 matrix
 
     def __len__(self):
-        return len(self.features)
+        return len(self.csv_files)
 
     def __getitem__(self, idx):
-        return self.features[idx], self.adjacency_matrix
+        csv_file = self.csv_files[idx]
+        data = pd.read_csv(csv_file, header=None)
+
+        # NaN 값들을 0으로 채우기
+        data.fillna(0, inplace=True)
+
+        features = torch.tensor(data.values).float().view(592, 9)  # 592x9 matrix
+        return features, self.adjacency_matrix
+
+
+# Dataset Initialization
+feature_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'result')
+
+csv_folder_path = feature_path
+adj_dim = 592
+dataset = FloorDataset(csv_folder_path)
 
 # Dataset and DataLoader Initialization
 feature_dim = 9
-adj_dim = 596
-num_samples = 1000
-dataset = FloorDataset(num_samples, feature_dim, adj_dim)
+
 dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
 # Model and Optimizer Initialization
@@ -94,8 +121,8 @@ for epoch in range(num_epochs):
     for batch_features, batch_adj in dataloader:
         optimizer.zero_grad()
 
-        print("batch_features shape:", batch_features.shape)
-        print("batch_adj shape:", batch_adj.shape)
+        # print("batch_features shape:", batch_features.shape)
+        # print("batch_adj shape:", batch_adj.shape)
 
         reconstructed_features, mu, logvar = floorNet(batch_features, batch_adj)
 
