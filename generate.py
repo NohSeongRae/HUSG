@@ -48,7 +48,9 @@ class FloorNetDecoder(nn.Module):
 
     def forward(self, x, adj):
         x = self.mlp(x)
+        x = x.unsqueeze(1).repeat(1, adj.size(1), 1)  # This will change the shape to [num_samples, adj_dim, 256]
         return self.gc(x, adj)
+
 
 class VAE(nn.Module):
     def __init__(self, feature_dim, latent_dim):
@@ -64,7 +66,7 @@ class VAE(nn.Module):
 
 # Model Initialization
 feature_dim = 9
-adj_dim = 596
+adj_dim = 592
 latent_dim = 256
 
 # Load the model
@@ -73,18 +75,81 @@ loaded_floorNet.load_state_dict(torch.load('floorNet.pth'))
 loaded_floorNet.eval()
 
 # Generate new data
-def generate_data(model, num_samples, adj_matrix):
-    with torch.no_grad():
-        latent_samples = torch.randn(num_samples, latent_dim)
-        expanded_latent = latent_samples.unsqueeze(1).expand(-1, adj_matrix.size(0), -1)
+# 학습된 모델 불러오기
+loaded_floorNet = VAE(feature_dim, latent_dim)
+loaded_floorNet.load_state_dict(torch.load('floorNet.pth'))
+loaded_floorNet.eval()
 
-        adj_matrix_batch = adj_matrix.unsqueeze(0).repeat(num_samples, 1, 1)  # [num_samples, adj_dim, adj_dim]
-        generated_data = model.decoder(expanded_latent, adj_matrix_batch)
+# Latent space의 통계 계산
+def get_latent_statistics(model, data_loader):
+    mus, logvars = [], []
+
+    with torch.no_grad():
+        for batch_features, batch_adj in data_loader:
+            batch_features, batch_adj = batch_features.to(device), batch_adj.to(device)
+            mu, logvar = model.encoder(batch_features, batch_adj)
+            mus.append(mu)
+            logvars.append(logvar)
+
+    mus = torch.cat(mus, dim=0)
+    logvars = torch.cat(logvars, dim=0)
+
+    latent_mean = mus.mean(dim=0)
+    latent_std = (logvars.exp()).mean(dim=0).sqrt()
+
+    return latent_mean, latent_std
+
+# 새로운 데이터 생성
+def generate_data_using_statistics(model, num_samples, adj_matrix, latent_mean, latent_std):
+    with torch.no_grad():
+        latent_samples = torch.randn(num_samples, latent_dim) * latent_std + latent_mean
+        adj_matrix_batch = adj_matrix.unsqueeze(0).repeat(num_samples, 1, 1)
+        generated_data = model.decoder(latent_samples, adj_matrix_batch)
+
     return generated_data
 
+if __name__ == '__main__':
+    # Dataset Initialization
+    feature_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'result')
+    csv_folder_path = feature_path
+    adj_dim = 592
+    dataset = FloorDataset(csv_folder_path)
 
-adj_matrix = torch.eye(adj_dim)
-num_samples_to_generate = 10
-new_data = generate_data(loaded_floorNet, num_samples_to_generate, adj_matrix)
+    # Dataset and DataLoader Initialization
+    feature_dim = 9
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4)
 
-print("output: ", new_data.shape)
+    # Model and Optimizer Initialization
+    latent_dim = 256
+    floorNet = VAE(feature_dim, latent_dim).to(device)
+    optimizer = optim.Adam(floorNet.parameters(), lr=0.001)
+
+    # Training Loop
+    num_epochs = 200
+    for epoch in range(num_epochs):
+        for batch_features, batch_adj in dataloader:
+            batch_features, batch_adj = batch_features.to(device), batch_adj.to(device)
+            optimizer.zero_grad()
+
+            reconstructed_features, mu, logvar = floorNet(batch_features, batch_adj)
+
+            reconstruction_loss = nn.MSELoss()(reconstructed_features, batch_features)
+            kl_divergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+            loss = reconstruction_loss + kl_divergence
+            loss.backward()
+            optimizer.step()
+
+        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}")
+
+    # Save the model
+    torch.save(floorNet.state_dict(), 'floorNet.pth')
+
+    # Latent space의 통계 계산
+    latent_mean, latent_std = get_latent_statistics(loaded_floorNet, dataloader)
+
+    # 새로운 데이터 생성
+    adj_matrix = create_cycle_adjacency_matrix(adj_dim)
+    num_samples_to_generate = 20
+    new_data = generate_data_using_statistics(loaded_floorNet, num_samples_to_generate, adj_matrix, latent_mean, latent_std)
+
+    print("Generated data shape:", new_data.shape)

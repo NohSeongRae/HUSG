@@ -2,25 +2,26 @@ import os
 import json
 import csv
 
-city_name = 'milan'
+# city_name = 'milan'
+
+city_list = ['nottingham', 'paris', 'philadelphia', 'phoenix', 'portland', 'richmond', 'saintpaul', 'sanfrancisco']
 
 def normalize(value, min_value, range_value):
     return (value - min_value) / range_value
 
-dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
-files = os.listdir(dir_path)
-filenum = len(files)
+for idx in range(len(city_list)):
+    city_name = city_list[idx]
 
-j = 0
+    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
+    files = os.listdir(dir_path)
+    filenum = len(files)
 
-for i in range(1, filenum+1):
+    j = 0
 
-    test_boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries',
-                                    f'{city_name}_boundaries{i}.geojson')
+    for i in range(1, filenum+1):
+        test_boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries',
+                                        f'{city_name}_boundaries{i}.geojson')
 
-    file_size_kb = os.path.getsize(test_boundary_filename) / 1024
-
-    if file_size_kb < 5:
         j +=1
         with open(test_boundary_filename, "r") as f:
             geojson_boundary = json.load(f)
@@ -49,9 +50,16 @@ for i in range(1, filenum+1):
         # 좌표 데이터 정규화
         normalized_coordinates = [[normalize(x, min_x, max_range), normalize(y, min_y, max_range)] for x, y in coordinates]
 
-        csv_boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'boundary_csv',
+        csv_folder = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundarycsv')
+
+        if not os.path.exists(csv_folder):
+            os.makedirs(csv_folder)
+
+        csv_boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundarycsv',
                                         f'{city_name}_boundaries{j}.csv')
 
         with open(csv_boundary_filename, "w", newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(normalized_coordinates[:-1])
+
+    print(f"{city_name} done")
