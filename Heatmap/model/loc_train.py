@@ -13,16 +13,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from data_refine import load_mask
+from tqdm import tqdm
+
+from torch.utils.tensorboard import SummaryWriter
+
+summary = SummaryWriter()
 
 
 # 데이터셋
 class BuildingDataset(Dataset):
-    def __init__(self, boundary_masks, inside_masks, building_masks, boundarybuilding_masks, inverse_masks):
+    def __init__(self, boundary_masks, inside_masks, centriod_masks):
         self.boundary_masks = boundary_masks
         self.inside_masks = inside_masks
-        self.building_masks = building_masks
-        self.boundarybuilding_masks = boundarybuilding_masks
-        self.inverse_masks = inverse_masks
+        self.centriod_masks = centriod_masks
 
     def __len__(self):
         return len(self.boundary_masks)
@@ -30,12 +33,11 @@ class BuildingDataset(Dataset):
     def __getitem__(self, idx):
         boundary = self.boundary_masks[idx].unsqueeze(0)
         inside = self.inside_masks[idx].unsqueeze(0)
-        building = self.building_masks[idx].unsqueeze(0)
-        boundarybuilding = self.boundarybuilding_masks[idx].unsqueeze(0)
-        inverse_masks = self.inverse_masks[idx].unsqueeze(0)
+        centriod = self.centriod_masks[idx].unsqueeze(0)
 
-        x = torch.cat([boundary, inside, building, boundarybuilding, inverse_masks], dim=0)
-        y = boundarybuilding
+
+        x = torch.cat([boundary, inside], dim=0)
+        y = centriod
 
         return x, y
 
@@ -93,6 +95,8 @@ class PolygonResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.use_fc = use_fc
+        if use_fc:
+            self.fc = nn.Linear(512*block.expansion, num_classes)
 
         # weight initializing - variant of "He initialization"
         for m in self.modules():  # Loop over all the modules (layers) in the current model
@@ -129,14 +133,14 @@ class PolygonResNet(nn.Module):
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
-        if stride != 1 or self.inplanes != planes * block.explansion:
+        if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.explansion, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.explansion),
+                nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(planes * block.expansion),
             )
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample))
-        self.inplanes = planes * block.explansion
+        self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))
 
@@ -225,21 +229,31 @@ def ensuredir(dirname):
             os.makedirs(dirname)
 
 
-boundarybuildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarybuildingmask')
-boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask')
-buildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'buildingmask')
-insidemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'insidemask')
-inversemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'inversemask')
+# boundarybuildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarybuildingmask')
+# boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask')
+# buildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'buildingmask')
+# insidemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'insidemask')
+# inversemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'inversemask')
+# centroidmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'centroidmask')
 
-boundarybuilding_masks = load_mask(boundarybuildingmask)
+#sample
+boundarybuildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarybuildingmask_sample')
+boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask_sample')
+buildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'buildingmask_sample')
+insidemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'insidemask_sample')
+inversemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'inversemask_sample')
+centroidmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'centroidmask_sample')
+
+# boundarybuilding_masks = load_mask(boundarybuildingmask)
 boundary_masks = load_mask(boundarymask)
-building_masks = load_mask(buildingmask)
+# building_masks = load_mask(buildingmask)
 inside_masks = load_mask(insidemask)
-inverse_masks = load_mask(inversemask)
+# inverse_masks = load_mask(inversemask)
+centriod_masks = load_mask(centroidmask)
 
-dataset_size = len(boundarybuilding_masks)
-train_size = int(dataset_size * 0.8)
-test_size = int(dataset_size * 0.2)
+dataset_size = len(boundary_masks)
+train_size = int(dataset_size * 0.80)
+test_size = int(dataset_size * 0.20)
 
 
 if __name__ == "__main__":
@@ -260,7 +274,7 @@ if __name__ == "__main__":
     ensuredir(save_dir)
 
     num_categories = 2  # building이 있을 수 있는 곳, 있을 수 없는 곳
-    num_input_channels = num_categories + 8  # WHY?
+    num_input_channels = num_categories + 15  # WHY?
     logfile = open(f"{save_dir}/log_location.txt", 'w')
 
 
@@ -271,27 +285,28 @@ if __name__ == "__main__":
 
 
     LOG('Building model...')
-    model = PolygonResNet(num_classes=num_categories + 1, num_input_channels=num_input_channels)  # WHY category+1?
+    model = Model(num_classes=num_categories+1 , num_input_channels=num_input_channels)  # WHY category+1?
 
-    weight = [args.centroid_weight for i in range(num_categories + 1)]
+    weight = [args.centroid_weight for i in range(num_categories+1)] #의문이 남음
     weight[0] = 1
     print(weight)
 
     weight = torch.from_numpy(np.asarray(weight)).float().cuda()
     cross_entropy = nn.CrossEntropyLoss(weight=weight)
     softmax = nn.Softmax()
-
+    print(f'CUDA available: {torch.cuda.is_available()}')
     LOG('Converting to CUDA')
     model.cuda()
     cross_entropy.cuda()
 
     LOG('Building dataset...')
     train_dataset = BuildingDataset(
-        boundary_masks=boundarybuilding_masks[:train_size],
+        boundary_masks=boundary_masks[:train_size],
         inside_masks=inside_masks[:train_size],
-        building_masks=building_masks[:train_size],
-        boundarybuilding_masks=boundarybuilding_masks[:train_size],
-        inverse_masks=inverse_masks[:train_size]
+        # building_masks=building_masks[:train_size],
+        # boundarybuilding_masks=boundarybuilding_masks[:train_size],
+        # inverse_masks=inverse_masks[:train_size]
+        centriod_masks=centriod_masks[:train_size]
     )
 
     LOG('Building data loader...')
@@ -322,13 +337,14 @@ if __name__ == "__main__":
     num_seen = 0
 
     model.train()
-    LOG(f'===================================== Epoch {current_epoch}=====================================')
 
 
-    def train():
+    MAX_EPOCHS=10000
+    def train(epoch):
+        print(f'Training Epoch: {epoch}')
         global num_seen, current_epoch
         for batch_idx, (data, target) \
-                in enumerate(train_loader):
+                in enumerate(tqdm(train_loader)):
             data, target = data.cuda(), target.cuda()
 
             optimizer.zero_grad()
@@ -341,16 +357,17 @@ if __name__ == "__main__":
 
             num_seen += args.batch_size
             if num_seen % 800 == 0:
-                LOG(f'Examples{num_seen}/10000')
-            if num_seen % 10000 == 0:
-                LOG('Validating')
+                LOG(f'Examples {num_seen}/{len(train_loader) * args.batch_size}')
+            if num_seen >= len(train_loader) * args.batch_size:
                 num_seen = 0
-                current_epoch += 1
-                LOG(f'===================================== Epoch {current_epoch}=====================================')
-                if current_epoch % 10 == 0:
-                    torch.save(model.state_dict(), f"{save_dir}/location_{current_epoch}.pt")
+                if epoch % 10 == 0:
+                    summary.add_scalar('loss ', loss, epoch)
+
+
+                    torch.save(model.state_dict(), f"{save_dir}/location_{epoch}.pt")
                     torch.save(optimizer.state_dict(), f"{save_dir}/location_optim_backup.pt")
 
 
-    while True:
-        train()
+    for epoch in range(starting_epoch, MAX_EPOCHS):
+        LOG(f'===================================== Epoch {epoch} =====================================')
+        train(epoch)
