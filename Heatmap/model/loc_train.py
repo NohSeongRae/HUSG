@@ -237,6 +237,10 @@ building_masks = load_mask(buildingmask)
 inside_masks = load_mask(insidemask)
 inverse_masks = load_mask(inversemask)
 
+dataset_size = len(boundarybuilding_masks)
+train_size = int(dataset_size * 0.8)
+test_size = int(dataset_size * 0.2)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Location Training with Auxillary Tasks')
@@ -283,11 +287,11 @@ if __name__ == "__main__":
 
     LOG('Building dataset...')
     train_dataset = BuildingDataset(
-        boundary_masks=boundarybuilding_masks,
-        inside_masks=inside_masks,
-        building_masks=building_masks,
-        boundarybuilding_masks=boundarybuilding_masks,
-        inverse_masks=inverse_masks
+        boundary_masks=boundarybuilding_masks[:train_size],
+        inside_masks=inside_masks[:train_size],
+        building_masks=building_masks[:train_size],
+        boundarybuilding_masks=boundarybuilding_masks[:train_size],
+        inverse_masks=inverse_masks[:train_size]
     )
 
     LOG('Building data loader...')
