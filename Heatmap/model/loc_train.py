@@ -62,7 +62,7 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         residual = x
 
-        out = self.con1(x)
+        out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
 
@@ -70,7 +70,7 @@ class BasicBlock(nn.Module):
         out = self.bn2(out)
 
         if self.downsample is not None:
-            residual = self.downsample
+            residual = self.downsample(x)
 
         out += residual
         out = self.relu(out)
@@ -274,7 +274,8 @@ if __name__ == "__main__":
     ensuredir(save_dir)
 
     num_categories = 2  # building이 있을 수 있는 곳, 있을 수 없는 곳
-    num_input_channels = num_categories + 15  # WHY?
+    # num_input_channels = num_categories + 15  # WHY?
+    num_input_channels = num_categories # WHY?
     logfile = open(f"{save_dir}/log_location.txt", 'w')
 
 
