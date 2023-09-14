@@ -14,10 +14,12 @@ import matplotlib.pyplot as plt
 import math
 from data_refine import load_mask
 from tqdm import tqdm
+from datetime import datetime
 
 from torch.utils.tensorboard import SummaryWriter
 
-summary = SummaryWriter()
+current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+writer = SummaryWriter(f'runs/loc_experiment/{current_time}')
 
 
 # 데이터셋
@@ -348,6 +350,10 @@ if __name__ == "__main__":
                 in enumerate(tqdm(train_loader)):
             data, target = data.cuda(), target.cuda()
 
+            target = target.squeeze(1)
+
+            target = target.long()
+
             optimizer.zero_grad()
             output = model(data)
             loss = cross_entropy(output, target)
@@ -357,12 +363,16 @@ if __name__ == "__main__":
             optimizer.step()
 
             num_seen += args.batch_size
+
+            writer.add_scalar('loss ', loss.item(), epoch)
+
             if num_seen % 800 == 0:
                 LOG(f'Examples {num_seen}/{len(train_loader) * args.batch_size}')
             if num_seen >= len(train_loader) * args.batch_size:
                 num_seen = 0
+
                 if epoch % 10 == 0:
-                    summary.add_scalar('loss ', loss, epoch)
+                    # summary.add_scalar('loss ', loss, epoch)
 
 
                     torch.save(model.state_dict(), f"{save_dir}/location_{epoch}.pt")

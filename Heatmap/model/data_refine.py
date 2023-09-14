@@ -24,6 +24,7 @@ def load_mask(dir_name):
         mask_image = Image.open(image_path)
         mask_numpy = np.array(mask_image, dtype=np.float32) / 255.0
         mask_tensor = torch.tensor(mask_numpy)
+        # mask_tensor = mask_tensor.long()
         # print(mask_tensor.size())
         # print(mask_tensor)
         mask_list.append(mask_tensor)
