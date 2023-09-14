@@ -13,5 +13,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-def preprocessing_data(cityname, data):
-    #open
+def load_mask(dir_name):
+    mask_list = []
+
+    file_list = [f for f in os.listdir(dir_name) if os.path.isfile(os.path.join(dir_name, f))]
+
+    for i in range(len(file_list)-1):
+        image_path_png = file_list[i]
+        image_path = os.path.join(dir_name, image_path_png)
+        mask_image = Image.open(image_path)
+        mask_numpy = np.array(mask_image, dtype=np.float32) / 255.0
+        mask_tensor = torch.tensor(mask_numpy)
+        mask_list.append(mask_tensor)
+
+    return mask_list

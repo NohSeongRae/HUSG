@@ -12,19 +12,17 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from data_refine import load_mask
 
 
-city_name = "philadelphia"
-
-city_boundary_mask=0
-city_inside_mask=0
-city_polygon_mask=0
 # 데이터셋
-class PolygonDataset(Dataset):
-    def __init__(self, boundary_masks, inside_masks, polygon_masks):
+class BuildingDataset(Dataset):
+    def __init__(self, boundary_masks, inside_masks, building_masks, boundarybuilding_masks, inverse_masks):
         self.boundary_masks = boundary_masks
         self.inside_masks = inside_masks
-        self.polygon_masks = polygon_masks
+        self.building_masks = building_masks
+        self.boundarybuilding_masks = boundarybuilding_masks
+        self.inverse_masks = inverse_masks
 
     def __len__(self):
         return len(self.boundary_masks)
@@ -32,10 +30,12 @@ class PolygonDataset(Dataset):
     def __getitem__(self, idx):
         boundary = self.boundary_masks[idx].unsqueeze(0)
         inside = self.inside_masks[idx].unsqueeze(0)
-        polygon = self.polygon_masks[idx].unsqueeze(0)
+        building = self.building_masks[idx].unsqueeze(0)
+        boundarybuilding = self.boundarybuilding_masks[idx].unsqueeze(0)
+        inverse_masks = self.inverse_masks[idx].unsqueeze(0)
 
-        x = torch.cat([boundary, inside, polygon], dim=0)
-        y = polygon
+        x = torch.cat([boundary, inside, building, boundarybuilding, inverse_masks], dim=0)
+        y = boundarybuilding
 
         return x, y
 
@@ -224,6 +224,20 @@ def ensuredir(dirname):
     if not os.path.exists(dirname):
             os.makedirs(dirname)
 
+
+boundarybuildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarybuildingmask')
+boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask')
+buildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'buildingmask')
+insidemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'insidemask')
+inversemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'inversemask')
+
+boundarybuilding_masks = load_mask(boundarybuildingmask)
+boundary_masks = load_mask(boundarymask)
+building_masks = load_mask(buildingmask)
+inside_masks = load_mask(insidemask)
+inverse_masks = load_mask(inversemask)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Location Training with Auxillary Tasks')
     parser.add_argument('--batch-size', type=int, default=16, metavar='S')
@@ -268,10 +282,12 @@ if __name__ == "__main__":
     cross_entropy.cuda()
 
     LOG('Building dataset...')
-    train_dataset = PolygonDataset(
-        boundary_masks=city_boundary_mask,
-        inside_masks=city_inside_mask,
-        polygon_masks=city_polygon_mask
+    train_dataset = BuildingDataset(
+        boundary_masks=boundarybuilding_masks,
+        inside_masks=inside_masks,
+        building_masks=building_masks,
+        boundarybuilding_masks=boundarybuilding_masks,
+        inverse_masks=inverse_masks
     )
 
     LOG('Building data loader...')
