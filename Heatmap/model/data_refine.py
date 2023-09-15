@@ -31,7 +31,3 @@ def load_mask(dir_name):
 
     return mask_list
 
-centroidmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'centroidmask_sample')
-
-# inverse_masks = load_mask(inversemask)
-centriod_masks = load_mask(centroidmask)
