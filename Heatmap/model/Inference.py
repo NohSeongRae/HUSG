@@ -94,13 +94,13 @@ with torch.no_grad():
         target=target.squeeze()
         target=target.long()
         outputs = model(inputs)
-        loss = cross_entropy(outputs, target)
-        total_loss+=loss.item()
+        # loss = cross_entropy(outputs, target)
+        # total_loss+=loss.item()
 
         counter += 1
         output_image = outputs.squeeze(0)
         if counter<21:
             img_name = f"heatmap_vis_{counter}.png"
             visualize_output(output_image, img_name)
-    avg_loss=total_loss/len(test_loader)
-    print(f"test loss: {avg_loss}")
+    # avg_loss=total_loss/len(test_loader)
+    # print(f"test loss: {avg_loss}")
