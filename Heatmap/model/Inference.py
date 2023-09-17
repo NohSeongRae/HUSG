@@ -23,18 +23,25 @@ def ensuredir(dirname):
         os.makedirs(dirname)
 
 
-def tensor_to_image(tensor):
+def tensor_to_image(tensor, temperature_pixel=0.8):
     probs = torch.nn.functional.softmax(tensor, dim=2)
-    _, predictions = probs.max(2)
-    img = np.zeros((tensor.shape[0], tensor.shape[1], 3), dtype=np.uint8)
-    img[predictions == 0] = [0, 0, 0]
-    img[predictions == 1] = [255, 255, 255]
-    return img
+    upsampled_tensor = F.interpolate(probs, size=(256, 256), mode='bilinear', align_corners=True)
+    location_map = upsampled_tensor.cpu()
+    location_map = location_map**(1/temperature_pixel)
+    location_map = location_map / location_map.sum()
+    # _, predictions = probs.max(2)
+    # img = np.zeros((tensor.shape[0], tensor.shape[1], 3), dtype=np.uint8)
+    # img[predictions == 0] = [0, 0, 0]
+    # img[predictions == 1] = [255, 255, 255]
+    return location_map
 
 
 def visualize_output(tensor, filename):
-    img = tensor_to_image(tensor.detach().cpu().numpy())
-    plt.imshow(img)
+    location_map = tensor_to_image(tensor.detach().cpu().numpy())
+    plt.imshow(location_map.numpy(), cmap='viridis')
+    plt.title('Location Map Visualization')
+    # img = tensor_to_image(tensor.detach().cpu().numpy())
+    # plt.imshow(img)
     plt.axis('off')
     plt.savefig(filename, bbox_inches='tight', pad_inches=0)
     plt.close()
@@ -72,5 +79,5 @@ for inputs, _ in tqdm(test_loader, desc='Processing'):
         outputs = model(inputs)
     counter += 1
     output_image = outputs.squeeze(0)
-    img_name = f"heatmap_vis_{counter}"
+    img_name = f"heatmap_vis_{counter}.png"
     visualize_output(output_image, img_name)
