@@ -354,8 +354,8 @@ if __name__ == "__main__":
     def train(epoch):
         print(f'Training Epoch: {epoch}')
         global num_seen, current_epoch
-        for batch_idx, (data, target) \
-                in enumerate(tqdm(train_loader)):
+        train_loader_progress=tqdm(train_loader, desc=f"Epoch {epoch}")
+        for batch_idx, (data, target) in enumerate(train_loader_progress):
             data, target = data.cuda(), target.cuda()
 
             target = target.squeeze(1)
@@ -365,7 +365,7 @@ if __name__ == "__main__":
             optimizer.zero_grad()
             output = model(data)
             loss = cross_entropy(output, target)
-            print(loss)
+            train_loader_progress.set_postfix(loss=loss.item())
 
             loss.backward()
             optimizer.step()
@@ -381,8 +381,6 @@ if __name__ == "__main__":
 
                 if epoch % 10 == 0:
                     # summary.add_scalar('loss ', loss, epoch)
-
-
                     torch.save(model.state_dict(), f"{save_dir}/location_{epoch}.pt")
                     torch.save(optimizer.state_dict(), f"{save_dir}/location_optim_backup.pt")
 
