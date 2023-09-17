@@ -24,24 +24,24 @@ def ensuredir(dirname):
 
 
 def tensor_to_image(tensor, temperature_pixel=0.8):
-    probs = torch.nn.functional.softmax(tensor, dim=2)
-    upsampled_tensor = F.interpolate(probs, size=(256, 256), mode='bilinear', align_corners=True)
+    if not isinstance(tensor, torch.Tensor):
+        tensor = torch.tensor(tensor)
+
+    probs = F.softmax(tensor, dim=2)
+    upsampled_tensor = F.interpolate(probs.unsqueeze(0), size=(256, 256), mode='bilinear', align_corners=True).squeeze(
+        0)
+
     location_map = upsampled_tensor.cpu()
-    location_map = location_map**(1/temperature_pixel)
+    location_map = location_map ** (1 / temperature_pixel)
     location_map = location_map / location_map.sum()
-    # _, predictions = probs.max(2)
-    # img = np.zeros((tensor.shape[0], tensor.shape[1], 3), dtype=np.uint8)
-    # img[predictions == 0] = [0, 0, 0]
-    # img[predictions == 1] = [255, 255, 255]
+
     return location_map
 
 
 def visualize_output(tensor, filename):
-    location_map = tensor_to_image(tensor.detach().cpu().numpy())
+    location_map = tensor_to_image(tensor)
     plt.imshow(location_map.numpy(), cmap='viridis')
     plt.title('Location Map Visualization')
-    # img = tensor_to_image(tensor.detach().cpu().numpy())
-    # plt.imshow(img)
     plt.axis('off')
     plt.savefig(filename, bbox_inches='tight', pad_inches=0)
     plt.close()
