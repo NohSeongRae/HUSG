@@ -63,7 +63,7 @@ args = parser.parse_args()
 save_dir = args.save_dir
 ensuredir(save_dir)
 
-model = Model(num_classes=3, num_input_channels=3)
+model = Model(num_classes=3, num_input_channels=2)
 
 weight = [args.centroid_weight for i in range(3)]  # 의문이 남음
 weight[0] = 1
