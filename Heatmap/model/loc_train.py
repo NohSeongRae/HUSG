@@ -17,6 +17,7 @@ from tqdm import tqdm
 from datetime import datetime
 
 from torch.utils.tensorboard import SummaryWriter
+import paths
 
 current_time = datetime.now().strftime('%b%d_%H-%M-%S')
 writer = SummaryWriter(f'runs/loc_experiment/{current_time}')
@@ -231,10 +232,12 @@ def ensuredir(dirname):
             os.makedirs(dirname)
 
 
-boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask')
-insidemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'insidemask')
-centroidmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'centroidmask')
-
+# boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask')
+# insidemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'insidemask')
+# centroidmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'centroidmask')
+boundarymask=paths.boundarymask
+insidemask=paths.insidemask
+centroidmask=paths.centroidmask
 #sample
 # boundarybuildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarybuildingmask_sample')
 # boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask_sample')
