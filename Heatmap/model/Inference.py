@@ -65,19 +65,42 @@ ensuredir(save_dir)
 
 model = Model(num_classes=3, num_input_channels=3)
 
+weight = [args.centroid_weight for i in range(3)]  # 의문이 남음
+weight[0] = 1
+print(weight)
+
+weight = torch.from_numpy(np.asarray(weight)).float().cuda()
+cross_entropy = nn.CrossEntropyLoss(weight=weight)
+softmax = nn.Softmax()
+print(f'CUDA available: {torch.cuda.is_available()}')
+
+model.cuda()
+cross_entropy.cuda()
+
+
+
+
+optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
 checkpoint_path = paths.pretrained_weights
 model.load_state_dict(torch.load(checkpoint_path))
 model.eval()
-
+total_loss=0.0
 counter = 0
 test_loader = get_datasets_and_loaders(args, mode='inference')
 
-for inputs, _ in tqdm(test_loader, desc='Processing'):
-    inputs = inputs.to('cuda' if torch.cuda.is_available() else 'cpu')
-
-    with torch.no_grad():
+with torch.no_grad():
+    for inputs, target in tqdm(test_loader, desc='Processing'):
+        inputs, target = inputs.cuda(), target.cuda()
+        target=target.squeeze()
+        target=target.long()
         outputs = model(inputs)
-    counter += 1
-    output_image = outputs.squeeze(0)
-    img_name = f"heatmap_vis_{counter}.png"
-    visualize_output(output_image, img_name)
+        loss = cross_entropy(outputs, target)
+        total_loss+=loss.item()
+
+        counter += 1
+        output_image = outputs.squeeze(0)
+        if counter<21:
+            img_name = f"heatmap_vis_{counter}.png"
+            visualize_output(output_image, img_name)
+    avg_loss=total_loss/len(test_loader)
+    print(f"test loss: {avg_loss}")

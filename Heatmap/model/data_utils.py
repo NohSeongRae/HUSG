@@ -99,3 +99,4 @@ def get_datasets_and_loaders(args, mode):
             num_workers=args.num_workers,
             shuffle=False
         )
+        return test_loader
