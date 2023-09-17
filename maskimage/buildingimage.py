@@ -12,8 +12,8 @@ sys.path.append(husg_directory_path)
 from etc import variables as variables
 from etc import filepath as filepath
 from cal_area_ratio import getarearatio
+from etc.cityname import city_name
 
-# 자를 영역 추출
 def get_square_bounds(geojson_path):
     # building data 전체를 geodataframe형태로 저장
     gdf = gpd.read_file(geojson_path)
@@ -46,7 +46,7 @@ def get_square_bounds(geojson_path):
     return left, upper, right, lower
 
 
-def image(city_name):
+def building_image(city_name):
     for filename in os.listdir(filepath.image):
         file_path = os.path.join(filepath.image, filename)
         if os.path.isfile(file_path):
@@ -110,21 +110,20 @@ def image(city_name):
                 with open(boundary_filename, "r", encoding='UTF-8') as file:
                     boundary_data = json.load(file)
                 boundary_gdf = gpd.GeoDataFrame.from_features(boundary_data, crs="EPSG:4326")
-                boundary_gdf.plot(ax=ax, color='white', edgecolor='black', linewidth=0.3)
+                # boundary_gdf.plot(ax=ax, color='white', edgecolor='black', linewidth=0.3)
 
                 gdf_cut = gdf_cut.dropna(subset=['color'])
-                # Check if GeoDataFrame is empty after dropna
                 if gdf_cut.empty:
                     print(f"{building_filename} resulted in an empty GeoDataFrame after dropna, skipping...")
                     continue
 
                 gdf_cut.plot(color=gdf_cut['color'], alpha=0.5, ax=ax, edgecolor='white', linewidth=0.5)
-
                 ax.set_axis_off()
 
                 image_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
-                                              f'{city_name}_dataset', 'Image',
-                                              f'{city_name}_buildings_image{filesaveindex}.png')
+                                              f'{city_name}_dataset', 'BuildingImage',
+                                              f'{city_name}_boundaries_image{i}.png')
+
 
                 if index not in under10percent:
                     name_list.append(i)
@@ -133,13 +132,7 @@ def image(city_name):
 
                     plt.close('all')
 
-    # print(name_list)
-
-    import csv
-
-    with open(filepath.removed_filepath, 'w', newline='') as file:
-        writer = csv.writer(file)
-        for number in name_list:
-            writer.writerow([number])
-
     return name_list
+
+if __name__ == "__main__":
+    building_image(city_name)

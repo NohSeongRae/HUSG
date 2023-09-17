@@ -21,6 +21,8 @@ lengtharea_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_T
 lengthnum_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Statistics', f'{city_name}_lengthnum')
 ratio_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Statistics', f'{city_name}_ratio.png')
 density_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Statistics', f'{city_name}_density.png')
+boundarysize_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Statistics', f'{city_name}_boundarysize.png')
+buildingnum_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Statistics', f'{city_name}_buildingnum.png')
 
 category_semantic = ["commercial", "education", "emergency", "financial", "government", "healthcare", "public", "sport", "building"]
 
@@ -39,8 +41,17 @@ boundaries = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{
 buildings = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildings')
 nld = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'NLD')
 image = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Image')
+
+boundaryimage = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'BoundaryImage')
+buildingimage = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'BuildingImage')
+
 stat = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Statistics')
 blocksemantic = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Statistics', 'blocksemantics')
+
+filtereddata = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'filtered_data')
+filteredbuilding = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'filtered_data', 'Buildings')
+filteredboundary = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'filtered_data', 'Boundaries')
+
 
 output_directories = [
     dataset,
@@ -50,8 +61,8 @@ output_directories = [
     image
 ]
 
-
-
-
-
-
+city_names = ["atlanta", "barcelona", "budapest", "dallas", "dublin", "firenze", "houston", "lasvegas",
+                  "littlerock", "manchester", "milan", "minneapolis",
+                  "nottingham", "paris", "philadelphia", "phoenix", "portland", "richmond", "saintpaul", "sanfrancisco",
+                  "singapore", "toronto", "vienna",
+                  "washington", "zurich"]

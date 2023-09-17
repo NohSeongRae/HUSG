@@ -11,6 +11,7 @@ sys.path.append(husg_directory_path)
 from etc import filepath as filepath
 import matplotlib.pyplot as plt
 from shapely.geometry import shape
+from matplotlib.ticker import ScalarFormatter
 
 
 def calculate_area(circumference):
@@ -18,88 +19,110 @@ def calculate_area(circumference):
     area = math.pi * radius ** 2
     return area
 
-def lengtharea(city_name):
-    filelist = []
+def lengtharea(city_name_list, rangesemantic):
+    city_boundarylength_list = []
+    city_boundaryarea_list = []
+    city_circlearea_list = []
 
-    import csv
+    for cityidx in range(len(city_name_list)):
+        filelist = []
 
-    with open(filepath.removed_filepath, 'r') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            number = int(row[0])
-            filelist.append(number)
+        import csv
 
-    city_name = city_name.capitalize()
-
-    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
-    files = os.listdir(dir_path)
-    filenum = len(files)
-
-    boundary_length_list = []
-    boundary_area_list = []
-    circle_area_list = []
-    boundary_circle_list = []
-
-    for i in range(1, filenum + 1):
-        if i in filelist:
-            boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                             'Boundaries', f'{city_name}_boundaries{i}.geojson')
-
-            if os.path.exists(boundary_filename):
-                with open(boundary_filename, "r", encoding='UTF-8') as file:
-                    boundary_data = json.load(file)
-
-            for feature in boundary_data['features']:
-                boundary_geometry = shape(feature['geometry'])
-
-            boundary_length = boundary_geometry.length
-            circle_area = calculate_area(boundary_length)
-            boundary_area = boundary_geometry.area
-
-            boundary_circle_ratio = (boundary_area / circle_area) * 100
-
-            boundary_length_list.append(boundary_length)
-            boundary_area_list.append(boundary_area)
-            circle_area_list.append(circle_area)
-
-            if boundary_circle_ratio > 90:
-                boundary_circle_list.append(90)
-            if boundary_circle_ratio > 80:
-                boundary_circle_list.append(80)
-            if boundary_circle_ratio > 70:
-                boundary_circle_list.append(70)
-            if boundary_circle_ratio > 60:
-                boundary_circle_list.append(60)
-            if boundary_circle_ratio > 50:
-                boundary_circle_list.append(50)
-            if boundary_circle_ratio > 40:
-                boundary_circle_list.append(40)
-            if boundary_circle_ratio > 30:
-                boundary_circle_list.append(30)
-            if boundary_circle_ratio > 20:
-                boundary_circle_list.append(20)
-            if boundary_circle_ratio > 10:
-                boundary_circle_list.append(10)
-            if boundary_circle_ratio > 0:
-                boundary_circle_list.append(0)
+        with open(filepath.removed_filepath, 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                number = int(row[0])
+                filelist.append(number)
 
 
-    sorted_values = sorted(zip(boundary_length_list, boundary_area_list, circle_area_list))
-    boundary_length_list, boundary_area_list, circle_area_list = zip(*sorted_values)
+        dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset', 'Boundaries')
+        files = os.listdir(dir_path)
+        filenum = len(files)
 
-    plt.plot(boundary_length_list, boundary_area_list, label='boundary area', color='skyblue')
-    plt.plot(boundary_length_list, circle_area_list, label='circle area', color='pink')
+        boundary_length_list = []
+        boundary_area_list = []
+        circle_area_list = []
+        boundary_circle_list = []
 
-    plt.xlabel('length')
-    plt.ylabel('area')
+        for i in range(1, filenum + 1):
+            if i in filelist:
+                boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
+                                                 'Boundaries', f'{city_name_list[cityidx]}_boundaries{i}.geojson')
 
-    plt.xlim(0.0, 0.04)
-    plt.ylim(0.0, 0.0001)
+                if os.path.exists(boundary_filename):
+                    with open(boundary_filename, "r", encoding='UTF-8') as file:
+                        boundary_data = json.load(file)
 
-    plt.legend()
+                for feature in boundary_data['features']:
+                    boundary_geometry = shape(feature['geometry'])
 
-    plt.savefig(filepath.lengtharea_filepath)
+                boundary_length = boundary_geometry.length
+                circle_area = calculate_area(boundary_length)
+                boundary_area = boundary_geometry.area
 
-    plt.clf()
+                boundary_length_list.append(boundary_length)
+                boundary_area_list.append(boundary_area)
+                circle_area_list.append(circle_area)
+
+        sorted_values = sorted(zip(boundary_length_list, boundary_area_list, circle_area_list))
+        boundary_length_list, boundary_area_list, circle_area_list = zip(*sorted_values)
+
+        city_boundarylength_list.append(boundary_length_list)
+        city_boundaryarea_list.append(boundary_area_list)
+        city_circlearea_list.append(circle_area_list)
+
+    subplot_height = 8 / 5
+    subplot_width = 16 / 3
+
+    if rangesemantic == "_0_15":
+        rows = 3
+        cols = 5
+
+    else:
+        rows = 2
+        cols = 5
+
+    figsize_width = subplot_width * rows
+    figsize_height = subplot_height * cols
+
+    # figsize_width = 20
+    # figsize_height = 8
+
+    fig, axs = plt.subplots(rows, cols, constrained_layout=True, sharex=True, sharey=True,
+                            figsize=(figsize_width, figsize_height))
+
+    axs = axs.ravel()
+
+    # print(city_boundarylength_list)
+    # print(city_boundaryarea_list)
+    print(circle_area_list)
+
+    for idx, axs in enumerate(axs):
+        axs.plot(city_boundarylength_list[idx], city_boundaryarea_list[idx], color='skyblue')
+        axs.plot(city_boundarylength_list[idx], city_circlearea_list[idx], color='pink')
+        axs.set_title(city_name_list[idx])
+        axs.set_xlim([0.0, 0.04])
+        axs.set_ylim([0.0, 1e-4])
+
+        axs.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+
+    citystat_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'citystatistics', 'pngfiles',
+                                 f'lengtharearatio{rangesemantic}.png')
+
+
+    plt.rcParams['font.size'] = 6
+    plt.tight_layout()
+
+    plt.savefig(citystat_path)
+
+
+if __name__ == "__main__":
+    city_name_list = ["atlanta", "barcelona", "budapest", "dallas", "dublin", "firenze", "houston", "lasvegas", "littlerock", "manchester", "milan", "minneapolis",
+                      "nottingham", "paris", "philadelphia", "phoenix", "portland", "richmond", "saintpaul", "sanfrancisco", "singapore", "toronto", "vienna",
+                      "washington", "zurich"]
+
+
+    lengtharea(city_name_list[:15], rangesemantic="_0_15")
 
 

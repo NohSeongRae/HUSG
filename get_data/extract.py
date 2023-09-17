@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from tqdm import tqdm
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -23,7 +24,7 @@ def extract(city_name):
     point_features = {"type": "FeatureCollection", "features": []}
     polygon_features = {"type": "FeatureCollection", "features": []}
 
-    for feature in data_geojson["features"]:
+    for feature in tqdm(data_geojson["features"]):
         geom_type = feature["geometry"]["type"]
         # geometry type이 point인 경우 amenity 정보가 있는 경우만 저장
         if geom_type == "Point":

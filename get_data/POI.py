@@ -4,6 +4,7 @@ import json
 from concurrent import futures
 import os
 import sys
+from tqdm import tqdm
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     # point의 index와 polygon index를 mapping 하기위한 dictionary
     index_mapping = {}
 
-    for i, row in joined.iterrows():
+    for i, row in tqdm(joined.iterrows()):
         # 만약 point가 어떠한 polygon에 속한다면 (polygon의 index가 None이 아니라면)
         if not pd.isna(row['index_right']):
             # point index - polygon index mapping

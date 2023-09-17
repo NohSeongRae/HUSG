@@ -7,6 +7,7 @@ import geopandas as gpd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import sys
+from tqdm import tqdm
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -141,7 +142,7 @@ def get_boundary(city_name, location):
     # len(result_polygons) == num_threads
     # 병렬로 처리되어 잘린 polygon들의 합집합을 구함
     final_polygon = result_polygons[0]
-    for i in range(1, len(result_polygons)):
+    for i in tqdm(range(1, len(result_polygons))):
         final_polygon = final_polygon.intersection(result_polygons[i])
 
     # 여러개의 linestring에 대해 잘린 polygon은 자동으로 data type이 multipolygon으로 할당됨

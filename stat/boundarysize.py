@@ -3,35 +3,43 @@ import os
 import re
 import sys
 import math
-
+import csv
+from tqdm import tqdm
 import numpy as np
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
 sys.path.append(husg_directory_path)
 
-from etc import filepath as filepath
+# from etc import filepath as filepath
 import matplotlib.pyplot as plt
 from shapely.geometry import shape
+from etc.cityname import city_name
+
 
 def calculate_area(circumference):
     radius = circumference / (2 * math.pi)
     area = math.pi * radius ** 2
     return area
 
-def ratio(city_name_list, rangesemantic):
-    city_ratio_list = []
+
+def boundarysize(city_name_list):
+    city_boundary_area_list = []
+    filtered_boundary_list = []
 
     for cityidx in range(len(city_name_list)):
         filelist = []
 
-        import csv
+        removed_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
+                                        f'{city_name_list[cityidx]}_removed_filenum.csv')
 
-        with open(filepath.removed_filepath, 'r') as file:
+        with open(removed_filepath, 'r') as file:
             reader = csv.reader(file)
             for row in reader:
                 number = int(row[0])
                 filelist.append(number)
+
+        # city_name = city_name.capitalize()
 
         dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset', 'Boundaries')
         files = os.listdir(dir_path)
@@ -42,50 +50,40 @@ def ratio(city_name_list, rangesemantic):
         circle_area_list = []
         boundary_circle_list = []
 
-        for i in range(1, filenum + 1):
+
+        for i in tqdm(range(1, filenum + 1)):
             if i in filelist:
                 boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
                                                  'Boundaries', f'{city_name_list[cityidx]}_boundaries{i}.geojson')
 
-                if os.path.exists(boundary_filename):
+                building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
+                                                 f'{city_name_list[cityidx]}_dataset',
+                                                 'Combined_Buildings',
+                                                 f'{city_name_list[cityidx]}_buildings{i}.geojson')
+
+                if os.path.exists(building_filename):
                     with open(boundary_filename, "r", encoding='UTF-8') as file:
                         boundary_data = json.load(file)
 
                 for feature in boundary_data['features']:
                     boundary_geometry = shape(feature['geometry'])
 
-                boundary_length = boundary_geometry.length
-                circle_area = calculate_area(boundary_length)
                 boundary_area = boundary_geometry.area
 
-                boundary_circle_ratio = (boundary_area / circle_area) * 100
+                # print(boundary_area)
 
-                boundary_length_list.append(boundary_length)
-                boundary_area_list.append(boundary_area)
-                circle_area_list.append(circle_area)
+                if boundary_area >= (0.2 * 1e-6) and boundary_area <= (1.8 * 1e-6):
+                    filtered_boundary_list.append(i)
 
-                if boundary_circle_ratio > 90:
-                    boundary_circle_list.append(90)
-                if boundary_circle_ratio > 80:
-                    boundary_circle_list.append(80)
-                if boundary_circle_ratio > 70:
-                    boundary_circle_list.append(70)
-                if boundary_circle_ratio > 60:
-                    boundary_circle_list.append(60)
-                if boundary_circle_ratio > 50:
-                    boundary_circle_list.append(50)
-                if boundary_circle_ratio > 40:
-                    boundary_circle_list.append(40)
-                if boundary_circle_ratio > 30:
-                    boundary_circle_list.append(30)
-                if boundary_circle_ratio > 20:
-                    boundary_circle_list.append(20)
-                if boundary_circle_ratio > 10:
-                    boundary_circle_list.append(10)
-                if boundary_circle_ratio > 0:
-                    boundary_circle_list.append(0)
+                """boundary size"""
 
-        city_ratio_list.append(boundary_circle_list)
+                # boundary_area_list.append(boundary_area)
+
+        # city_boundary_area_list.append(boundary_area_list)
+
+    """histogram (5x3)"""
+
+    """
 
     subplot_height = 8 / 5
     subplot_width = 16 / 3
@@ -110,22 +108,36 @@ def ratio(city_name_list, rangesemantic):
     axs = axs.ravel()
 
     for idx, axs in enumerate(axs):
-        axs.hist(city_ratio_list[idx], rwidth=0.8, color='skyblue')
+        axs.hist(city_boundary_area_list[idx], bins=100, range=(0.0, 0.000006), rwidth=0.8, color='skyblue')
         axs.set_title(city_name_list[idx])
         # axs.set_axis('off')
 
+
     citystat_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'citystatistics', 'pngfiles',
-                                 f'ratio{rangesemantic}.png')
+                                 f'boundarysize{rangesemantic}.png')
 
     plt.savefig(citystat_path)
+    
+    """
 
+    """
+
+    with open('filtered_boundary.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(filtered_boundary_list)
+        
+    """
+
+    return filtered_boundary_list
 
 
 if __name__ == "__main__":
-    city_name_list = ["atlanta", "barcelona", "budapest", "dallas", "dublin", "firenze", "houston", "lasvegas", "littlerock", "manchester", "milan", "minneapolis",
-                      "nottingham", "paris", "philadelphia", "phoenix", "portland", "richmond", "saintpaul", "sanfrancisco", "singapore", "toronto", "vienna",
-                      "washington", "zurich"]
+    # csv complete
 
-    ratio(city_name_list[15:], rangesemantic="_15_25")
+    city_name_list = filepath.city_names
 
+    print(city_name_list)
 
+    rangesemantic = "_15_25"
+
+    boundarysize(city_name_list[15:], rangesemantic)

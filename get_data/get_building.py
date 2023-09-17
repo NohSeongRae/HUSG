@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import geopandas as gpd
+from tqdm import tqdm
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -52,6 +53,6 @@ def process_boundary(i):
 
 if __name__ == "__main__":
     with ProcessPoolExecutor(max_workers=5) as executor:
-        for inside_boundary_indices in executor.map(process_boundary, range(1, filenum+1)):
+        for inside_boundary_indices in tqdm(executor.map(process_boundary, range(1, filenum+1))):
             polygons_gdf = polygons_gdf[~polygons_gdf.index.isin(inside_boundary_indices)]
     print("Step 5: Building extraction completed")

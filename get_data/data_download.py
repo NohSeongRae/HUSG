@@ -5,6 +5,7 @@ import geopandas as gpd
 from shapely.geometry import LineString
 import os
 import sys
+from tqdm import tqdm
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -38,7 +39,7 @@ def data_download(city_name, location):
 
     data = {"type": "FeatureCollection", "features": []}
     # 주어진 location에 대해 osmnx에서 태그별 데이터 다운로드 후 json으로 변환
-    for tag in tags:
+    for tag in tqdm(tags):
         gdf = ox.geometries_from_place(location, {tag: tags[tag]})
         geojson_data = json.loads(gdf.to_json())
 
