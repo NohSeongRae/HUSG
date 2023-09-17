@@ -252,16 +252,16 @@ centriod_masks = load_mask(centroidmask)
 
 dataset_size = len(boundary_masks)
 train_size = int(dataset_size * 0.80)
-test_size = int(dataset_size * 0.20)
+val_size = dataset_size - train_size
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Location Training with Auxillary Tasks')
     parser.add_argument('--batch-size', type=int, default=16, metavar='S')
     # parser.add_argument('--data-folder', type=str, default="bedroom_6x6", metavar='S')
-    parser.add_argument('--num-workers', type=int, default=6, metavar='N')
+    parser.add_argument('--num-workers', type=int, default=12, metavar='N')
     parser.add_argument('--last-epoch', type=int, default=-1, metavar='N')
-    parser.add_argument('--train-size', type=int, default=6000, metavar='N')
+    # parser.add_argument('--train-size', type=int, default=6000, metavar='N')
     parser.add_argument('--save-dir', type=str, default="loc_test", metavar='S')
     parser.add_argument('--ablation', type=str, default=None, metavar='S')
     parser.add_argument('--lr', type=float, default=0.001, metavar='N')
@@ -308,13 +308,24 @@ if __name__ == "__main__":
         # inverse_masks=inverse_masks[:train_size]
         centriod_masks=centriod_masks[:train_size]
     )
-
+    val_dataset=BuildingDataset(
+        boundary_masks=boundary_masks[train_size:],
+        inside_masks=inside_masks[train_size:],
+        centriod_masks=centriod_masks[train_size:]
+    )
     LOG('Building data loader...')
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         shuffle=True
+    )
+
+    val_loader=torch.utils.data.DataLoader(
+        val_dataset,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        shuffle=False
     )
 
     LOG('Building optimizer...')
@@ -339,7 +350,7 @@ if __name__ == "__main__":
     model.train()
 
 
-    MAX_EPOCHS=1000
+    MAX_EPOCHS=200
     def train(epoch):
         print(f'Training Epoch: {epoch}')
         global num_seen, current_epoch
@@ -375,7 +386,23 @@ if __name__ == "__main__":
                     torch.save(model.state_dict(), f"{save_dir}/location_{epoch}.pt")
                     torch.save(optimizer.state_dict(), f"{save_dir}/location_optim_backup.pt")
 
+    def validate():
+        model.eval()
+        total_loss=0.0
+        with torch.no_grad():
+            for data, target in tqdm(val_loader):
+                data, target=data.cuda(), target.cuda()
+                target=target.squeeze(1)
+                target=target.long()
+                output=model(data)
+                loss = cross_entropy(output, target)
+                total_loss +=loss.item()
+        avg_loss=total_loss/len(val_loader)
+        writer.add_scalar('val_loss', avg_loss, epoch)
+        return avg_loss
 
     for epoch in range(starting_epoch, MAX_EPOCHS):
         LOG(f'===================================== Epoch {epoch} =====================================')
         train(epoch)
+        val_loss=validate()
+        LOG(f'Validation Loss: {val_loss}')
