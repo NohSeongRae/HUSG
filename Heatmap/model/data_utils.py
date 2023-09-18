@@ -30,13 +30,16 @@ def k_fold_split(dataset, n_splits):
     indices=list(range(len(dataset)))
     return [Subset(dataset, indices[i*fold_length: (i+1)*fold_length]) for i in range(n_splits)]
 def get_datasets_and_loaders(args,  n_splits=5):
-    boundarymask = paths.boundarymask
-    insidemask = paths.insidemask
-    centroidmask = paths.centroidmask
+    boundarymask_hdf5 = paths.hdf5_boundarymask
+    insidemask_hdf5 = paths.hdf5_insidemask
+    centroidmask_hdf5 = paths.hdf5_centroidmask
 
-    boundary_masks = load_mask(boundarymask)
-    inside_masks = load_mask(insidemask)
-    centroid_masks = load_mask(centroidmask)
+    # boundary_masks = load_mask(boundarymask)
+    # inside_masks = load_mask(insidemask)
+    # centroid_masks = load_mask(centroidmask)
+    boundary_masks = [torch.tensor(mask) for mask in load_mask(boundarymask_hdf5)]
+    inside_masks = [torch.tensor(mask) for mask in load_mask(insidemask_hdf5)]
+    centroid_masks = [torch.tensor(mask) for mask in load_mask(centroidmask_hdf5)]
 
     all_dataset = BuildingDataset(boundary_masks, inside_masks, centroid_masks)
 
