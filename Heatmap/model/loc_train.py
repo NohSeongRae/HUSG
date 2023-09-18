@@ -93,10 +93,10 @@ if __name__ == "__main__":
     MAX_EPOCHS = 20
 
 
-    def train(epoch):
-        print(f'Training Epoch: {epoch}')
+    def train(epoch, foldnum):
+        print(f'Training Epoch: {epoch+foldnum*MAX_EPOCHS}')
         global current_epoch
-        train_loader_progress = tqdm(train_loader, desc=f"Epoch {epoch}")
+        train_loader_progress = tqdm(train_loader, desc=f"Epoch {epoch+foldnum*MAX_EPOCHS}")
         for batch_idx, (data, target) in enumerate(train_loader_progress):
             data, target = data.cuda(), target.cuda()
 
@@ -114,17 +114,17 @@ if __name__ == "__main__":
 
 
 
-            writer.add_scalar('loss ', loss.item(), epoch)
+            writer.add_scalar('loss ', loss.item(), epoch+foldnum*MAX_EPOCHS)
 
 
 
             if epoch % 10 == 0:
                 # summary.add_scalar('loss ', loss, epoch)
-                torch.save(model.state_dict(), f"{save_dir}/location_{epoch}.pt")
+                torch.save(model.state_dict(), f"{save_dir}/location_{epoch+foldnum*MAX_EPOCHS}.pt")
                 torch.save(optimizer.state_dict(), f"{save_dir}/location_optim_backup.pt")
 
 
-    def validate():
+    def validate(foldnum):
         model.eval()
         total_loss = 0.0
         with torch.no_grad():
@@ -136,7 +136,7 @@ if __name__ == "__main__":
                 loss = cross_entropy(output, target)
                 total_loss += loss.item()
         avg_loss = total_loss / len(val_loader)
-        writer.add_scalar('val_loss', avg_loss, epoch)
+        writer.add_scalar('val_loss', avg_loss, epoch+foldnum*MAX_EPOCHS)
         return avg_loss
 
 
@@ -148,8 +148,8 @@ if __name__ == "__main__":
         current_epoch = 0
         for epoch in range(MAX_EPOCHS):
             LOG(f'===================================== Epoch {epoch} =====================================')
-            train(epoch)  # Train the model using the train_loader
-            val_loss = validate()  # Validate the model using the val_loader
+            train(epoch,fold_num)  # Train the model using the train_loader
+            val_loss = validate(fold_num)  # Validate the model using the val_loader
             LOG(f'Validation Loss for Fold {fold_num + 1}: {val_loss}')
         fold_results.append(val_loss) #only read last val_loss
     avg_validation_loss = sum(fold_results) / len(fold_results)
