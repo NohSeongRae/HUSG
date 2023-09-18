@@ -86,7 +86,7 @@ model.load_state_dict(torch.load(checkpoint_path))
 model.eval()
 total_loss=0.0
 counter = 0
-test_loader = get_datasets_and_loaders(args, mode='inference')
+test_loader = get_datasets_and_loaders(args)
 
 with torch.no_grad():
     for inputs, target in tqdm(test_loader, desc='Processing'):

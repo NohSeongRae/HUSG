@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     def train(epoch):
         print(f'Training Epoch: {epoch}')
-        global num_seen, current_epoch
+        global current_epoch
         train_loader_progress = tqdm(train_loader, desc=f"Epoch {epoch}")
         for batch_idx, (data, target) in enumerate(train_loader_progress):
             data, target = data.cuda(), target.cuda()
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-            num_seen += args.batch_size
+
 
             writer.add_scalar('loss ', loss.item(), epoch)
 
