@@ -24,9 +24,6 @@ current_time = datetime.now().strftime('%b%d_%H-%M-%S')
 writer = SummaryWriter(f'runs/loc_experiment/{current_time}')
 
 
-
-
-
 def save_checkpoint(model, filename):
     torch.save(model.state_dict(), filename)
     print(f"Model saved to {filename}")
@@ -74,7 +71,6 @@ if __name__ == "__main__":
 
 
     LOG('Building model...')
-    model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)  # WHY category+1?
 
     weight = [args.centroid_weight for i in range(num_categories + 1)]  # 의문이 남음
     weight[0] = 1
@@ -85,33 +81,16 @@ if __name__ == "__main__":
     softmax = nn.Softmax()
     print(f'CUDA available: {torch.cuda.is_available()}')
     LOG('Converting to CUDA')
-    model.cuda()
+
     cross_entropy.cuda()
+    loaders = get_datasets_and_loaders(args, 5)  # This will return a list of (train_loader, val_loader) pairs.
+    fold_results = []
 
-    train_loader, val_loader = get_datasets_and_loaders(args, 'all')
 
-    LOG('Building optimizer...')
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
 
-    if args.last_epoch < 0:
-        load = False
-        starting_epoch = 0
-    else:
-        load = True
-        last_epoch = args.last_epoch
 
-    if load:
-        LOG('Loading saved models...')
-        model.load_state_dict(torch.load(f"{save_dir}/location_{last_epoch}.pt"))
-        optimizer.load_state_dict(torch.load(f"{save_dir}/location_optim_backup.pt"))
-        starting_epoch = last_epoch + 1
 
-    current_epoch = starting_epoch
-    num_seen = 0
-
-    model.train()
-
-    MAX_EPOCHS = 100
+    MAX_EPOCHS = 20
 
 
     def train(epoch):
@@ -137,8 +116,8 @@ if __name__ == "__main__":
 
             writer.add_scalar('loss ', loss.item(), epoch)
 
-            if num_seen % 800 == 0:
-                LOG(f'Examples {num_seen}/{len(train_loader) * args.batch_size}')
+            # if num_seen % 800 == 0:
+            #     LOG(f'Examples {num_seen}/{len(train_loader) * args.batch_size}')
             if num_seen >= len(train_loader) * args.batch_size:
                 num_seen = 0
 
@@ -164,8 +143,17 @@ if __name__ == "__main__":
         return avg_loss
 
 
-    for epoch in range(starting_epoch, MAX_EPOCHS):
-        LOG(f'===================================== Epoch {epoch} =====================================')
-        train(epoch)
-        val_loss = validate()
-        LOG(f'Validation Loss: {val_loss}')
+    for fold_num, (train_loader, val_loader) in enumerate(loaders):
+        LOG(f'========================= Starting Fold {fold_num + 1} of {len(loaders)} =========================')
+        model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)
+        model.cuda()
+        optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
+        current_epoch = 0
+        for epoch in range(MAX_EPOCHS):
+            LOG(f'===================================== Epoch {epoch} =====================================')
+            train(epoch)  # Train the model using the train_loader
+            val_loss = validate()  # Validate the model using the val_loader
+            LOG(f'Validation Loss for Fold {fold_num + 1}: {val_loss}')
+        fold_results.append(val_loss) #only read last val_loss
+    avg_validation_loss = sum(fold_results) / len(fold_results)
+    LOG(f'Average Validation Loss over {len(loaders)} folds: {avg_validation_loss}')

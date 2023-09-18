@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, random_split, Subset
 from data_refine import load_mask
 import paths
 import argparse
@@ -24,79 +24,43 @@ class BuildingDataset(Dataset):
 
         return x, y
 
-
-def get_datasets_and_loaders(args, mode):
-    # boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask')
-    # insidemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'insidemask')
-    # centroidmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'centroidmask')
+def k_fold_split(dataset, n_splits):
+    fold_length=len(dataset)//n_splits
+    indices=list(range(len(dataset)))
+    return [Subset(dataset, indices[i*fold_length: (i+1)*fold_length]) for i in range(n_splits)]
+def get_datasets_and_loaders(args,  n_splits=5):
     boundarymask = paths.boundarymask
     insidemask = paths.insidemask
     centroidmask = paths.centroidmask
-    # sample
-    # boundarybuildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarybuildingmask_sample')
-    # boundarymask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'boundarymask_sample')
-    # buildingmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'buildingmask_sample')
-    # insidemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'insidemask_sample')
-    # inversemask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'inversemask_sample')
-    # centroidmask = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'centroidmask_sample')
-    if mode == 'all':
-        # boundarybuilding_masks = load_mask(boundarybuildingmask)
-        boundary_masks = load_mask(boundarymask)
-        # building_masks = load_mask(buildingmask)
-        inside_masks = load_mask(insidemask)
-        # inverse_masks = load_mask(inversemask)
-        centroid_masks = load_mask(centroidmask)
 
-        dataset_size = len(boundary_masks)
-        train_size = int(dataset_size * 0.80)
-        val_size = (dataset_size - train_size) // 2
-        test_size = val_size
+    boundary_masks = load_mask(boundarymask)
+    inside_masks = load_mask(insidemask)
+    centroid_masks = load_mask(centroidmask)
 
-        train_dataset = BuildingDataset(
-            boundary_masks=boundary_masks[:train_size],
-            inside_masks=inside_masks[:train_size],
-            centroid_masks=centroid_masks[:train_size]
-        )
-        val_dataset = BuildingDataset(
-            boundary_masks=boundary_masks[train_size:train_size + val_size],
-            inside_masks=inside_masks[train_size:train_size + val_size],
-            centroid_masks=centroid_masks[train_size:train_size + val_size]
-        )
+    all_dataset = BuildingDataset(boundary_masks, inside_masks, centroid_masks)
+    folds = k_fold_split(all_dataset, n_splits)
+    loaders=[]
 
-        train_loader = torch.utils.data.DataLoader(
+    for i in range(n_splits):
+        train_subsets = [folds[j] for j in range(n_splits) if j != i]
+        train_dataset = torch.utils.data.ConcatDataset(train_subsets)
+        val_dataset = folds[i]
+
+        train_loader = DataLoader(
             train_dataset,
             batch_size=args.batch_size,
             num_workers=args.num_workers,
             shuffle=True
         )
 
-        val_loader = torch.utils.data.DataLoader(
+        val_loader = DataLoader(
             val_dataset,
             batch_size=args.batch_size,
             num_workers=args.num_workers,
             shuffle=False
         )
 
-        return train_loader, val_loader
-    else:
-        boundary_masks = load_mask(boundarymask)
-        inside_masks = load_mask(insidemask)
-        centroid_masks = load_mask(centroidmask)
+        loaders.append((train_loader, val_loader))
 
-        dataset_size = len(boundary_masks)
-        train_size = int(dataset_size * 0.80)
-        val_size = (dataset_size - train_size) // 2
-        test_size = val_size
+    return loaders
 
-        test_dataset = BuildingDataset(
-            boundary_masks=boundary_masks[train_size + val_size:],
-            inside_masks=inside_masks[train_size + val_size:],
-            centroid_masks=centroid_masks[train_size + val_size:]
-        )
-        test_loader = torch.utils.data.DataLoader(
-            test_dataset,
-            batch_size=1,
-            num_workers=args.num_workers,
-            shuffle=False
-        )
-        return test_loader
