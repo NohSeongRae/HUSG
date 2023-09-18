@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset, random_split, Subset
 from data_refine import load_mask
 import paths
+import random
 import argparse
 
 
@@ -38,7 +39,11 @@ def get_datasets_and_loaders(args,  n_splits=5):
     centroid_masks = load_mask(centroidmask)
 
     all_dataset = BuildingDataset(boundary_masks, inside_masks, centroid_masks)
-    folds = k_fold_split(all_dataset, n_splits)
+
+    indices = list(range(len(all_dataset)))
+    random.shuffle(indices) #random shuffle entire dataset for better generalization
+
+    folds = k_fold_split(all_dataset, n_splits) # K-fold cross validation
     loaders=[]
 
     for i in range(n_splits):

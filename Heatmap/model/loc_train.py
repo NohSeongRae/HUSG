@@ -116,15 +116,12 @@ if __name__ == "__main__":
 
             writer.add_scalar('loss ', loss.item(), epoch)
 
-            # if num_seen % 800 == 0:
-            #     LOG(f'Examples {num_seen}/{len(train_loader) * args.batch_size}')
-            if num_seen >= len(train_loader) * args.batch_size:
-                num_seen = 0
 
-                if epoch % 10 == 0:
-                    # summary.add_scalar('loss ', loss, epoch)
-                    torch.save(model.state_dict(), f"{save_dir}/location_{epoch}.pt")
-                    torch.save(optimizer.state_dict(), f"{save_dir}/location_optim_backup.pt")
+
+            if epoch % 10 == 0:
+                # summary.add_scalar('loss ', loss, epoch)
+                torch.save(model.state_dict(), f"{save_dir}/location_{epoch}.pt")
+                torch.save(optimizer.state_dict(), f"{save_dir}/location_optim_backup.pt")
 
 
     def validate():
