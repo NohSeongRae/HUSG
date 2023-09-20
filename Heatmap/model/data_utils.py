@@ -7,10 +7,16 @@ import argparse
 
 
 class BuildingDataset(Dataset):
-    def __init__(self, boundary_masks, inside_masks, centroid_masks):
+    def __init__(self, boundary_masks, inside_masks, centroid_masks=None, mode='train'):
         self.boundary_masks = boundary_masks
         self.inside_masks = inside_masks
         self.centroid_masks = centroid_masks
+        self.mode = mode
+
+        assert mode in ['train', 'inference'], "Mode should be either 'train' or 'inference'"
+
+        if mode == 'train':
+            assert self.centroid_masks is not None, "For training mode, centroid_masks should be provided."
 
     def __len__(self):
         return len(self.boundary_masks)
@@ -18,17 +24,21 @@ class BuildingDataset(Dataset):
     def __getitem__(self, idx):
         boundary = self.boundary_masks[idx].unsqueeze(0)
         inside = self.inside_masks[idx].unsqueeze(0)
-        centroid = self.centroid_masks[idx].unsqueeze(0)
 
         x = torch.cat([boundary, inside], dim=0)
-        y = centroid
 
-        return x, y
+        if self.mode == 'train':
+            centroid = self.centroid_masks[idx].unsqueeze(0)
+            y = centroid
+            return x, y
+        else:
+            return x
 
 def k_fold_split(dataset, n_splits):
     fold_length=len(dataset)//n_splits
     indices=list(range(len(dataset)))
     return [Subset(dataset, indices[i*fold_length: (i+1)*fold_length]) for i in range(n_splits)]
+
 def get_datasets_and_loaders(args,  n_splits=5):
     boundarymask_hdf5 = paths.hdf5_boundarymask
     insidemask_hdf5 = paths.hdf5_insidemask
@@ -72,3 +82,21 @@ def get_datasets_and_loaders(args,  n_splits=5):
 
     return loaders
 
+
+def get_inference_loader(args):
+    boundarymask_hdf5_test = paths.hdf5_boundarymask_test
+    insidemask_hdf5_test = paths.hdf5_insidemask_test
+
+    boundary_masks_test = [torch.tensor(mask) for mask in load_mask(boundarymask_hdf5_test)]
+    inside_masks_test = [torch.tensor(mask) for mask in load_mask(insidemask_hdf5_test)]
+
+    test_dataset = BuildingDataset(boundary_masks_test, inside_masks_test, mode="inference")
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        shuffle=False
+    )
+
+    return test_loader

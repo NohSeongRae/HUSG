@@ -6,17 +6,15 @@ import sys
 import geopandas as gpd
 import rasterio
 from rasterio.features import geometry_mask
-from skimage.morphology import dilation, square
+from skimage.morphology import dilation, disk, square
 from tqdm import tqdm
 import numpy as np
 import imageio
+from shapely.geometry import shape, MultiPolygon
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
 sys.path.append(husg_directory_path)
-
-
-
 
 def get_square_bounds(geojson_path):
     # building data 전체를 geodataframe형태로 저장
@@ -50,7 +48,7 @@ def get_square_bounds(geojson_path):
     return left, upper, right, lower
 
 
-def boundarymask(city_name):
+def buildingcentroid(city_name):
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
     files = os.listdir(dir_path)
     filenum = len(files)
@@ -62,25 +60,29 @@ def boundarymask(city_name):
         building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'filtered_data',
                                          'Buildings', f'{city_name}_buildings{i}.geojson')
 
+        centroids = []
         if os.path.exists(building_filename):
-            gdf = gpd.read_file(boundary_filename)
-            boundaries = gdf.geometry.boundary
+            with open(building_filename, 'r') as file:
+                data = json.load(file)
 
-            boundaries_list = list(boundaries)
+            for feature in data['features']:
+                building_geometry = feature['geometry']
+                building_polygon = shape(building_geometry)
+                centroids.append(building_polygon.centroid.coords[0])
 
-            width, height = 224, 224
-            # 이미지 경계 설정
+
+            width, height = 64, 64
+
+            building_mask = np.ones((height, width), dtype=np.uint8) * 255
             left, bottom, right, top = get_square_bounds(boundary_filename)
             transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
 
-            boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
+            for centroid in centroids:
+                row, col = rasterio.transform.rowcol(transform, centroid[0], centroid[1])
+                building_mask[row, col] = 0
 
-            # 경계선 굵기 조절
-            thick_boundary_mask = dilation(boundary_mask, square(1))
+            buildingmask_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask', 'centroidmask',
+                                                 f'{city_name}_centroidmask{i}.png')
 
-            inverted_mask = np.where(thick_boundary_mask, 0, 255).astype(np.uint8)
+            imageio.imsave(buildingmask_filename, building_mask)
 
-            boundarymask_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask',
-                                             'boundarymask', f'{city_name}_boundarymask{i}.png')
-
-            imageio.imsave(boundarymask_filename, inverted_mask)
