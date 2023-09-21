@@ -34,15 +34,21 @@ class BuildingDataset(Dataset):
         else:
             return x
 
-def k_fold_split(dataset, n_splits):
-    fold_length=len(dataset)//n_splits
-    indices=list(range(len(dataset)))
-    return [Subset(dataset, indices[i*fold_length: (i+1)*fold_length]) for i in range(n_splits)]
 
-def get_datasets_and_loaders(args,  n_splits=5):
+def k_fold_split(dataset, n_splits):
+    fold_length = len(dataset) // n_splits
+    indices = list(range(len(dataset)))
+    return [Subset(dataset, indices[i * fold_length: (i + 1) * fold_length]) for i in range(n_splits)]
+
+
+def get_datasets_and_loaders(args, n_splits=5):
     boundarymask_hdf5 = paths.hdf5_boundarymask
     insidemask_hdf5 = paths.hdf5_insidemask
     centroidmask_hdf5 = paths.hdf5_centroidmask
+    if args.train_type == 'sample':
+        boundarymask_hdf5 = paths.hdf5_boundarymask_sample
+        insidemask_hdf5 = paths.hdf5_insidemask_sample
+        centroidmask_hdf5 = paths.hdf5_centroidmask_sample
 
     # boundary_masks = load_mask(boundarymask)
     # inside_masks = load_mask(insidemask)
@@ -54,10 +60,10 @@ def get_datasets_and_loaders(args,  n_splits=5):
     all_dataset = BuildingDataset(boundary_masks, inside_masks, centroid_masks)
 
     indices = list(range(len(all_dataset)))
-    random.shuffle(indices) #random shuffle entire dataset for better generalization
+    random.shuffle(indices)  # random shuffle entire dataset for better generalization
 
-    folds = k_fold_split(all_dataset, n_splits) # K-fold cross validation
-    loaders=[]
+    folds = k_fold_split(all_dataset, n_splits)  # K-fold cross validation
+    loaders = []
 
     for i in range(n_splits):
         train_subsets = [folds[j] for j in range(n_splits) if j != i]

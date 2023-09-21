@@ -44,15 +44,14 @@ def ensuredir(dirname):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Location Training with Auxillary Tasks')
     parser.add_argument('--batch-size', type=int, default=16, metavar='S')
-    # parser.add_argument('--data-folder', type=str, default="bedroom_6x6", metavar='S')
     parser.add_argument('--num-workers', type=int, default=12, metavar='N')
     parser.add_argument('--last-epoch', type=int, default=-1, metavar='N')
-    # parser.add_argument('--train-size', type=int, default=6000, metavar='N')
     parser.add_argument('--save-dir', type=str, default="loc_test", metavar='S')
     parser.add_argument('--ablation', type=str, default=None, metavar='S')
     parser.add_argument('--lr', type=float, default=0.001, metavar='N')
     parser.add_argument('--eps', type=float, default=1e-6, metavar='N')
     parser.add_argument('--centroid-weight', type=float, default=10, metavar="N")
+    parser.add_argument('--train_type', type=str, default='all', metavar="N")
     args = parser.parse_args()
 
     save_dir = args.save_dir
