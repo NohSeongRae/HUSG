@@ -58,9 +58,8 @@ if __name__ == "__main__":
     save_dir = args.save_dir
     ensuredir(save_dir)
 
-    num_categories = 2  # building이 있을 수 있는 곳, 있을 수 없는 곳
-    # num_input_channels = num_categories + 15  # WHY?
-    num_input_channels = num_categories  # WHY?
+    num_categories = 1  # building이 있을 수 있는 곳, 있을 수 없는 곳
+    num_input_channels = 2 # 3, if text encoding encluded
     logfile = open(f"{save_dir}/log_location.txt", 'w')
 
 
