@@ -21,10 +21,13 @@ import json
 # if not os.path.exists(filepath.stat):
 #    os.makedirs(filepath.stat)
 
-city_names_USA = ["atlanta", "dallas", "dublin", "houston", "lasvegas", "littlerock", "minneapolis", "phoenix", "portland", "richmond", "sanfrancisco", "washington"]
+# city_names_USA = ["atlanta", "dallas", "dublin", "houston", "lasvegas", "littlerock", "minneapolis", "phoenix", "portland", "richmond", "sanfrancisco", "washington"]
 
 # city_names_all = ["barcelona", "budapest", "firenze", "manchester", "milan", "nottingham", "paris", "singapore", "toronto", "vienna", "zurich"]
-city_names_all = ["vienna", "zurich"]
+# city_names_all = ["losangeles", "miami", "seattle", "boston", "providence", "tampa"]
+
+city_names_all = ["pittsburgh"]
+
 
 for city in tqdm(range(len(city_names_all))):
     city_name = city_names_all[city]
@@ -46,23 +49,14 @@ for city in tqdm(range(len(city_names_all))):
         os.makedirs(filteredboundary_path)
 
 
-    boundarysize_filtered = boundarysize([city_name])
-    # print(boundarysize_filtered)
-
-    buildingnum_filtered = buildingnum([city_name], boundarysize_filtered)
-    # print(buildingnum_filtered)
-
-    density_filtered = density([city_name], buildingnum_filtered)
+    boundarysize_filtered = boundarysize([city_name], upperlimit=1.8 * 1e-6, lowerlimit=0.2 * 1e-6)
+    buildingnum_filtered = buildingnum([city_name], boundarysize_filtered, upperlimit=20, lowerlimit=2)
+    density_filtered = density([city_name], buildingnum_filtered, lowerlimit=40)
     print(len(density_filtered))
 
-    # lengthnum_filtered = lengthnum([city_name], density_filtered)
-    # print(len(lengthnum_filtered))
 
     whole_filtered = density_filtered
 
-    # print(len(whole_filtered))
-
-    # print(whole_filtered)
 
     dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
     files = os.listdir(dir_path)

@@ -22,12 +22,13 @@ def calculate_area(circumference):
     area = math.pi * radius ** 2
     return area
 
-def density(city_name_list, filtered_list):
+def density(city_name_list, filtered_list, lowerlimit):
     city_density_list = []
 
     filtered_denstiy_list = []
 
     for cityidx in range(len(city_name_list)):
+        """
         filelist = []
 
         import csv
@@ -41,6 +42,7 @@ def density(city_name_list, filtered_list):
             for row in reader:
                 number = int(row[0])
                 filelist.append(number)
+        """
 
         # print(filelist)
 
@@ -52,45 +54,43 @@ def density(city_name_list, filtered_list):
         boundary_circle_list = []
 
         for i in tqdm(range(1, filenum + 1)):
-            if i in filelist:
-                if i in filtered_list:
-                    # print(i)
+            if i in filtered_list:
+                # print(i)
+                boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
+                                                 'Boundaries', f'{city_name_list[cityidx]}_boundaries{i}.geojson')
+                building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
+                                                 'Combined_Buildings', f'{city_name_list[cityidx]}_buildings{i}.geojson')
 
-                    boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
-                                                     'Boundaries', f'{city_name_list[cityidx]}_boundaries{i}.geojson')
-                    building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
-                                                     'Combined_Buildings', f'{city_name_list[cityidx]}_buildings{i}.geojson')
+                if os.path.exists(building_filename):
+                    with open(boundary_filename, "r", encoding='UTF-8') as file:
+                        boundary_data = json.load(file)
 
-                    if os.path.exists(building_filename):
-                        with open(boundary_filename, "r", encoding='UTF-8') as file:
-                            boundary_data = json.load(file)
+                if os.path.exists(building_filename):
+                    with open(building_filename, "r", encoding='UTF-8') as file:
+                        building_data = json.load(file)
 
-                    if os.path.exists(building_filename):
-                        with open(building_filename, "r", encoding='UTF-8') as file:
-                            building_data = json.load(file)
+                    building_geometry = []
 
-                        building_geometry = []
+                    for feature in building_data['features']:
+                        building_geometry.append(shape(feature['geometry']))
 
-                        for feature in building_data['features']:
-                            building_geometry.append(shape(feature['geometry']))
+                    for feature in boundary_data['features']:
+                        boundary_geometry = shape(feature['geometry'])
 
-                        for feature in boundary_data['features']:
-                            boundary_geometry = shape(feature['geometry'])
+                    boundary_length = boundary_geometry.length
+                    circle_area = calculate_area(boundary_length)
+                    boundary_area = boundary_geometry.area
 
-                        boundary_length = boundary_geometry.length
-                        circle_area = calculate_area(boundary_length)
-                        boundary_area = boundary_geometry.area
+                    building_area = 0
 
-                        building_area = 0
+                    for idx in range(len(building_geometry)):
+                        building_area += building_geometry[idx].area
 
-                        for idx in range(len(building_geometry)):
-                            building_area += building_geometry[idx].area
+                    boundary_circle_ratio = (boundary_area / circle_area) * 100
 
-                        boundary_circle_ratio = (boundary_area / circle_area) * 100
-
-                        if boundary_circle_ratio >= 40:
-                            if boundary_length >= 0 and boundary_length <= 0.02:
-                                filtered_denstiy_list.append(i)
+                    if boundary_circle_ratio >= lowerlimit:
+                        if boundary_length >= 0 and boundary_length <= 0.02:
+                            filtered_denstiy_list.append(i)
                             # filtered_denstiy_list.append(i)
 
 

@@ -159,6 +159,10 @@ def get_boundary(city_name, location):
 
     print(f"Length of polygon list: {len(poly_list)}")
 
+    if len(poly_list) == 1:
+        print("The division is not properly done")
+        sys.exit(1)
+
     # poly_list에 담긴 polygon들을 하나씩 geojson 형태로 저장
     def save_polygon(i):
         """

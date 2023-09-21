@@ -23,12 +23,14 @@ def calculate_area(circumference):
     return area
 
 
-def boundarysize(city_name_list):
+def boundarysize(city_name_list, upperlimit, lowerlimit):
     city_boundary_area_list = []
     filtered_boundary_list = []
 
     for cityidx in range(len(city_name_list)):
         filelist = []
+
+        """
 
         removed_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
                                         f'{city_name_list[cityidx]}_removed_filenum.csv')
@@ -38,6 +40,8 @@ def boundarysize(city_name_list):
             for row in reader:
                 number = int(row[0])
                 filelist.append(number)
+                
+        """
 
         # city_name = city_name.capitalize()
 
@@ -52,18 +56,18 @@ def boundarysize(city_name_list):
 
 
         for i in tqdm(range(1, filenum + 1)):
-            if i in filelist:
-                boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
-                                                 'Boundaries', f'{city_name_list[cityidx]}_boundaries{i}.geojson')
+            # if i in filelist:
+            boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
+                                             'Boundaries', f'{city_name_list[cityidx]}_boundaries{i}.geojson')
 
-                building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
-                                                 f'{city_name_list[cityidx]}_dataset',
-                                                 'Combined_Buildings',
-                                                 f'{city_name_list[cityidx]}_buildings{i}.geojson')
+            building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
+                                             f'{city_name_list[cityidx]}_dataset',
+                                             'Combined_Buildings',
+                                             f'{city_name_list[cityidx]}_buildings{i}.geojson')
 
-                if os.path.exists(building_filename):
-                    with open(boundary_filename, "r", encoding='UTF-8') as file:
-                        boundary_data = json.load(file)
+            if os.path.exists(building_filename):
+                with open(boundary_filename, "r", encoding='UTF-8') as file:
+                    boundary_data = json.load(file)
 
                 for feature in boundary_data['features']:
                     boundary_geometry = shape(feature['geometry'])
@@ -72,7 +76,7 @@ def boundarysize(city_name_list):
 
                 # print(boundary_area)
 
-                if boundary_area >= (0.2 * 1e-6) and boundary_area <= (1.8 * 1e-6):
+                if boundary_area >= lowerlimit and boundary_area <= upperlimit:
                     filtered_boundary_list.append(i)
 
                 """boundary size"""

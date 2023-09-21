@@ -22,11 +22,13 @@ def calculate_area(circumference):
     area = math.pi * radius ** 2
     return area
 
-def buildingnum(city_name_list, filtered_list):
+def buildingnum(city_name_list, filtered_list, upperlimit, lowerlimit):
     city_building_num_list = []
     filtered_buildingnum_list = []
 
     for cityidx in range(len(city_name_list)):
+
+        """
         filelist = []
 
         import csv
@@ -38,6 +40,8 @@ def buildingnum(city_name_list, filtered_list):
             for row in reader:
                 number = int(row[0])
                 filelist.append(number)
+                
+        """
 
 
         dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset', 'Boundaries')
@@ -70,7 +74,7 @@ def buildingnum(city_name_list, filtered_list):
 
                     building_num = len(building_geometry)
 
-                    if building_num >= 2 and building_num <= 20:
+                    if building_num >= lowerlimit and building_num <= upperlimit:
                         filtered_buildingnum_list.append(i)
 
 
