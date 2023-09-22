@@ -54,6 +54,7 @@ if __name__ == "__main__":
     parser.add_argument('--train-sample', type=bool, default=False, metavar="N")
     parser.add_argument('--use-total-shuffle', type=bool, default=False, metavar="N")
     parser.add_argument('--use-Kfold', type=bool, default=False, metavar="N")
+    parser.add_argument('--cuda-device', type=int, default=0)
     args = parser.parse_args()
 
     save_dir = args.save_dir
@@ -75,14 +76,15 @@ if __name__ == "__main__":
     weight = [args.centroid_weight for i in range(num_categories + 1)]  # 의문이 남음
     weight[0] = 1
     print(weight)
-
-    weight = torch.from_numpy(np.asarray(weight)).float().cuda()
+    device = torch.device(f"cuda:{args.cuda_device}")
+    print(device)
+    weight = torch.from_numpy(np.asarray(weight)).float().to(device)
     cross_entropy = nn.CrossEntropyLoss(weight=weight)
     softmax = nn.Softmax()
     print(f'CUDA available: {torch.cuda.is_available()}')
     LOG('Converting to CUDA')
 
-    cross_entropy.cuda()
+    cross_entropy.to(device)
     if args.use_Kfold:
         loaders = get_datasets_and_loaders(args, 5)  # This will return a list of (train_loader, val_loader) pairs.
         fold_results = []
@@ -92,7 +94,7 @@ if __name__ == "__main__":
         train_loader, val_loader = get_datasets_and_loaders(args)
         MAX_EPOCHS=1000
         model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)
-        model.cuda()
+        model.to(device)
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
 
     def train(args, epoch, foldnum=5):
@@ -104,7 +106,7 @@ if __name__ == "__main__":
         global current_epoch
         train_loader_progress = tqdm(train_loader, desc=f"Epoch {epoch}")
         for batch_idx, (data, target) in enumerate(train_loader_progress):
-            data, target = data.cuda(), target.cuda()
+            data, target = data.to(device), target.to(device)
 
             target = target.squeeze(1)
 
@@ -131,7 +133,7 @@ if __name__ == "__main__":
         total_loss = 0.0
         with torch.no_grad():
             for data, target in tqdm(val_loader):
-                data, target = data.cuda(), target.cuda()
+                data, target = data.to(device), target.to(device)
                 target = target.squeeze(1)
                 target = target.long()
                 output = model(data)
@@ -145,9 +147,6 @@ if __name__ == "__main__":
     if args.use_Kfold:
         for fold_num, (train_loader, val_loader) in enumerate(loaders):
             LOG(f'========================= Starting Fold {fold_num + 1} of {len(loaders)} =========================')
-            model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)
-            model.cuda()
-            optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
             for epoch in range(MAX_EPOCHS):
                 LOG(f'===================================== Epoch {epoch} =====================================')
                 train(args,epoch, fold_num)  # Train the model using the train_loader
