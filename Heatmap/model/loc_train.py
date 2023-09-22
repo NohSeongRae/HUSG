@@ -51,16 +51,16 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=0.001, metavar='N')
     parser.add_argument('--eps', type=float, default=1e-6, metavar='N')
     parser.add_argument('--centroid-weight', type=float, default=10, metavar="N")
-    parser.add_argument('--train_type', type=str, default='all', metavar="N")
-    parser.add_argument('--use_total_shuffle', type=bool, default=False, metavar="N")
-    parser.add_argument('--use_Kfold', type=bool, default=False, metavar="N")
+    parser.add_argument('--train-sample', type=bool, default=False, metavar="N")
+    parser.add_argument('--use-total-shuffle', type=bool, default=False, metavar="N")
+    parser.add_argument('--use-Kfold', type=bool, default=False, metavar="N")
     args = parser.parse_args()
 
     save_dir = args.save_dir
     ensuredir(save_dir)
 
     num_categories = 1  # building이 있을 수 있는 곳, 있을 수 없는 곳
-    num_input_channels = 2 # 3, if text encoding encluded
+    num_input_channels = 2  # 3, if text encoding encluded
     logfile = open(f"{save_dir}/log_location.txt", 'w')
 
 
@@ -83,20 +83,26 @@ if __name__ == "__main__":
     LOG('Converting to CUDA')
 
     cross_entropy.cuda()
-    loaders = get_datasets_and_loaders(args, 5)  # This will return a list of (train_loader, val_loader) pairs.
-    fold_results = []
+    if args.use_Kfold:
+        loaders = get_datasets_and_loaders(args, 5)  # This will return a list of (train_loader, val_loader) pairs.
+        fold_results = []
 
+        MAX_EPOCHS = 20
+    else:
+        train_loader, val_loader = get_datasets_and_loaders(args)
+        MAX_EPOCHS=1000
+        model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)
+        model.cuda()
+        optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
 
-
-
-
-    MAX_EPOCHS = 20
-
-
-    def train(epoch, foldnum):
-        print(f'Training Epoch: {epoch+foldnum*MAX_EPOCHS}')
+    def train(args, epoch, foldnum=5):
+        if args.use_Kfold:
+            epoch = epoch + foldnum * MAX_EPOCHS
+        else:
+            epoch = epoch
+        print(f'Training Epoch: {epoch}')
         global current_epoch
-        train_loader_progress = tqdm(train_loader, desc=f"Epoch {epoch+foldnum*MAX_EPOCHS}")
+        train_loader_progress = tqdm(train_loader, desc=f"Epoch {epoch}")
         for batch_idx, (data, target) in enumerate(train_loader_progress):
             data, target = data.cuda(), target.cuda()
 
@@ -112,19 +118,15 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-
-
-            writer.add_scalar('loss ', loss.item(), epoch+foldnum*MAX_EPOCHS)
-
-
+            writer.add_scalar('loss ', loss.item(), epoch)
 
             if epoch % 10 == 0:
                 # summary.add_scalar('loss ', loss, epoch)
-                torch.save(model.state_dict(), f"{save_dir}/location_{epoch+foldnum*MAX_EPOCHS}.pt")
+                torch.save(model.state_dict(), f"{save_dir}/location_{epoch}.pt")
                 torch.save(optimizer.state_dict(), f"{save_dir}/location_optim_backup.pt")
 
 
-    def validate(foldnum):
+    def validate(epoch):
         model.eval()
         total_loss = 0.0
         with torch.no_grad():
@@ -136,8 +138,9 @@ if __name__ == "__main__":
                 loss = cross_entropy(output, target)
                 total_loss += loss.item()
         avg_loss = total_loss / len(val_loader)
-        writer.add_scalar('val_loss', avg_loss, epoch+foldnum*MAX_EPOCHS)
+        writer.add_scalar('val_loss', avg_loss, epoch)
         return avg_loss
+
 
     if args.use_Kfold:
         for fold_num, (train_loader, val_loader) in enumerate(loaders):
@@ -145,18 +148,17 @@ if __name__ == "__main__":
             model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)
             model.cuda()
             optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
-            current_epoch = 0
             for epoch in range(MAX_EPOCHS):
                 LOG(f'===================================== Epoch {epoch} =====================================')
-                train(epoch,fold_num)  # Train the model using the train_loader
+                train(args,epoch, fold_num)  # Train the model using the train_loader
                 val_loss = validate(fold_num)  # Validate the model using the val_loader
                 LOG(f'Validation Loss for Fold {fold_num + 1}: {val_loss}')
-            fold_results.append(val_loss) #only read last val_loss
+            fold_results.append(val_loss)  # only read last val_loss
         avg_validation_loss = sum(fold_results) / len(fold_results)
         LOG(f'Average Validation Loss over {len(loaders)} folds: {avg_validation_loss}')
     else:
         for epoch in range(MAX_EPOCHS):
             LOG(f'===================================== Epoch {epoch} =====================================')
-            train(epoch)
-            val_loss = validate()
+            train(args,epoch)
+            val_loss = validate(epoch)
             LOG(f'Validation Loss: {val_loss}')

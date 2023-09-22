@@ -45,7 +45,7 @@ def get_datasets_and_loaders(args, n_splits=5):
     boundarymask_hdf5 = paths.hdf5_boundarymask
     insidemask_hdf5 = paths.hdf5_insidemask
     centroidmask_hdf5 = paths.hdf5_centroidmask
-    if args.train_type == 'sample':
+    if args.train_sample:
         boundarymask_hdf5 = paths.hdf5_boundarymask_sample
         insidemask_hdf5 = paths.hdf5_insidemask_sample
         centroidmask_hdf5 = paths.hdf5_centroidmask_sample

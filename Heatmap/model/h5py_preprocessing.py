@@ -21,7 +21,7 @@ def images_to_hdf5(img_dir, hdf5_path, img_size):
 # images_to_hdf5(paths.insidemask_sample, paths.hdf5_insidemask_sample,224)
 # images_to_hdf5(paths.centroidmask_sample, paths.hdf5_centroidmask_sample,64)
 
-# images_to_hdf5(paths.boundarymask_all, paths.hdf5_boundarymask,512)
-# images_to_hdf5(paths.insidemask_all, paths.hdf5_insidemask,512)
-# images_to_hdf5(paths.centroidmask_all, paths.hdf5_centroidmask,64)
-images_to_hdf5(paths.objectmask_all, paths.hdf5_objectmask,512)
+images_to_hdf5(paths.boundarymask_sample, paths.hdf5_boundarymask_sample,512)
+images_to_hdf5(paths.insidemask_sample, paths.hdf5_insidemask_sample,512)
+images_to_hdf5(paths.centroidmask_sample, paths.hdf5_centroidmask_sample,64)
+# images_to_hdf5(paths.objectmask_all, paths.hdf5_objectmask,512)
