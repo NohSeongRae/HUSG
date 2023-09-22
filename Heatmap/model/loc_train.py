@@ -52,6 +52,8 @@ if __name__ == "__main__":
     parser.add_argument('--eps', type=float, default=1e-6, metavar='N')
     parser.add_argument('--centroid-weight', type=float, default=10, metavar="N")
     parser.add_argument('--train_type', type=str, default='all', metavar="N")
+    parser.add_argument('--use_total_shuffle', type=bool, default=False, metavar="N")
+    parser.add_argument('--use_Kfold', type=bool, default=False, metavar="N")
     args = parser.parse_args()
 
     save_dir = args.save_dir
@@ -137,18 +139,24 @@ if __name__ == "__main__":
         writer.add_scalar('val_loss', avg_loss, epoch+foldnum*MAX_EPOCHS)
         return avg_loss
 
-
-    for fold_num, (train_loader, val_loader) in enumerate(loaders):
-        LOG(f'========================= Starting Fold {fold_num + 1} of {len(loaders)} =========================')
-        model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)
-        model.cuda()
-        optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
-        current_epoch = 0
+    if args.use_Kfold:
+        for fold_num, (train_loader, val_loader) in enumerate(loaders):
+            LOG(f'========================= Starting Fold {fold_num + 1} of {len(loaders)} =========================')
+            model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)
+            model.cuda()
+            optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
+            current_epoch = 0
+            for epoch in range(MAX_EPOCHS):
+                LOG(f'===================================== Epoch {epoch} =====================================')
+                train(epoch,fold_num)  # Train the model using the train_loader
+                val_loss = validate(fold_num)  # Validate the model using the val_loader
+                LOG(f'Validation Loss for Fold {fold_num + 1}: {val_loss}')
+            fold_results.append(val_loss) #only read last val_loss
+        avg_validation_loss = sum(fold_results) / len(fold_results)
+        LOG(f'Average Validation Loss over {len(loaders)} folds: {avg_validation_loss}')
+    else:
         for epoch in range(MAX_EPOCHS):
             LOG(f'===================================== Epoch {epoch} =====================================')
-            train(epoch,fold_num)  # Train the model using the train_loader
-            val_loss = validate(fold_num)  # Validate the model using the val_loader
-            LOG(f'Validation Loss for Fold {fold_num + 1}: {val_loss}')
-        fold_results.append(val_loss) #only read last val_loss
-    avg_validation_loss = sum(fold_results) / len(fold_results)
-    LOG(f'Average Validation Loss over {len(loaders)} folds: {avg_validation_loss}')
+            train(epoch)
+            val_loss = validate()
+            LOG(f'Validation Loss: {val_loss}')

@@ -50,44 +50,79 @@ def get_datasets_and_loaders(args, n_splits=5):
         insidemask_hdf5 = paths.hdf5_insidemask_sample
         centroidmask_hdf5 = paths.hdf5_centroidmask_sample
 
-    # boundary_masks = load_mask(boundarymask)
-    # inside_masks = load_mask(insidemask)
-    # centroid_masks = load_mask(centroidmask)
-    boundary_masks = [torch.tensor(mask) for mask in load_mask(boundarymask_hdf5)]
-    inside_masks = [torch.tensor(mask) for mask in load_mask(insidemask_hdf5)]
-    centroid_masks = [torch.tensor(mask) for mask in load_mask(centroidmask_hdf5)]
+    if args.use_Kfold:
+        # boundary_masks = load_mask(boundarymask)
+        # inside_masks = load_mask(insidemask)
+        # centroid_masks = load_mask(centroidmask)
+        boundary_masks = [torch.tensor(mask) for mask in load_mask(boundarymask_hdf5)]
+        inside_masks = [torch.tensor(mask) for mask in load_mask(insidemask_hdf5)]
+        centroid_masks = [torch.tensor(mask) for mask in load_mask(centroidmask_hdf5)]
 
-    all_dataset = BuildingDataset(boundary_masks, inside_masks, centroid_masks)
+        all_dataset = BuildingDataset(boundary_masks, inside_masks, centroid_masks)
 
-    indices = list(range(len(all_dataset)))
-    random.shuffle(indices)  # random shuffle entire dataset for better generalization
+        if args.use_total_shuffle:
+            indices = list(range(len(all_dataset)))
+            random.shuffle(indices)  # random shuffle entire dataset for better generalization
 
-    folds = k_fold_split(all_dataset, n_splits)  # K-fold cross validation
-    loaders = []
+        folds = k_fold_split(all_dataset, n_splits)  # K-fold cross validation
+        loaders = []
 
-    for i in range(n_splits):
-        train_subsets = [folds[j] for j in range(n_splits) if j != i]
-        train_dataset = torch.utils.data.ConcatDataset(train_subsets)
-        val_dataset = folds[i]
+        for i in range(n_splits):
+            train_subsets = [folds[j] for j in range(n_splits) if j != i]
+            train_dataset = torch.utils.data.ConcatDataset(train_subsets)
+            val_dataset = folds[i]
 
-        train_loader = DataLoader(
+            train_loader = DataLoader(
+                train_dataset,
+                batch_size=args.batch_size,
+                num_workers=args.num_workers,
+                shuffle=True
+            )
+
+            val_loader = DataLoader(
+                val_dataset,
+                batch_size=args.batch_size,
+                num_workers=args.num_workers,
+                shuffle=False
+            )
+
+            loaders.append((train_loader, val_loader))
+
+        return loaders
+    else:
+        boundary_masks = [torch.tensor(mask) for mask in load_mask(boundarymask_hdf5)]
+        inside_masks = [torch.tensor(mask) for mask in load_mask(insidemask_hdf5)]
+        centroid_masks = [torch.tensor(mask) for mask in load_mask(centroidmask_hdf5)]
+
+        dataset_size=len(boundary_masks)
+        train_size = int(dataset_size * 0.9)
+        val_size = (dataset_size - train_size) // 2
+        test_size = val_size
+        train_dataset = BuildingDataset(
+            boundary_masks=boundary_masks[:train_size],
+            inside_masks=inside_masks[:train_size],
+            centroid_masks=centroid_masks[:train_size]
+        )
+        val_dataset = BuildingDataset(
+            boundary_masks=boundary_masks[train_size:train_size + val_size],
+            inside_masks=inside_masks[train_size:train_size + val_size],
+            centroid_masks=centroid_masks[train_size:train_size + val_size]
+        )
+
+        train_loader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=args.batch_size,
             num_workers=args.num_workers,
             shuffle=True
         )
 
-        val_loader = DataLoader(
+        val_loader = torch.utils.data.DataLoader(
             val_dataset,
             batch_size=args.batch_size,
             num_workers=args.num_workers,
             shuffle=False
         )
-
-        loaders.append((train_loader, val_loader))
-
-    return loaders
-
+        return train_loader, val_loader
 
 def get_inference_loader(args):
     boundarymask_hdf5_test = paths.hdf5_boundarymask_test
