@@ -47,7 +47,7 @@ class BasicBlock(nn.Module):
 
 
 class PolygonResNet(nn.Module):
-    def __init__(self, block, layers, num_classes=2, num_input_channels=17, use_fc=False):
+    def __init__(self, block, layers, num_classes=2, num_input_channels=2, use_fc=False):
         self.inplanes = 64
         super(PolygonResNet, self).__init__()
         self.conv1 = nn.Conv2d(num_input_channels, out_channels=64, kernel_size=7, stride=4, padding=3, bias=False)
@@ -122,7 +122,6 @@ class DownConvBlock(nn.Module):
         self.act = nn.LeakyReLU()
 
     def forward(self, x):
-        x = F.upsample(x, mode='nearest', scale_factor=2)
         return self.act(self.bn(self.conv(x)))
 
 

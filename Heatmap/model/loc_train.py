@@ -42,6 +42,12 @@ def ensuredir(dirname):
 
 
 if __name__ == "__main__":
+    torch.manual_seed(42)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(42)
+    np.random.seed(42)
+    random.seed(42)
+
     parser = argparse.ArgumentParser(description='Location Training with Auxillary Tasks')
     parser.add_argument('--batch-size', type=int, default=16, metavar='S')
     parser.add_argument('--num-workers', type=int, default=12, metavar='N')
@@ -81,7 +87,7 @@ if __name__ == "__main__":
     print(device)
     weight = torch.from_numpy(np.asarray(weight)).float().to(device)
     cross_entropy = nn.CrossEntropyLoss(weight=weight)
-    softmax = nn.Softmax()
+    # softmax = nn.Softmax()
     print(f'CUDA available: {torch.cuda.is_available()}')
     LOG('Converting to CUDA')
 
@@ -99,6 +105,7 @@ if __name__ == "__main__":
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
 
     def train(args, epoch, foldnum=5):
+        model.train()
         if args.use_Kfold:
             epoch = epoch + foldnum * MAX_EPOCHS
         else:
@@ -159,6 +166,6 @@ if __name__ == "__main__":
     else:
         for epoch in range(MAX_EPOCHS):
             LOG(f'===================================== Epoch {epoch} =====================================')
-            train(args,epoch)
+            train(args, epoch)
             val_loss = validate(epoch)
             LOG(f'Validation Loss: {val_loss}')
