@@ -55,6 +55,7 @@ if __name__ == "__main__":
     parser.add_argument('--use-total-shuffle', type=bool, default=False, metavar="N")
     parser.add_argument('--use-Kfold', type=bool, default=False, metavar="N")
     parser.add_argument('--cuda-device', type=int, default=0)
+    parser.add_argument('--epoch', type=int, default=100)
     args = parser.parse_args()
 
     save_dir = args.save_dir
@@ -89,10 +90,10 @@ if __name__ == "__main__":
         loaders = get_datasets_and_loaders(args, 5)  # This will return a list of (train_loader, val_loader) pairs.
         fold_results = []
 
-        MAX_EPOCHS = 20
+        MAX_EPOCHS = args.epoch
     else:
         train_loader, val_loader = get_datasets_and_loaders(args)
-        MAX_EPOCHS=1000
+        MAX_EPOCHS=args.epoch
         model = Model(num_classes=num_categories + 1, num_input_channels=num_input_channels)
         model.to(device)
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
