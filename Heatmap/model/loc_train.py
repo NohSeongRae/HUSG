@@ -19,6 +19,8 @@ from torch.utils.tensorboard import SummaryWriter
 from heatmap_models import Model
 import paths
 from data_utils import get_datasets_and_loaders
+import random
+
 
 current_time = datetime.now().strftime('%b%d_%H-%M-%S')
 writer = SummaryWriter(f'runs/loc_experiment/{current_time}')
