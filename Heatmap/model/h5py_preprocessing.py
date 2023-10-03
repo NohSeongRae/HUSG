@@ -13,7 +13,9 @@ def images_to_hdf5(img_dir, hdf5_path, img_size):
 
         for i, image_path in tqdm(enumerate(file_list), total=len(file_list), desc="Saving to HDF5"):
             image = Image.open(image_path)
-            image_np = np.array(image, dtype=np.float32) * (1.0 / 255.0)
+
+            image_resized=image.resize((img_size, img_size),resample=Image.BILINEAR)
+            image_np = np.array(image_resized, dtype=np.float32) * (1.0 / 255.0)
             hf["images"][i, ...] = image_np
 
 
@@ -21,7 +23,7 @@ def images_to_hdf5(img_dir, hdf5_path, img_size):
 # images_to_hdf5(paths.insidemask_sample, paths.hdf5_insidemask_sample,224)
 # images_to_hdf5(paths.centroidmask_sample, paths.hdf5_centroidmask_sample,64)
 
-images_to_hdf5(paths.boundarymask, paths.hdf5_boundarymask,512)
-images_to_hdf5(paths.insidemask, paths.hdf5_insidemask,512)
-images_to_hdf5(paths.centroidmask, paths.hdf5_centroidmask,64)
-# images_to_hdf5(paths.objectmask_all, paths.hdf5_objectmask,512)
+# images_to_hdf5(paths.boundarymask_USA, paths.hdf5_boundarymask_USA,512)
+# images_to_hdf5(paths.insidemask_USA, paths.hdf5_insidemask_USA,512)
+# images_to_hdf5(paths.centroidmask_USA, paths.hdf5_centroidmask_USA,64)
+images_to_hdf5(paths.buildingmask_USA, paths.hdf5_buildingmask_USA,64)

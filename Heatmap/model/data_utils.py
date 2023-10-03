@@ -42,13 +42,13 @@ def k_fold_split(dataset, n_splits):
 
 
 def get_datasets_and_loaders(args, n_splits=5):
-    boundarymask_hdf5 = paths.hdf5_boundarymask
-    insidemask_hdf5 = paths.hdf5_insidemask
-    centroidmask_hdf5 = paths.hdf5_centroidmask
+    boundarymask_hdf5 = paths.boundarymask_USA
+    insidemask_hdf5 = paths.insidemask_USA
+    centroidmask_hdf5 = paths.centroidmask_USA
     if args.train_sample:
-        boundarymask_hdf5 = paths.hdf5_boundarymask_sample
-        insidemask_hdf5 = paths.hdf5_insidemask_sample
-        centroidmask_hdf5 = paths.hdf5_centroidmask_sample
+        boundarymask_hdf5 = paths.boundarymask_sample
+        insidemask_hdf5 = paths.insidemask_sample
+        centroidmask_hdf5 = paths.centroidmask_sample
 
     if args.use_Kfold:
         # boundary_masks = load_mask(boundarymask)
