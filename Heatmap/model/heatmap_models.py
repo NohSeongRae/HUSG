@@ -142,16 +142,16 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.model = nn.Sequential(
-            nn.Dropout(p=0.2),
+            nn.Dropout(p=0.3),
             resnet34(num_input_channels=num_input_channels),
-            nn.Dropout(p=0.1),
+            nn.Dropout(p=0.2),
             UpConvBlock(512, 256),
             UpConvBlock(256, 128),
             UpConvBlock(128, 64),
             UpConvBlock(64, 32),
             UpConvBlock(32, 16),
             UpConvBlock(16, 8),
-            nn.Dropout(p=0.1),
+            nn.Dropout(p=0.2),
             nn.Conv2d(8, num_classes, 1, 1)
         )
 
