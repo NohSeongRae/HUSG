@@ -25,6 +25,19 @@ import random
 current_time = datetime.now().strftime('%b%d_%H-%M-%S')
 writer = SummaryWriter(f'runs/loc_experiment/{current_time}')
 
+def save_input_images(img_tensor, save_dir):
+    """
+    Save images from a 2-channel tensor to a directory
+    :param img_tensor: tensor of images, shape [B, C, H, W]
+    :param save_dir: directory to save the images
+    """
+    ensuredir(save_dir)  # Ensure the directory exists
+    for i in range(img_tensor.shape[0]):
+        for j in range(img_tensor.shape[1]):  # Loop over channels
+            filename = os.path.join(save_dir, f"image_{i}_channel_{j}.png")
+            # Use unsqueeze to add the channel dimension back to the image
+            save_image(img_tensor[i, j].unsqueeze(0), filename)
+
 
 def save_checkpoint(model, filename):
     torch.save(model.state_dict(), filename)
@@ -82,7 +95,7 @@ if __name__ == "__main__":
 
     LOG('Building model...')
 
-    weight = [args.centroid_weight for i in range(num_categories + 1)]  # 의문이 남음
+    weight = [args.centroid_weight for i in range(num_categories + 1)]
     weight[0] = 1
     print(weight)
     device = torch.device(f"cuda:{args.cuda_device}")
@@ -117,6 +130,10 @@ if __name__ == "__main__":
         train_loader_progress = tqdm(train_loader, desc=f"Epoch {epoch}")
         for batch_idx, (data, target) in enumerate(train_loader_progress):
             data, target = data.to(device), target.to(device)
+
+            if epoch == 0:
+                if batch_idx == 0:
+                    save_input_images(data, "./check")
 
             target = target.squeeze(1)
 

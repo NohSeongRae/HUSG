@@ -15,7 +15,7 @@ from tqdm import tqdm
 import paths
 from heatmap_models import Model
 from data_utils import get_inference_loader
-
+from torchvision.utils import save_image
 
 
 def ensuredir(dirname):
@@ -36,10 +36,13 @@ def tensor_to_image(tensor, temperature_pixel=0.8):
 
     image = probs.cpu()
 
+    """
     plt.figure(figsize=(8, 8))
-    sns.heatmap(image[2], cmap="YlGnBu", annot=False, fmt=".2e")  # YlGnBu: 파란색 계열의 colormap
+    sns.heatmap(image[0], cmap="YlGnBu", annot=False, fmt=".2e")  # YlGnBu: 파란색 계열의 colormap
     plt.savefig("heatmap.png", dpi=300, bbox_inches='tight')
     plt.show()
+    """
+
     """
 
     print(probs.shape)
@@ -53,19 +56,32 @@ def tensor_to_image(tensor, temperature_pixel=0.8):
     print("location map: ", location_map.shape)
 
     print(location_map)
-
     """
-
 
     return probs
 
 
-def visualize_output(tensor, filename):
+def visualize_output_channel0(tensor, filename):
     location_map = tensor_to_image(tensor).cpu()
 
-    location_map = location_map.permute(1, 2, 0)
-    plt.imshow(location_map, cmap='viridis')
-    plt.title('Location Map Visualization')
+    location_map_channel0 = location_map[0]
+
+    # print("channel0", location_map_channel0.shape)
+
+
+    # location_map = location_map.permute(1, 2, 0)
+    plt.imshow(location_map_channel0, cmap='viridis')
+    plt.title('Channel2 Visualization')
+    plt.axis('off')
+    plt.savefig(filename, bbox_inches='tight', pad_inches=0)
+    plt.close()
+
+def visualize_output_channel1(tensor, filename):
+    location_map = tensor_to_image(tensor).cpu()
+
+    # location_map = location_map.permute(1, 2, 0)
+    plt.imshow(location_map[1], cmap='viridis')
+    plt.title('Channel1 Visualization')
     plt.axis('off')
     plt.savefig(filename, bbox_inches='tight', pad_inches=0)
     plt.close()
@@ -89,7 +105,7 @@ if __name__=="__main__":
 
     model = Model(num_classes=2, num_input_channels=2)
 
-    weight = [args.centroid_weight for i in range(3)]  # 의문이 남음
+    weight = [args.centroid_weight for i in range(2)]  # 의문이 남음
     weight[0] = 1
     print(weight)
 
@@ -101,7 +117,6 @@ if __name__=="__main__":
     model.cuda()
     cross_entropy.cuda()
 
-
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=2e-6)
     checkpoint_path = paths.pretrained_weights
     model.load_state_dict(torch.load(checkpoint_path))
@@ -109,6 +124,7 @@ if __name__=="__main__":
     total_loss = 0.0
     counter = 0
     test_loader = get_inference_loader(args)
+
 
     with torch.no_grad():
         for inputs in tqdm(test_loader, desc='Processing'):
@@ -119,5 +135,8 @@ if __name__=="__main__":
             output_image = outputs.squeeze(0)
 
             if counter < 20:
-                img_name = f"heatmap_vis_{counter}.png"
-                visualize_output(output_image, img_name)
+                img_name_0 = f"./output/result/heatmap_vis_{counter}_0.png"
+                visualize_output_channel0(output_image, img_name_0)
+
+                img_name_1 = f"./output/result/heatmap_vis_{counter}_1.png"
+                visualize_output_channel1(output_image, img_name_1)

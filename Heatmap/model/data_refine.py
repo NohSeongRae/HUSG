@@ -20,6 +20,7 @@ def load_mask_single(args):
 
 def load_mask(dir_name, num_workers=8):
     file_list = [os.path.join(dir_name, f) for f in os.listdir(dir_name) if os.path.isfile(os.path.join(dir_name, f))]
+    file_list.sort()
     mask_list=[None]*len(file_list)
 
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
@@ -30,5 +31,7 @@ def load_mask(dir_name, num_workers=8):
     mask_arrays = [result[1] for result in sorted_results]
     mask_tensors = [torch.tensor(array) for array in mask_arrays]
     return mask_tensors
+
+
 # def load_mask(hdf5_path):
 #     return load_mask_from_hdf5(hdf5_path)

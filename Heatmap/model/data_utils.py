@@ -124,12 +124,21 @@ def get_datasets_and_loaders(args, n_splits=5):
         )
         return train_loader, val_loader
 
-def get_inference_loader(args):
-    boundarymask_hdf5_test = paths.hdf5_boundarymask_test
-    insidemask_hdf5_test = paths.hdf5_insidemask_test
+from torchvision.utils import save_image
 
-    boundary_masks_test = [torch.tensor(mask) for mask in load_mask(boundarymask_hdf5_test)]
-    inside_masks_test = [torch.tensor(mask) for mask in load_mask(insidemask_hdf5_test)]
+def save_masks(masks, prefix):
+    for idx, mask in enumerate(masks):
+        save_image(mask.cpu(), f"./output/gt/{prefix}_mask_{idx}.png")
+
+def get_inference_loader(args):
+    boundarymask_test_path = paths.boundarymask_test
+    insidemask_test_path = paths.insidemask_test
+
+    boundary_masks_test = [torch.tensor(mask) for mask in load_mask(boundarymask_test_path)]
+    inside_masks_test = [torch.tensor(mask) for mask in load_mask(insidemask_test_path)]
+
+    save_masks(boundary_masks_test, "boundary")
+    save_masks(inside_masks_test, "inside")
 
     test_dataset = BuildingDataset(boundary_masks_test, inside_masks_test, mode="inference")
 
