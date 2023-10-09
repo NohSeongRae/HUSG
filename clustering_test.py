@@ -215,7 +215,8 @@ def get_boundary_building_polygon_with_index(groups, boundary):
 
         # Draw the corresponding combined boundary edge with the same color
         x, y = combined_edge.xy
-        boundary_lines.append([edge_index, (x, y)])
+
+        boundary_lines.append([edge_index, ((x[0], y[0]), (x[1], y[1]))])
         # plt.plot(x, y, color=group_colors[edge_index], linewidth=1)
 
         assigned_edges.update(same_index_originals)
@@ -230,10 +231,10 @@ def get_boundary_building_polygon_with_index(groups, boundary):
             # plt.text(mid_point.x, mid_point.y, str(updated_indices[i]), fontsize=7, ha='center', va='center',
             #          color='black')
 
-    # print(building_polygons)
+    print(building_polygons)
     print(boundary_lines)
 
-    # return building_polygons, boundary
+    return building_polygons, boundary_lines
 
 
 
@@ -335,4 +336,7 @@ for i in range(3, 5):
         sorted_edges = sorted_boundary_edges(boundary_polygon)
         groups = group_by_boundary_edge(building_polygon, boundary_polygon, sorted_edges)
         # plot_groups_with_rectangles_v7(groups, boundary_polygon)
-        get_boundary_building_polygon_with_index(groups, boundary_polygon)
+
+
+        #TODO
+        building_polygons, boundary_lines = get_boundary_building_polygon_with_index(groups, boundary_polygon)
