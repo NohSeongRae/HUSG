@@ -8,17 +8,49 @@ from shapely.geometry import Polygon, LineString, Point
 from shapely.geometry import box
 
 unit_length = 3.399999999942338e-05
+angle = 30
 
+import math
+
+
+def compute_angle(p1, p2, p3):
+    """Compute angle between the line formed by points p1-p2 and p2-p3."""
+    # Compute vectors
+    a = (p2[0] - p1[0], p2[1] - p1[1])
+    b = (p3[0] - p2[0], p3[1] - p2[1])
+
+    # Compute dot product and magnitudes
+    dot_product = a[0] * b[0] + a[1] * b[1]
+    mag_a = math.sqrt(a[0] ** 2 + a[1] ** 2)
+    mag_b = math.sqrt(b[0] ** 2 + b[1] ** 2)
+
+    # Clamp the cosine value to the range [-1, 1]
+    cosine_value = dot_product / (mag_a * mag_b)
+    clamped_cosine_value = max(-1.0, min(1.0, cosine_value))
+
+    # Compute angle using dot product formula
+    angle = math.acos(clamped_cosine_value)
+    return math.degrees(angle)
 
 def updated_boundary_edge_indices_v5(boundary):
-    """Generate updated indices for boundary edges."""
+    """Generate updated indices for boundary edges based on length and angle."""
+
     original_indices = list(range(len(boundary.exterior.coords) - 1))
     updated_indices = original_indices.copy()
 
     adjustment = 0  # 인덱스 조정값
-    for i in range(1, len(original_indices)):
+    for i in range(1, len(original_indices) - 1):
         b_edge = LineString([boundary.exterior.coords[i], boundary.exterior.coords[i + 1]])
-        if b_edge.length < unit_length:
+
+        # Check the angle condition only if it's not the first or last point
+        angle_condition = False
+        if i > 0:
+            angle = compute_angle(boundary.exterior.coords[i - 1], boundary.exterior.coords[i],
+                                  boundary.exterior.coords[i + 1])
+            if angle > 150:
+                angle_condition = True
+
+        if b_edge.length < unit_length or angle_condition:
             # 이전 선분과 동일한 인덱스를 부여
             updated_indices[i] = updated_indices[i - 1]
             adjustment += 1
@@ -83,27 +115,62 @@ def normalize_geometry(geometry, minx, miny, maxx, maxy):
         return LineString(normalized_coords)
 
 
-from math import atan2, degrees
+from math import atan2, degrees, sqrt
+
+
+def calculate_perpendicular_distance(point, line_point1, line_point2):
+    x0, y0 = point
+    x1, y1 = line_point1
+    x2, y2 = line_point2
+
+    # Calculate the line equation parameters: y = mx + b
+    if x2 - x1 == 0:  # Vertical line
+        # Distance from point to line is just the horizontal distance
+        return abs(x0 - x1)
+    else:
+        m = (y2 - y1) / (x2 - x1)
+        b = y1 - m * x1
+
+        # Distance from point (x0, y0) to line (y = mx + b)
+        return abs(m * x0 - y0 + b) / sqrt(m ** 2 + 1)
+
 
 def create_rectangle(boundary_edge, farthest_point):
+    # Extract coordinates from boundary edge
     x0, y0 = boundary_edge.coords[0]
-    x1, y1 = boundary_edge.coords[-1]  # Use the last point of the combined edge
-    xf, yf = farthest_point
+    x1, y1 = boundary_edge.coords[-1]
 
-    angle = degrees(atan2(y1 - y0, x1 - x0))
+    # Calculate the direction vector of the boundary_edge
+    dx = x1 - x0
+    dy = y1 - y0
 
-    if -45 <= angle <= 45 or 135 <= angle <= 225:  # Horizontal boundary
-        # Calculate the coordinates of the rectangle's vertices
-        x2, y2 = x1, yf
-        x3, y3 = x0, yf
-    else:  # Vertical boundary
-        # Calculate the coordinates of the rectangle's vertices
-        x2, y2 = xf, y1
-        x3, y3 = xf, y0
+    # Calculate the length of the boundary_edge
+    length_boundary_edge = sqrt(dx ** 2 + dy ** 2)
+
+    # Calculate unit vector of the boundary_edge
+    ux = dx / length_boundary_edge
+    uy = dy / length_boundary_edge
+
+    # Calculate unit vector perpendicular to the boundary_edge (direction reversed from before)
+    perp_ux = uy
+    perp_uy = -ux
+
+    # Calculate the perpendicular distance from boundary_edge to farthest_point
+    distance_to_farthest_point = calculate_perpendicular_distance(
+        farthest_point,
+        boundary_edge.coords[0],
+        boundary_edge.coords[-1]
+    )
+
+    # Calculate the coordinates of the rectangle's vertices using the unit vectors and distances
+    x2 = x1 + perp_ux * distance_to_farthest_point
+    y2 = y1 + perp_uy * distance_to_farthest_point
+
+    x3 = x0 + perp_ux * distance_to_farthest_point
+    y3 = y0 + perp_uy * distance_to_farthest_point
 
     coords = [(x0, y0), (x1, y1), (x2, y2), (x3, y3)]
     return Polygon(coords)
-
 
 
 def sorted_boundary_edges(boundary):
@@ -120,6 +187,7 @@ def sorted_boundary_edges(boundary):
 
     # Return the updated indices
     return sorted_indices
+
 
 def find_polygon_with_farthest_edge(polygons, boundary_edge):
     farthest_polygon = None
@@ -208,7 +276,7 @@ def get_boundary_building_polygon_with_index(groups, boundary):
         for poly in cluster_polygons:
             unique_index += 1
             x, y = poly.exterior.xy
-            plt.plot(x, y, color=group_colors[edge_index])
+            # plt.plot(x, y, color=group_colors[edge_index])
             centroid = poly.centroid
             building_polygons.append([unique_index, edge_index, poly])
             # plt.text(centroid.x, centroid.y, str(edge_index), fontsize=7, ha='center', va='center', color='black')
@@ -224,7 +292,7 @@ def get_boundary_building_polygon_with_index(groups, boundary):
     for i in range(len(boundary.exterior.coords) - 1):
         if i not in assigned_edges:
             x, y = zip(*[boundary.exterior.coords[i], boundary.exterior.coords[i + 1]])
-            boundary_lines.append([updated_indices[i], (x, y)])
+            boundary_lines.append([updated_indices[i], ((x[0], y[0]), (x[1], y[1]))])
 
             # plt.plot(x, y, color='black', linewidth=1)
             # mid_point = LineString([boundary.exterior.coords[i], boundary.exterior.coords[i + 1]]).centroid
@@ -233,6 +301,42 @@ def get_boundary_building_polygon_with_index(groups, boundary):
 
     return building_polygons, boundary_lines
 
+
+def plot_unit_segments(unit_segments, boundary):
+    updated_indices = updated_boundary_edge_indices_v5(boundary)
+
+    # Calculate the total number of unique indices based on the max value in updated_indices
+    total_unique_indices = max(updated_indices) + 1
+    colors = plt.cm.rainbow(np.linspace(0, 1, total_unique_indices))
+    group_colors = {idx: colors[idx] for idx in range(total_unique_indices)}
+
+    for street_index, segment in unit_segments:
+        point1, point2 = segment
+        x_values = [point1[0], point2[0]]
+        y_values = [point1[1], point2[1]]
+
+        mid_pointx = (point1[0] + point2[0]) / 2
+        mid_pointy = (point1[1] + point2[1]) / 2
+        color = group_colors.get(street_index, 'black')  # Use black as default if no color is assigned
+        plt.plot(x_values, y_values, color=color, linewidth=1)
+        plt.text(mid_pointx, mid_pointy, str(street_index), fontsize=7, ha='center', va='center',
+                 color='black')
+
+    unique_index = 0
+
+    for original_index in groups:
+        edge_index = updated_indices[original_index]
+        cluster_polygons = groups[original_index]
+        for poly in cluster_polygons:
+            unique_index += 1
+            x, y = poly.exterior.xy
+            plt.plot(x, y, color=group_colors[edge_index])
+            centroid = poly.centroid
+            building_text = str(edge_index)
+            # plt.text(centroid.x, centroid.y, str(edge_index), fontsize=7, ha='center', va='center', color='black')
+            plt.text(centroid.x, centroid.y, building_text, fontsize=7, ha='center', va='center', color='black')
+
+    plt.show()
 
 
 def plot_groups_with_rectangles_v7(groups, boundary):
@@ -273,6 +377,7 @@ def plot_groups_with_rectangles_v7(groups, boundary):
 
         # Draw the rectangle polygon
         rect_x, rect_y = rect_polygon.exterior.xy
+
         plt.plot(rect_x, rect_y, color=group_colors[edge_index], linestyle='--', linewidth=1, alpha=0.5)
 
         # Draw building polygon
@@ -307,14 +412,14 @@ def plot_groups_with_rectangles_v7(groups, boundary):
     plt.show()
 
 
-city_name = "portland"
+city_name = "dublin"
 dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
 files = os.listdir(dir_path)
 filenum = len(files)
 
 building_polygons = []
 
-for i in range(3, 5):
+for i in range(30, 33):
     building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Combined_Buildings', f'{city_name}_buildings{i}.geojson')
     boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries', f'{city_name}_boundaries{i}.geojson')
 
@@ -332,12 +437,14 @@ for i in range(3, 5):
 
         sorted_edges = sorted_boundary_edges(boundary_polygon)
         groups = group_by_boundary_edge(building_polygon, boundary_polygon, sorted_edges)
-        # plot_groups_with_rectangles_v7(groups, boundary_polygon)
-
-
+        plot_groups_with_rectangles_v7(groups, boundary_polygon)
 
         building_polygons, boundary_lines = get_boundary_building_polygon_with_index(groups, boundary_polygon)
 
-        print(building_polygons)
-        print(boundary_lines) # boundary street segment
-        print(boundary_polygon) # whole boundary
+        # print(boundary_lines)
+
+        # plot_unit_segments(boundary_lines, boundary_polygon)
+
+        # print(building_polygons)
+        # print(boundary_lines) # boundary street segment
+        # print(boundary_polygon) # whole boundary

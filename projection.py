@@ -49,3 +49,5 @@ linestring = LineString([(0,1), (3,1)])
 segment_length = 1.0
 
 overlaps = project_polygon_onto_linestring(polygon, linestring, segment_length)
+print(overlaps)
+
