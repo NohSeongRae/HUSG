@@ -180,6 +180,63 @@ def group_by_boundary_edge(polygons, boundary, sorted_edges):
     return groups
 
 
+def get_unit_length_points(boundary):
+    line_segment = LineString([boundary.exterior.coords[i], boundary.exterior.coords[i + 1]])
+    unit_length_points = create_unit_length_points(line_segment, unit_length)
+
+    return unit_length_points
+
+def get_boundary_building_polygon_with_index(groups, boundary):
+    updated_indices = updated_boundary_edge_indices_v5(boundary)
+    unique_updated_indices = list(set(updated_indices))
+    colors = plt.cm.rainbow(np.linspace(0, 1, len(unique_updated_indices)))
+    group_colors = {idx: colors[i] for i, idx in enumerate(unique_updated_indices)}
+
+    building_polygons = []
+    boundary_lines = []
+    unique_index = 0
+
+    assigned_edges = set()
+
+    for original_index in groups:
+        edge_index = updated_indices[original_index]
+        cluster_polygons = groups[original_index]
+
+        same_index_originals = [i for i, idx in enumerate(updated_indices) if idx == edge_index]
+        combined_edge = create_combined_edge(boundary, same_index_originals)
+        # Draw building polygon
+        for poly in cluster_polygons:
+            unique_index += 1
+            x, y = poly.exterior.xy
+            plt.plot(x, y, color=group_colors[edge_index])
+            centroid = poly.centroid
+            building_polygons.append([unique_index, edge_index, poly])
+            # plt.text(centroid.x, centroid.y, str(edge_index), fontsize=7, ha='center', va='center', color='black')
+
+        # Draw the corresponding combined boundary edge with the same color
+        x, y = combined_edge.xy
+        boundary_lines.append([edge_index, (x, y)])
+        # plt.plot(x, y, color=group_colors[edge_index], linewidth=1)
+
+        assigned_edges.update(same_index_originals)
+
+    for i in range(len(boundary.exterior.coords) - 1):
+        if i not in assigned_edges:
+            x, y = zip(*[boundary.exterior.coords[i], boundary.exterior.coords[i + 1]])
+            boundary_lines.append([updated_indices[i], (x, y)])
+
+            # plt.plot(x, y, color='black', linewidth=1)
+            # mid_point = LineString([boundary.exterior.coords[i], boundary.exterior.coords[i + 1]]).centroid
+            # plt.text(mid_point.x, mid_point.y, str(updated_indices[i]), fontsize=7, ha='center', va='center',
+            #          color='black')
+
+    # print(building_polygons)
+    print(boundary_lines)
+
+    # return building_polygons, boundary
+
+
+
 def plot_groups_with_rectangles_v7(groups, boundary):
     updated_indices = updated_boundary_edge_indices_v5(boundary)
     unique_updated_indices = list(set(updated_indices))
@@ -187,6 +244,7 @@ def plot_groups_with_rectangles_v7(groups, boundary):
     group_colors = {idx: colors[i] for i, idx in enumerate(unique_updated_indices)}
 
     assigned_edges = set()
+    unique_index = 0
 
     for original_index in groups:
         edge_index = updated_indices[original_index]
@@ -221,10 +279,13 @@ def plot_groups_with_rectangles_v7(groups, boundary):
 
         # Draw building polygon
         for poly in cluster_polygons:
+            unique_index += 1
             x, y = poly.exterior.xy
             plt.plot(x, y, color=group_colors[edge_index])
             centroid = poly.centroid
-            plt.text(centroid.x, centroid.y, str(edge_index), fontsize=7, ha='center', va='center', color='black')
+            building_text = str(unique_index) + ' , ' + str(edge_index)
+            # plt.text(centroid.x, centroid.y, str(edge_index), fontsize=7, ha='center', va='center', color='black')
+            plt.text(centroid.x, centroid.y, building_text, fontsize=7, ha='center', va='center', color='black')
 
         # Draw the corresponding combined boundary edge with the same color
         x, y = combined_edge.xy
@@ -273,4 +334,5 @@ for i in range(3, 5):
 
         sorted_edges = sorted_boundary_edges(boundary_polygon)
         groups = group_by_boundary_edge(building_polygon, boundary_polygon, sorted_edges)
-        plot_groups_with_rectangles_v7(groups, boundary_polygon)
+        # plot_groups_with_rectangles_v7(groups, boundary_polygon)
+        get_boundary_building_polygon_with_index(groups, boundary_polygon)
