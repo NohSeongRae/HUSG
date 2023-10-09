@@ -20,6 +20,10 @@ def main():
     model, diffusion = create_model_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
+    model.to(dist_util.dev())
+    schedule_sampler=create_named_schedule_sampler(args.schedule_sampler, diffusion)
+
+    logger.log("creating data loader...")
     if args.dataset == 'rplan':
         data = load_rplanhg_data(
             batch_size=args.batch_size,
@@ -30,6 +34,26 @@ def main():
     else:
         print('dataset not exist!')
         assert False
+
+    logger.log("training...")
+    TrainLoop(
+        model=model,
+        diffusion=diffusion,
+        data=data,
+        batch_size=args.batch_size,
+        microbatch=args.microbatch,
+        lr=args.lr,
+        ema_rate=args.ema_rate,
+        log_interval=args.log_interval,
+        save_interval=args.save_interval,
+        resume_checkpoint=args.resume_checkpoint,
+        use_fp16=args.use_fp16,
+        fp16_scale_growth=args.fp16_scale_growth,
+        schedule_sampler=schedule_sampler,
+        weight_decay=args.weight_decay,
+        lr_anneal_steps=args.lr_anneal_steps,
+        analog_bit=args.analog_bit,
+    ).run_loop()
 
 
 def create_argparser():

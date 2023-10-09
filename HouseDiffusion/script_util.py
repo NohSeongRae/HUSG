@@ -7,7 +7,22 @@ from hd_transformer import TransformerModel
 
 
 def diffusion_defaults():
-    pass
+    """
+    Defaults for image and classifier training
+    """
+    return dict(
+        analog_bit=False,
+        learn_sigma=False,
+        diffusion_steps=1000,
+        noise_schedule="cosine",
+        timestep_respacing="",
+        use_kl=False,
+        predict_xstart=False,
+        rescale_timesteps=False,
+        rescale_learned_sigmas=False,
+        target_set=-1,
+        set_name='',
+    )
 
 
 def update_arg_parser(args):
@@ -38,7 +53,20 @@ def update_arg_parser(args):
 
 
 def model_and_diffusion_defaults():
-    pass
+    """
+    Defaults for image training.
+    """
+    res =dict(
+        dataset='',
+        use_checkpoint=False,
+        input_channels=0,
+        condition_channels=0,
+        out_channels=0,
+        use_unet=False, #unet not implemented
+        num_channels=128,
+    )
+    res.update(diffusion_defaults())
+    return res
 
 
 def create_model_and_diffusion(input_channels, condition_channels, num_channels, out_channels, dataset, use_checkpoint,
@@ -57,6 +85,24 @@ def create_model_and_diffusion(input_channels, condition_channels, num_channels,
 def create_gaussian_diffusion(*, steps=1000, learn_sigma=False, sigma_small=False, noise_schedule="linear",
                               use_kl=False, predict_xstart=False,
                               rescales_timesteps=False, rescale_learned_sigmas=False, timestep_respacing="", ):
+    """
+    Initialize a diffusion process with specified parameters and setting
+
+    Parameters:
+        steps (int): Number of steps in the diffusion process.
+        learn_sigma (bool): If True, the standard deviation will be learned during training.
+        sigma_small (bool): If True, uses a smaller sigma value.
+        noise_schedule (str): The type of noise schedule to use.
+        use_kl (bool): If True, uses KL divergence for the loss; otherwise, uses MSE.
+        predict_xstart (bool): If True, predicts the starting point.
+        rescale_timesteps (bool): If True, rescales the timesteps.
+        rescale_learned_sigmas (bool): If True, rescales learned sigmas.
+        timestep_respacing (str): Method for respacing timesteps
+
+    Returns:
+        SpacedDiffusion: An initialized diffusion process with specified settings.
+
+    """
     betas=gd.get_named_beta_schedule(noise_schedule, steps)
     if use_kl:
         loss_type = gd.LossType.RESCALED_KL
@@ -92,12 +138,31 @@ def create_gaussian_diffusion(*, steps=1000, learn_sigma=False, sigma_small=Fals
 
 
 def add_dict_to_argparser(parser, default_dict):
-    pass
+    for k, v in default_dict.item():
+        v_type=type(v)
+        if v is None:
+            v_type=str
+        elif isinstance(v, bool):
+            v_type=str2bool
+            print(f"v_type: {v_type}, did you intend this?")
+        parser.add_argument(f"--{k}", default=v, type=v_type)
+
+
 
 
 def args_to_dict(args, keys):
-    pass
+    return {k: getattr(args, k) for k in keys}
 
 
 def str2bool(v):
-    pass
+    """
+    https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+    """
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("boolean value expected")

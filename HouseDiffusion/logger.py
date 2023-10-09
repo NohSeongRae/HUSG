@@ -156,7 +156,7 @@ class TensorBoardOutputFormat(KVWriter):
         import tensorflow as tf
         from tensorflow.python import pywrap_tensorflow
         from tensorflow.core.util import event_pb2
-        from tensorflow.python.util import _compat_pickle
+        from tensorflow.python.util import compat
 
         self.tf = tf
         self.event_pb2 = event_pb2
@@ -206,56 +206,100 @@ def make_output_format(format, ev_dir, log_suffix=""):
         raise ValueError("Unknown format specified: %s" % (format,))
 
 
+# ================================================================
+# API
+# ================================================================
+
 def logkv(key, val):
-    pass
+    """
+    Log a value of some diagnostic
+    Call this once for each diagnostic quantity, each iteration
+    If called many times, last value will be used.
+    :param key:
+    :param val:
+    :return:
+    """
+    get_current().logkv(key, val)
 
 
 def logkv_mean(key, val):
-    pass
+    """
+    The same as logkv(), but if called many times, values averaged.
+    :param key:
+    :param val:
+    :return:
+    """
+    get_current().logkv_mean(key, val)
 
 
 def logkvs(d):
-    pass
+    """
+    Log a dictionary of key-value pairs
+    :param d:
+    :return:
+    """
+    for (k, v) in d.items():
+        logkv(k, v)
 
 
 def dumpkvs():
-    pass
+    """
+    Write all the diagnostics from the current iteration
+    :return:
+    """
+    return get_current().dumpkvs()
 
 
 def getkvs():
-    pass
+    return get_current().name2val
 
 
 def log(*args, level=INFO):
-    pass
+    """
+    Write the sequence of args, with no separators, to the console and output files (if you've configured an output file)
+    :param args:
+    :param level:
+    :return:
+    """
+    get_current().log(*args, level=level)
 
 
 def debug(*args):
-    pass
+    log(*args, level=DEBUG)
 
 
 def info(*args):
-    pass
+    log(*args, level=INFO)
 
 
 def warn(*args):
-    pass
+    log(*args, level=WARN)
 
 
 def error(*args):
-    pass
+    log(*args, level=ERROR)
 
 
-def set_leve(level):
-    pass
+def set_level(level):
+    """
+    Set logging threshold on current logger
+    :param level:
+    :return:
+    """
+    get_current().set_level(level)
 
 
 def set_comm(comm):
-    pass
+    get_current().set_comm(comm)
 
 
 def get_dir():
-    pass
+    """
+    Get directory that log files are being written to.
+    Will be None if there is no output directory (i.e., if you didn't call start)
+    :return:
+    """
+    return get_current().get_dir()
 
 
 record_tabular = logkv
@@ -264,21 +308,35 @@ dump_tabular = dumpkvs()
 
 @contextmanager
 def profile_kv(scopename):
-    pass
+    logkey = "wait_" + scopename
+    tstart = time.time()
+    try:
+        yield
+    finally:
+        get_current().name2val[logkey] += time.time() - tstart
 
 
 def profile(n):
+    """
+    Usage
+    @profile("my_func")
+    def my_func(): code
+    """
+
     def decorator_with_name(func):
         def func_wrapper(*args, **kwargs):
-            pass
+            with profile_kv(n):
+                return func(*args, **kwargs)
 
-        pass
+        return func_wrapper
 
-    pass
+    return decorator_with_name
 
 
 def get_current():
-    pass
+    if Logger.CURRENT is None:
+        _configure_defualt_logger()
+    return Logger.CURRENT
 
 
 class Logger(object):
@@ -420,13 +478,23 @@ def configure(dir=None, format_strs=None, comm=None, log_suffix=""):
 
 
 def _configure_defualt_logger():
-    pass
+    configure()
+    Logger.DEFAULT = Logger.CURRENT
 
 
 def reset():
-    pass
+    if Logger.CURRENT is not Logger.DEFAULT:
+        Logger.CURRENT.close()
+        Logger.CURRENT = Logger.DEFAULT
+        log("Reset logger")
 
 
 @contextmanager
 def scoped_configure(dir=None, format_strs=None, comm=None):
-    pass
+    prevlogger = Logger.CURRENT
+    configure(dir=dir, format_strs=format_strs, comm=comm)
+    try:
+        yield
+    finally:
+        Logger.CURRENT.close()
+        Logger.CURRENT = prevlogger
