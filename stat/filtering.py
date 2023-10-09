@@ -26,7 +26,7 @@ import json
 # city_names_all = ["barcelona", "budapest", "firenze", "manchester", "milan", "nottingham", "paris", "singapore", "toronto", "vienna", "zurich"]
 # city_names_all = ["losangeles", "miami", "seattle", "boston", "providence", "tampa"]
 
-city_names_all = ["pittsburgh"]
+city_names_all = ["neworleans", "denver", "vancouver"]
 
 
 for city in tqdm(range(len(city_names_all))):
