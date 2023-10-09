@@ -12,16 +12,12 @@ class SiLU(nn.Module):
 
 class GroupNorm32(nn.GroupNorm):
     def forward(self, x):
-        return super().forward(x.float).type(x.dtype)
+        return super().forward(x.float()).type(x.dtype)
 
 
 def conv_nd(dims, *args, **kwargs):
     """
     Create a 1D, 2D or 3D convolution module
-    :param dims:
-    :param args:
-    :param kwargs:
-    :return:
     """
     if dims == 1:
         return nn.Conv1d(*args, **kwargs)
@@ -35,9 +31,6 @@ def conv_nd(dims, *args, **kwargs):
 def linear(*args, **kwargs):
     """
     Create a linear module
-    :param args:
-    :param kwargs:
-    :return:
     """
     return nn.Linear(*args, **kwargs)
 
@@ -45,10 +38,6 @@ def linear(*args, **kwargs):
 def avg_pool_nd(dims, *args, **kwargs):
     """
     Create a 1D, 2D, or 3D average pooling module
-    :param dims:
-    :param args:
-    :param kwargs:
-    :return:
     """
     if dims == 1:
         return nn.AvgPool1d(*args, **kwargs)
@@ -123,7 +112,7 @@ def timestep_embedding(timesteps, dim, max_period=10000):
     """
     half = dim // 2
     freqs = torch.exp(
-        -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half
+        -math.log(max_period) * torch.arange(start=0, end=half, dtype=th.float32) / half
     ).to(device=timesteps.device)
     args = timesteps[:, None].float() * freqs[None]
     embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
@@ -178,15 +167,16 @@ class CheckpointFunction(torch.autograd.Function):
         :param output_grads: Gradients of the output to propagate back
         :return: Gradients with respect to the input parameters
         """
-        ctx.input_tensors = [x.detach().require_grad_(True) for x in ctx.input_tensors]
+        ctx.input_tensors = [x.detach().requires_grad_(True) for x in ctx.input_tensors]
         with torch.enable_grad():
             # Fixes a bug where the first op in run_function modifies the
-            # Tensor storage in place, which is not allowed for detach()'d Tensors
+            # Tensor storage in place, which is not allowed for detach()'d
+            # Tensors.
             shallow_copies = [x.view_as(x) for x in ctx.input_tensors]
             output_tensors = ctx.run_function(*shallow_copies)
         input_grads = torch.autograd.grad(
             output_tensors,
-            ctx.input_tensors + ctx.input_tensors,
+            ctx.input_tensors + ctx.input_params,
             output_grads,
             allow_unused=True,
         )

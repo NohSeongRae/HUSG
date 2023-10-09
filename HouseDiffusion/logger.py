@@ -1,3 +1,8 @@
+"""
+Logger copied from OpenAI baselines to avoid extra RL-based dependencies:
+https://github.com/openai/baselines/blob/ea25b9e8b234e6ee1bca43083f8f3cf974143998/baselines/logger.py
+"""
+
 import os
 import sys
 import shutil
@@ -41,16 +46,16 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.own_file = False
 
     def writekvs(self, kvs):
-        # Create string for printing
+        # Create strings for printing
         key2str = {}
-        for (key, val) in sorted(kvs.item()):
+        for (key, val) in sorted(kvs.items()):
             if hasattr(val, "__float__"):
                 valstr = "%-8.3g" % val
             else:
                 valstr = str(val)
             key2str[self._truncate(key)] = self._truncate(valstr)
 
-        # find max widths
+        # Find max widths
         if len(key2str) == 0:
             print("WARNING: tried to write empty key-value dict")
             return
@@ -58,10 +63,10 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             keywidth = max(map(len, key2str.keys()))
             valwidth = max(map(len, key2str.values()))
 
-        # write out the data
+        # Write out the data
         dashes = "-" * (keywidth + valwidth + 7)
         lines = [dashes]
-        for (key, val) in sorted(key2str.item(), key=lambda kv: kv[0].lower()):
+        for (key, val) in sorted(key2str.items(), key=lambda kv: kv[0].lower()):
             lines.append(
                 "| %s%s | %s%s |"
                 % (key, " " * (keywidth - len(key)), val, " " * (valwidth - len(val)))
@@ -80,7 +85,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         seq = list(seq)
         for (i, elem) in enumerate(seq):
             self.file.write(elem)
-            if i < len(seq) - 1:
+            if i < len(seq) - 1:  # add space unless this is the last one
                 self.file.write(" ")
         self.file.write("\n")
         self.file.flush()
@@ -92,7 +97,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
 class JSONOutputFormat(KVWriter):
     def __init__(self, filename):
-        self.file = open(filename, 'wt')
+        self.file = open(filename, "wt")
 
     def writekvs(self, kvs):
         for k, v in sorted(kvs.items()):
@@ -112,13 +117,13 @@ class CSVOutputFormat(KVWriter):
         self.sep = ","
 
     def writekvs(self, kvs):
-        # add our current row to the history
+        # Add our current row to the history
         extra_keys = list(kvs.keys() - self.keys)
         extra_keys.sort()
         if extra_keys:
             self.keys.extend(extra_keys)
             self.file.seek(0)
-            lines = self.file.readline()
+            lines = self.file.readlines()
             self.file.seek(0)
             for (i, k) in enumerate(self.keys):
                 if i > 0:
@@ -144,7 +149,7 @@ class CSVOutputFormat(KVWriter):
 
 class TensorBoardOutputFormat(KVWriter):
     """
-    Dumps key/value pairs into TensorBoard's numeric format
+    Dumps key/value pairs into TensorBoard's numeric format.
     """
 
     def __init__(self, dir):
@@ -170,9 +175,9 @@ class TensorBoardOutputFormat(KVWriter):
 
         summary = self.tf.Summary(value=[summary_val(k, v) for k, v in kvs.items()])
         event = self.event_pb2.Event(wall_time=time.time(), summary=summary)
-        event.step(
+        event.step = (
             self.step
-        )
+        )  # is there any reason why you'd want to specify the step?
         self.writer.WriteEvent(event)
         self.writer.Flush()
         self.step += 1
@@ -184,20 +189,13 @@ class TensorBoardOutputFormat(KVWriter):
 
 
 def make_output_format(format, ev_dir, log_suffix=""):
-    """
-
-    :param format: format for logging
-    :param ev_dir: log save dir
-    :param log_suffix: suffix string added to log file
-    :return: logfile
-    """
     os.makedirs(ev_dir, exist_ok=True)
     if format == "stdout":
         return HumanOutputFormat(sys.stdout)
     elif format == "log":
         return HumanOutputFormat(osp.join(ev_dir, "log%s.txt" % log_suffix))
     elif format == "json":
-        return JSONOutputFormat(osp.join(ev_dir, "progress%s.csv" % log_suffix))
+        return JSONOutputFormat(osp.join(ev_dir, "progress%s.json" % log_suffix))
     elif format == "csv":
         return CSVOutputFormat(osp.join(ev_dir, "progress%s.csv" % log_suffix))
     elif format == "tensorboard":
@@ -210,14 +208,12 @@ def make_output_format(format, ev_dir, log_suffix=""):
 # API
 # ================================================================
 
+
 def logkv(key, val):
     """
     Log a value of some diagnostic
     Call this once for each diagnostic quantity, each iteration
     If called many times, last value will be used.
-    :param key:
-    :param val:
-    :return:
     """
     get_current().logkv(key, val)
 
@@ -225,9 +221,6 @@ def logkv(key, val):
 def logkv_mean(key, val):
     """
     The same as logkv(), but if called many times, values averaged.
-    :param key:
-    :param val:
-    :return:
     """
     get_current().logkv_mean(key, val)
 
@@ -235,8 +228,6 @@ def logkv_mean(key, val):
 def logkvs(d):
     """
     Log a dictionary of key-value pairs
-    :param d:
-    :return:
     """
     for (k, v) in d.items():
         logkv(k, v)
@@ -244,8 +235,7 @@ def logkvs(d):
 
 def dumpkvs():
     """
-    Write all the diagnostics from the current iteration
-    :return:
+    Write all of the diagnostics from the current iteration
     """
     return get_current().dumpkvs()
 
@@ -256,10 +246,7 @@ def getkvs():
 
 def log(*args, level=INFO):
     """
-    Write the sequence of args, with no separators, to the console and output files (if you've configured an output file)
-    :param args:
-    :param level:
-    :return:
+    Write the sequence of args, with no separators, to the console and output files (if you've configured an output file).
     """
     get_current().log(*args, level=level)
 
@@ -282,9 +269,7 @@ def error(*args):
 
 def set_level(level):
     """
-    Set logging threshold on current logger
-    :param level:
-    :return:
+    Set logging threshold on current logger.
     """
     get_current().set_level(level)
 
@@ -296,14 +281,13 @@ def set_comm(comm):
 def get_dir():
     """
     Get directory that log files are being written to.
-    Will be None if there is no output directory (i.e., if you didn't call start)
-    :return:
+    will be None if there is no output directory (i.e., if you didn't call start)
     """
     return get_current().get_dir()
 
 
 record_tabular = logkv
-dump_tabular = dumpkvs()
+dump_tabular = dumpkvs
 
 
 @contextmanager
@@ -318,7 +302,7 @@ def profile_kv(scopename):
 
 def profile(n):
     """
-    Usage
+    Usage:
     @profile("my_func")
     def my_func(): code
     """
@@ -333,18 +317,25 @@ def profile(n):
     return decorator_with_name
 
 
+# ================================================================
+# Backend
+# ================================================================
+
+
 def get_current():
     if Logger.CURRENT is None:
-        _configure_defualt_logger()
+        _configure_default_logger()
+
     return Logger.CURRENT
 
 
 class Logger(object):
-    DEFAULT = None  # A logger with no output files.
+    DEFAULT = None  # A logger with no output files. (See right below class definition)
+    # So that you can still log to the terminal without setting up any output files
     CURRENT = None  # Current logger being used by the free functions above
 
     def __init__(self, dir, output_formats, comm=None):
-        self.name2val = defaultdict(float)
+        self.name2val = defaultdict(float)  # values this iteration
         self.name2cnt = defaultdict(int)
         self.level = INFO
         self.dir = dir
@@ -352,13 +343,14 @@ class Logger(object):
         self.comm = comm
 
     # Logging API, forwarded
+    # ----------------------------------------
     def logkv(self, key, val):
         self.name2val[key] = val
 
     def logkv_mean(self, key, val):
         oldval, cnt = self.name2val[key], self.name2cnt[key]
         self.name2val[key] = oldval * cnt / (cnt + 1) + val / (cnt + 1)
-        self.name2cnt = cnt + 1
+        self.name2cnt[key] = cnt + 1
 
     def dumpkvs(self):
         if self.comm is None:
@@ -367,12 +359,13 @@ class Logger(object):
             d = mpi_weighted_mean(
                 self.comm,
                 {
-                    name: (val, self.name2cnt.get(name, 1)) for (name, val) in self.name2val.items()
+                    name: (val, self.name2cnt.get(name, 1))
+                    for (name, val) in self.name2val.items()
                 },
             )
             if self.comm.rank != 0:
-                d["dummy"] = 1
-        out = d.copy()
+                d["dummy"] = 1  # so we don't get a warning about empty dict
+        out = d.copy()  # Return the dict for unit testing purposes
         for fmt in self.output_formats:
             if isinstance(fmt, KVWriter):
                 fmt.writekvs(d)
@@ -384,7 +377,8 @@ class Logger(object):
         if self.level <= level:
             self._do_log(args)
 
-    # configuration
+    # Configuration
+    # ----------------------------------------
     def set_level(self, level):
         self.level = level
 
@@ -398,6 +392,8 @@ class Logger(object):
         for fmt in self.output_formats:
             fmt.close()
 
+    # Misc
+    # ----------------------------------------
     def _do_log(self, args):
         for fmt in self.output_formats:
             if isinstance(fmt, SeqWriter):
@@ -415,10 +411,10 @@ def get_rank_without_mpi_import():
 
 def mpi_weighted_mean(comm, local_name2valcount):
     """
-        Copied from: https://github.com/openai/baselines/blob/ea25b9e8b234e6ee1bca43083f8f3cf974143998/baselines/common/mpi_util.py#L110
-        Perform a weighted average over dicts that are each on a different node
-        Input: local_name2valcount: dict mapping key -> (value, count)
-        Return: key -> mean
+    Copied from: https://github.com/openai/baselines/blob/ea25b9e8b234e6ee1bca43083f8f3cf974143998/baselines/common/mpi_util.py#L110
+    Perform a weighted average over dicts that are each on a different node
+    Input: local_name2valcount: dict mapping key -> (value, count)
+    Returns: key -> mean
     """
     all_name2valcount = comm.gather(local_name2valcount)
     if comm.rank == 0:
@@ -430,29 +426,28 @@ def mpi_weighted_mean(comm, local_name2valcount):
                     val = float(val)
                 except ValueError:
                     if comm.rank == 0:
-                        warnings.warm(
-                            f"WARNING: tried to compute mean on non-float {name} = {val}"
+                        warnings.warn(
+                            "WARNING: tried to compute mean on non-float {}={}".format(
+                                name, val
+                            )
                         )
                 else:
                     name2sum[name] += val * count
                     name2count[name] += count
-            return {name: name2sum[name] / name2count[name] for name in name2sum}
+        return {name: name2sum[name] / name2count[name] for name in name2sum}
     else:
         return {}
 
 
 def configure(dir=None, format_strs=None, comm=None, log_suffix=""):
     """
-    if comm is provided, average all numerical stats across that comm
-    :param dir: directory for logging
-    :param format_strs: formats for logs
-    :param comm: a communicator for distributed logging
-    :param log_suffix:a suffix to be added to the log filenames
-    :return: None
+    If comm is provided, average all numerical stats across that comm
     """
     if dir is None:
         dir = os.getenv("OPENAI_LOGDIR")
+    if dir is None:
         dir = osp.join(
+            # tempfile.gettempdir(),
             'ckpts',
             datetime.datetime.now().strftime("openai_%Y_%m_%d_%H_%M_%S_%f"),
         )
@@ -474,10 +469,10 @@ def configure(dir=None, format_strs=None, comm=None, log_suffix=""):
 
     Logger.CURRENT = Logger(dir=dir, output_formats=output_formats, comm=comm)
     if output_formats:
-        log("Logging it %s" % dir)
+        log("Logging to %s" % dir)
 
 
-def _configure_defualt_logger():
+def _configure_default_logger():
     configure()
     Logger.DEFAULT = Logger.CURRENT
 

@@ -25,17 +25,21 @@ def normal_kl(mean1, logvar1, mean2, logvar2):
         if isinstance(obj, torch.Tensor):
             tensor = obj
             break
-    assert tensor is not None, "at least one arguement must be a Tensor"
+    assert tensor is not None, "at least one argument must be a Tensor"
 
-    # Force variances to be Tensor, Broadcasting helps convert scalars to Tensor
-    # But this doesn't work for torch.exp()
-    logvar1, logvar2=[
+    # Force variances to be Tensors. Broadcasting helps convert scalars to
+    # Tensors, but it does not work for th.exp().
+    logvar1, logvar2 = [
         x if isinstance(x, torch.Tensor) else torch.tensor(x).to(tensor)
         for x in (logvar1, logvar2)
     ]
 
     return 0.5 * (
-        -1.0 + logvar2 -logvar1 +torch.exp(logvar1-logvar2) + ((mean1 -mean2)**2 )*torch.exp(-logvar2)
+            -1.0
+            + logvar2
+            - logvar1
+            + torch.exp(logvar1 - logvar2)
+            + ((mean1 - mean2) ** 2) * torch.exp(-logvar2)
     )
 
 def approx_standard_normal_cdf(x):
@@ -46,7 +50,7 @@ def approx_standard_normal_cdf(x):
     :param x:Input tensor for which the CDF is computed
     :return:The approximated CDF of the standard normal for input x
     """
-    return 0.5*(1.0 + torch.tanh(np.sqrt(2.0/np.pi)*(x+0.044715*torch.pow(x,3))))
+    return 0.5 * (1.0 + torch.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * torch.pow(x, 3))))
 
 
 def discretized_gaussian_log_likelihood(x, *, means, log_scales):

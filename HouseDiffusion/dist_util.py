@@ -8,7 +8,7 @@ import torch.distributed as dist
 
 # Change this to reflect your cluster layout.
 # The GPU for a given rank is (rank % GPUS_PER_NODE).
-GPUS_PER_NODE =4
+GPUS_PER_NODE =3
 SETUP_RETRY_COUNT=3
 
 def setup_dist():

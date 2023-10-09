@@ -2,7 +2,7 @@ import argparse
 import inspect
 
 import gaussian_diffusion as gd
-from respace import SpaceDiffusion, space_timesteps
+from respace import SpacedDiffusion, space_timesteps
 from hd_transformer import TransformerModel
 
 
@@ -27,64 +27,101 @@ def diffusion_defaults():
 
 def update_arg_parser(args):
     args.num_channels = 512
-    num_coords = 16 if args.analog_bit else 2  # what is analog_bit?
-    if args.dataset == 'rplan':
-        args.input_channels = num_coords + (2 * 8 if not args.analog_bit else 0)
-        args.condition_channel = 89  # why 89?
+    num_coords = 16 if args.analog_bit else 2
+    if args.dataset=='rplan':
+        args.input_channels = num_coords + (2*8 if not args.analog_bit else 0) # . , . , . , . , '
+        args.condition_channels = 89
         args.out_channels = num_coords * 1
         args.use_unet = False
 
-    elif args.dataset == 'st3d':
-        args.input_channels = num_coords + (2 * 8 if not args.analog_bit else 0)
+    elif args.dataset=='st3d':
+        args.input_channels = num_coords + (2*8 if not args.analog_bit else 0) # . , . , . , . , '
         args.condition_channels = 89
-        args.out_channels = num_coords + 1
+        args.out_channels = num_coords * 1
         args.use_unet = False
-    elif args.dataset == 'zind':
+
+    elif args.dataset=='zind':
         args.input_channels = num_coords + 2 * 8
         args.condition_channels = 89
         args.out_channels = num_coords * 1
         args.use_unet = False
-    elif args.dataset == 'layout':
-        args.use_unet = True
-    elif args.dataset == 'outdoor':
-        args.use_unet = True
+
+    # elif args.dataset=='layout':
+    #     args.use_unet = True
+    #     pass
+    #
+    # elif args.dataset=='outdoor':
+    #     args.use_unet = True
+    #     pass
     else:
-        assert False, "Dataset Not Found"
+        assert False, "DATASET NOT FOUND"
 
 
 def model_and_diffusion_defaults():
     """
     Defaults for image training.
     """
-    res =dict(
+    res = dict(
         dataset='',
         use_checkpoint=False,
         input_channels=0,
         condition_channels=0,
         out_channels=0,
-        use_unet=False, #unet not implemented
-        num_channels=128,
+        use_unet=False,
+        num_channels=128
     )
     res.update(diffusion_defaults())
     return res
 
 
-def create_model_and_diffusion(input_channels, condition_channels, num_channels, out_channels, dataset, use_checkpoint,
-                               use_unet, learn_sigma, diffusoin_steps, noise_schedule,
-                               timestep_respacing, use_kl, predict_xstart, rescale_timesteps, rescale_learned_sigmas,
-                               analog_bit, target_set, set_name):
+def create_model_and_diffusion(
+    input_channels,
+    condition_channels,
+    num_channels,
+    out_channels,
+    dataset,
+    use_checkpoint,
+    use_unet,
+    learn_sigma,
+    diffusion_steps,
+    noise_schedule,
+    timestep_respacing,
+    use_kl,
+    predict_xstart,
+    rescale_timesteps,
+    rescale_learned_sigmas,
+    analog_bit,
+    target_set,
+    set_name,
+):
     model = TransformerModel(input_channels, condition_channels, num_channels, out_channels, dataset, use_checkpoint,
                              use_unet, analog_bit)
-    diffusion = create_gaussian_diffusion(steps=diffusoin_steps, learn_sigma=learn_sigma, noise_schedule=noise_schedule,
-                                          use_kl=use_kl, predict_xstart=predict_xstart,
-                                          rescale_learned_sigma=rescale_learned_sigmas,
-                                          timestep_respacing=timestep_respacing)
+
+    diffusion = create_gaussian_diffusion(
+        steps=diffusion_steps,
+        learn_sigma=learn_sigma,
+        noise_schedule=noise_schedule,
+        use_kl=use_kl,
+        predict_xstart=predict_xstart,
+        rescale_timesteps=rescale_timesteps,
+        rescale_learned_sigmas=rescale_learned_sigmas,
+        timestep_respacing=timestep_respacing,
+    )
     return model, diffusion
 
 
-def create_gaussian_diffusion(*, steps=1000, learn_sigma=False, sigma_small=False, noise_schedule="linear",
-                              use_kl=False, predict_xstart=False,
-                              rescales_timesteps=False, rescale_learned_sigmas=False, timestep_respacing="", ):
+def create_gaussian_diffusion(
+    *,
+    steps=1000,
+    learn_sigma=False,
+    sigma_small=False,
+    noise_schedule="linear",
+    use_kl=False,
+    predict_xstart=False,
+    rescale_timesteps=False,
+    rescale_learned_sigmas=False,
+    timestep_respacing="",
+):
     """
     Initialize a diffusion process with specified parameters and setting
 
@@ -103,16 +140,16 @@ def create_gaussian_diffusion(*, steps=1000, learn_sigma=False, sigma_small=Fals
         SpacedDiffusion: An initialized diffusion process with specified settings.
 
     """
-    betas=gd.get_named_beta_schedule(noise_schedule, steps)
+    betas = gd.get_named_beta_schedule(noise_schedule, steps)
     if use_kl:
         loss_type = gd.LossType.RESCALED_KL
     elif rescale_learned_sigmas:
-        loss_type=gd.LossType.RESCALED_MSE
+        loss_type = gd.LossType.RESCALED_MSE
     else:
-        loss_type=gd.LossType.MSE
+        loss_type = gd.LossType.MSE
     if not timestep_respacing:
-        timestep_respacing=[steps]
-    return SpaceDiffusion(
+        timestep_respacing = [steps]
+    return SpacedDiffusion(
         use_timesteps=space_timesteps(steps, timestep_respacing),
         betas=betas,
         model_mean_type=(
@@ -123,31 +160,22 @@ def create_gaussian_diffusion(*, steps=1000, learn_sigma=False, sigma_small=Fals
                 gd.ModelVarType.FIXED_LARGE
                 if not sigma_small
                 else gd.ModelVarType.FIXED_SMALL
-
             )
             if not learn_sigma
             else gd.ModelVarType.LEARNED_RANGE
-
         ),
         loss_type=loss_type,
-        rescale_timestep=rescales_timesteps
-
+        rescale_timesteps=rescale_timesteps,
     )
 
-
-
-
 def add_dict_to_argparser(parser, default_dict):
-    for k, v in default_dict.item():
-        v_type=type(v)
+    for k, v in default_dict.items():
+        v_type = type(v)
         if v is None:
-            v_type=str
+            v_type = str
         elif isinstance(v, bool):
-            v_type=str2bool
-            print(f"v_type: {v_type}, did you intend this?")
+            v_type = str2bool
         parser.add_argument(f"--{k}", default=v, type=v_type)
-
-
 
 
 def args_to_dict(args, keys):

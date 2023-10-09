@@ -99,28 +99,28 @@ class LossAwareSampler(ScheduleSampler):
         :param local_losses: (torch.Tensor) Corresponding losses for each timesteps
         :return: None
         """
-        batch_size = [
+        batch_sizes = [
             torch.tensor([0], dtype=torch.int32, device=local_ts.device)
             for _ in range(dist.get_world_size())
         ]
         dist.all_gather(
-            batch_size,
-            torch.tensor([len(local_ts)], dtype=torch.int32, device=local_ts.device)
+            batch_sizes,
+            torch.tensor([len(local_ts)], dtype=torch.int32, device=local_ts.device),
         )
 
-        # Pad all_gather batches to be the maximum batch size
-        batch_size = [x.item() for x in batch_size]
-        max_bs = max(batch_size)
+        # Pad all_gather batches to be the maximum batch size.
+        batch_sizes = [x.item() for x in batch_sizes]
+        max_bs = max(batch_sizes)
 
-        timestep_batches = [torch.zeros(max_bs).to(local_ts) for bs in batch_size]
-        loss_batches = [torch.zeros(max_bs).to(local_losses) for bs in batch_size]
+        timestep_batches = [torch.zeros(max_bs).to(local_ts) for bs in batch_sizes]
+        loss_batches = [torch.zeros(max_bs).to(local_losses) for bs in batch_sizes]
         dist.all_gather(timestep_batches, local_ts)
         dist.all_gather(loss_batches, local_losses)
         timesteps = [
-            x.item() for y, bs in zip(timestep_batches, batch_size) for x in y[:bs]
+            x.item() for y, bs in zip(timestep_batches, batch_sizes) for x in y[:bs]
         ]
-        losses = [x.item() for y, bs in zip(loss_batches, batch_size) for x in y[:bs]]
-        self.update_with_local_losses(timesteps, losses)
+        losses = [x.item() for y, bs in zip(loss_batches, batch_sizes) for x in y[:bs]]
+        self.update_with_all_losses(timesteps, losses)
 
     @abstractmethod
     def update_with_all_losses(self, ts, losses):
@@ -149,7 +149,7 @@ class LossSecondMomentResampler(LossAwareSampler):
         self._loss_history = np.zeros(
             [diffusion.num_timesteps, history_per_term], dtype=np.float64
         )
-        self._loss_counts = np.zeros([diffusion.num_timesteps], dtype=np.int32)
+        self._loss_counts = np.zeros([diffusion.num_timesteps], dtype=np.int)
 
     def weights(self):
         """
@@ -174,7 +174,7 @@ class LossSecondMomentResampler(LossAwareSampler):
         """
         for t, loss in zip(ts, losses):
             if self._loss_counts[t] == self.history_per_term:
-                # Shift out the oldest loss term
+                # Shift out the oldest loss term.
                 self._loss_history[t, :-1] = self._loss_history[t, 1:]
                 self._loss_history[t, -1] = loss
             else:

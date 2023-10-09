@@ -1,12 +1,20 @@
+"""
+Train a diffusion model on images.
+"""
+
 import argparse
 
-import dist_util
-import logger
+import dist_util, logger
 from rplanhg_datasets import load_rplanhg_data
 from resample import create_named_schedule_sampler
-from script_util import model_and_diffusion_defaults, create_model_and_diffusion, args_to_dict, add_dict_to_argparser, \
-    update_arg_parser
-from trainutil import TrainLoop
+from script_util import (
+    model_and_diffusion_defaults,
+    create_model_and_diffusion,
+    args_to_dict,
+    add_dict_to_argparser,
+    update_arg_parser,
+)
+from train_util import TrainLoop
 
 
 def main():
@@ -21,10 +29,10 @@ def main():
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
     model.to(dist_util.dev())
-    schedule_sampler=create_named_schedule_sampler(args.schedule_sampler, diffusion)
+    schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
     logger.log("creating data loader...")
-    if args.dataset == 'rplan':
+    if args.dataset=='rplan':
         data = load_rplanhg_data(
             batch_size=args.batch_size,
             analog_bit=args.analog_bit,
@@ -58,14 +66,14 @@ def main():
 
 def create_argparser():
     defaults = dict(
-        dataset='',
-        schedule_sampler="uniform",  # "loss-second-moment", "uniform"
+        dataset = '',
+        schedule_sampler= "uniform", #"loss-second-moment", "uniform",
         lr=1e-4,
         weight_decay=0.0,
-        lr_anneal_step=0,
+        lr_anneal_steps=0,
         batch_size=1,
-        microbatch=-1,  # disable microbatch
-        ema_rate="0.9999",
+        microbatch=-1,  # -1 disables microbatches
+        ema_rate="0.9999",  # comma-separated list of EMA values
         log_interval=10,
         save_interval=10000,
         resume_checkpoint="",
@@ -80,3 +88,4 @@ def create_argparser():
 
 if __name__ == "__main__":
     main()
+

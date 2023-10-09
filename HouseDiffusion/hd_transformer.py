@@ -7,7 +7,7 @@ from nn import timestep_embedding
 
 
 def dec2bin(xinp, bits):
-    mask=2**torch.arange(bits -1, -1, -1).to(xinp.device, xinp.dtype)
+    mask = 2 ** torch.arange(bits - 1, -1, -1).to(xinp.device, xinp.dtype)
     return xinp.unsqueeze(-1).bitwise_and(mask).ne(0).float()
 
 
@@ -36,7 +36,7 @@ class PositionalEncoding(nn.Module):
 class FeedForward(nn.Module):
     def __init__(self, d_model, d_ff, dropout, activation):
         super().__init__()
-        # default value of d_ff is 2048
+        # We set d_ff as a default to 2048
         self.linear_1 = nn.Linear(d_model, d_ff)
         self.dropout = nn.Dropout(dropout)
         self.linear_2 = nn.Linear(d_ff, d_model)
@@ -78,7 +78,7 @@ class MultiHeadAttention(nn.Module):
         k = self.k_linear(k).view(bs, -1, self.h, self.d_k)
         q = self.q_linear(q).view(bs, -1, self.h, self.d_k)
         v = self.v_linear(v).view(bs, -1, self.h, self.d_k)
-        # transpose to get dimensions bs*h*sl*d_model
+        # transpose to get dimensions bs * h * sl * d_model
         k = k.transpose(1, 2)
         q = q.transpose(1, 2)
         v = v.transpose(1, 2)  # calculate attention using function we will define next
@@ -101,12 +101,14 @@ class EncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, door_mask, self_mask, gen_mask):
-        assert (gen_mask.max() == 1 and gen_mask.min() == 0), f"gen_mask.max():{gen_mask.max()}, {gen_mask.min()}"
+        assert (gen_mask.max() == 1 and gen_mask.min() == 0), f"{gen_mask.max()}, {gen_mask.min()}"
         x2 = self.norm_1(x)
-        x = x + self.dropout(self.door_attn(x2, x2, x2, door_mask)) + self.dropout(
-            self.self_attn(x2, x2, x2, self_mask)) + self.dropout(self.gen_attn(x2, x2, x2, gen_mask))
+        x = x + self.dropout(self.door_attn(x2, x2, x2, door_mask)) \
+            + self.dropout(self.self_attn(x2, x2, x2, self_mask)) \
+            + self.dropout(self.gen_attn(x2, x2, x2, gen_mask))
         x2 = self.norm_2(x)
         x = x + self.dropout(self.ff(x2))
+        return x
 
 
 class TransformerModel(nn.Module):
@@ -114,9 +116,18 @@ class TransformerModel(nn.Module):
     The full Transformer model with timestep embedding
     """
 
-    def __init(self, in_channels, condition_channels, model_channels, out_channels, dataset, use_checkpoint, use_unet,
-               analog_bit): #analog bit stands for discrete denoising
-        super().__init()
+    def __init__(
+            self,
+            in_channels,
+            condition_channels,
+            model_channels,
+            out_channels,
+            dataset,
+            use_checkpoint,
+            use_unet,
+            analog_bit,
+    ):
+        super().__init__()
         self.in_channels = in_channels
         self.condition_channels = condition_channels
         self.model_channels = model_channels
@@ -126,8 +137,9 @@ class TransformerModel(nn.Module):
         self.analog_bit = analog_bit
         self.use_unet = use_unet
         self.num_layers = 4
-        # self.pos_encoder=PositionalEncoding(model_channels, 0.001)
-        # self.activation == nn.SiLU()
+
+        # self.pos_encoder = PositionalEncoding(model_channels, 0.001)
+        # self.activation = nn.SiLU()
         self.activation = nn.ReLU()
 
         self.time_embed = nn.Sequential(
@@ -139,11 +151,11 @@ class TransformerModel(nn.Module):
         self.condition_emb = nn.Linear(self.condition_channels, self.model_channels)
 
         # if use_unet:
-        #     self.unet=UNet(self.model_channels, 1)
+        #     self.unet = UNet(self.model_channels, 1)
 
-        self.transformer_layer = nn.ModuleList(
-            [EncoderLayer(self.model_channels, 4, 0.1, self.activation) for x in
-             range(self.num_layers)])  # Encoder stack
+        self.transformer_layers = nn.ModuleList(
+            [EncoderLayer(self.model_channels, 4, 0.1, self.activation) for x in range(self.num_layers)])
+        # self.transformer_layers = nn.ModuleList([nn.TransformerEncoderLayer(self.model_channels, 4, self.model_channels*2, 0.1, self.activation, batch_first=True) for x in range(self.num_layers)])
 
         self.output_linear1 = nn.Linear(self.model_channels, self.model_channels)
         self.output_linear2 = nn.Linear(self.model_channels, self.model_channels // 2)
@@ -155,28 +167,28 @@ class TransformerModel(nn.Module):
             self.output_linear_bin3 = EncoderLayer(self.model_channels, 1, 0.1, self.activation)
             self.output_linear_bin4 = nn.Linear(self.model_channels, 16)
 
-        print(f"Number of model parameters: {sum(p.numel() for p in self.parameters() if p.requires_grad())}")
+        print(f"Number of model parameters: {sum(p.numel() for p in self.parameters() if p.requires_grad)}")
 
     def expand_points(self, points, connections):
         def average_points(point1, point2):
-            points_new=(point1+point2)/2
+            points_new = (point1 + point2) / 2
             return points_new
-        p1=points
-        p1=p1.view([p1.shape[0], p1.shape[1], 2, -1])
-        p5=points[torch.arange(points.shape[0])[:, None], connections[:, :, 1].long()]
-        p5=p5.view([p5.shape[0], p5.shape[1], 2, -1])
-        p3=average_points(p1, p5)
-        p2=average_points(p1, p3)
-        p4=average_points(p3, p5)
-        p1_5=average_points(p1, p2)
-        p2_5=average_points(p2,p3)
-        p3_5=average_points(p3,p4)
-        p4_5=average_points(p4,p5)
-        points_new = torch.cat((p1.view_as(points), p1_5.view_as(points), p2.view_as(points),
-                             p2_5.view_as(points), p3.view_as(points), p3_5.view_as(points), p4.view_as(points),
-                             p4_5.view_as(points), p5.view_as(points)), 2)
-        return points_new.detach()
 
+        p1 = points
+        p1 = p1.view([p1.shape[0], p1.shape[1], 2, -1])
+        p5 = points[torch.arange(points.shape[0])[:, None], connections[:, :, 1].long()]
+        p5 = p5.view([p5.shape[0], p5.shape[1], 2, -1])
+        p3 = average_points(p1, p5)
+        p2 = average_points(p1, p3)
+        p4 = average_points(p3, p5)
+        p1_5 = average_points(p1, p2)
+        p2_5 = average_points(p2, p3)
+        p3_5 = average_points(p3, p4)
+        p4_5 = average_points(p4, p5)
+        points_new = torch.cat((p1.view_as(points), p1_5.view_as(points), p2.view_as(points),
+                                p2_5.view_as(points), p3.view_as(points), p3_5.view_as(points), p4.view_as(points),
+                                p4_5.view_as(points), p5.view_as(points)), 2)
+        return points_new.detach()
 
     def create_image(self, points, connections, room_indices, image_size=256, res=200):
         pass
@@ -193,8 +205,9 @@ class TransformerModel(nn.Module):
         :param y: [N] Tensor of labels, if class-conditional
         :return:[N x S x C] Tensors of outputs
         """
+        # prefix = 'syn_' if is_syn else ''
         prefix = 'syn_' if is_syn else ''
-        x = x.permute([0, 2, 1]).float()  # converts [N x C x S] to [N x S x C]
+        x = x.permute([0, 2, 1]).float()  # -> convert [N x C x S] to [N x S x C]
 
         if not self.analog_bit:
             x = self.expand_points(x, kwargs[f'{prefix}connections'])
@@ -203,7 +216,6 @@ class TransformerModel(nn.Module):
         time_emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
         time_emb = time_emb.unsqueeze(1)
         input_emb = self.input_emb(x)
-        out=None
         if self.condition_channels > 0:
             cond = None
             for key in [f'{prefix}room_types', f'{prefix}corner_indices', f'{prefix}room_indices']:
@@ -212,34 +224,36 @@ class TransformerModel(nn.Module):
                 else:
                     cond = torch.cat((cond, kwargs[key]), 2)
             cond_emb = self.condition_emb(cond.float())
-            out=input_emb+cond_emb+time_emb.repeat((input_emb.shape[1], 1))
-        else:
-            out=input_emb +time_emb.repeat((input_emb.shape[1], 1))
 
+        # PositionalEncoding and DM model
+        out = input_emb + cond_emb + time_emb.repeat((1, input_emb.shape[1], 1))
         for layer in self.transformer_layers:
-            out=layer(out, kwargs[f'{prefix}door_mask'], kwargs[f'{prefix}self_mask'], kwargs[f'{prefix}gen_mask'])
+            out = layer(out, kwargs[f'{prefix}door_mask'], kwargs[f'{prefix}self_mask'], kwargs[f'{prefix}gen_mask'])
 
-        out_dec=self.output_linear1(out)
-        out_dec=self.activation(out_dec)
-        out_dec=self.output_linear2(out_dec)
-        out_dec=self.output_linear3(out_dec)
+        out_dec = self.output_linear1(out)
+        out_dec = self.activation(out_dec)
+        out_dec = self.output_linear2(out_dec)
+        out_dec = self.output_linear3(out_dec)
 
         if not self.analog_bit:
-            out_bin_start=x*xtalpha.repeat([1,1,9]) - out_dec.repeat([1,1,9])*epsalpha.repeat([1,1,9])
-            out_bin=(out_bin_start/2+0.5) # -> [0,1]
-            out_bin=out_bin*256 # -> [0,256]
-            out_bin=dec2bin(out_bin.round().int(), 8)
-            out_bin_inp=out_bin.reshape([x.shape[0], x.shape[1], 16*9])
-            out_bin_inp[out_bin_inp==0] = -1
+            out_bin_start = x * xtalpha.repeat([1, 1, 9]) - out_dec.repeat([1, 1, 9]) * epsalpha.repeat([1, 1, 9])
+            out_bin = (out_bin_start / 2 + 0.5)  # -> [0,1]
+            out_bin = out_bin * 256  # -> [0, 256]
+            out_bin = dec2bin(out_bin.round().int(), 8)
+            out_bin_inp = out_bin.reshape([x.shape[0], x.shape[1], 16 * 9])
+            out_bin_inp[out_bin_inp == 0] = -1
 
-            out_bin=torch.cat((out_bin_start, out_bin_inp, cond_emb), 2)
-            out_bin=self.activation(self.output_linear_bin1(out_bin))
-            out_bin=self.output_linear_bin2(out_bin, kwargs[f'{prefix}door_mask'], kwargs[f'{prefix}self_mask'], kwargs[f'{prefix}gen_mask'])
-            out_bin=self.output_linear_bin3(out_bin, kwargs[f'{prefix}door_mask'], kwargs[f'{prefix}self_mask'], kwargs[f'{prefix}gen_mask'])
-            out_bin=self.output_linear_bin4(out_bin)
+            out_bin = torch.cat((out_bin_start, out_bin_inp, cond_emb), 2)
+            out_bin = self.activation(self.output_linear_bin1(out_bin))
+            out_bin = self.output_linear_bin2(out_bin, kwargs[f'{prefix}door_mask'], kwargs[f'{prefix}self_mask'],
+                                              kwargs[f'{prefix}gen_mask'])
+            out_bin = self.output_linear_bin3(out_bin, kwargs[f'{prefix}door_mask'], kwargs[f'{prefix}self_mask'],
+                                              kwargs[f'{prefix}gen_mask'])
+            out_bin = self.output_linear_bin4(out_bin)
 
-            out_bin=out_bin.permute([0,2,1])
-        out_dec=out_dec.permute([0,2,1])
+            out_bin = out_bin.permute([0, 2, 1])  # -> convert back [N x S x C] to [N x C x S]
+
+        out_dec = out_dec.permute([0, 2, 1])  # -> convert back [N x S x C] to [N x C x S]
 
         if not self.analog_bit:
             return out_dec, out_bin
