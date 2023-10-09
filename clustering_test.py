@@ -231,9 +231,6 @@ def get_boundary_building_polygon_with_index(groups, boundary):
             # plt.text(mid_point.x, mid_point.y, str(updated_indices[i]), fontsize=7, ha='center', va='center',
             #          color='black')
 
-    print(building_polygons)
-    print(boundary_lines)
-
     return building_polygons, boundary_lines
 
 
@@ -284,7 +281,7 @@ def plot_groups_with_rectangles_v7(groups, boundary):
             x, y = poly.exterior.xy
             plt.plot(x, y, color=group_colors[edge_index])
             centroid = poly.centroid
-            building_text = str(unique_index) + ' , ' + str(edge_index)
+            building_text = str(edge_index)
             # plt.text(centroid.x, centroid.y, str(edge_index), fontsize=7, ha='center', va='center', color='black')
             plt.text(centroid.x, centroid.y, building_text, fontsize=7, ha='center', va='center', color='black')
 
@@ -338,5 +335,9 @@ for i in range(3, 5):
         # plot_groups_with_rectangles_v7(groups, boundary_polygon)
 
 
-        #TODO
+
         building_polygons, boundary_lines = get_boundary_building_polygon_with_index(groups, boundary_polygon)
+
+        print(building_polygons)
+        print(boundary_lines) # boundary street segment
+        print(boundary_polygon) # whole boundary
