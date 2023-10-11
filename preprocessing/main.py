@@ -1,0 +1,231 @@
+import os
+import geopandas as gpd
+import pickle
+from shapely.geometry import MultiLineString
+import networkx as nx
+
+from preprocessing.gemoetry_utils import *
+from preprocessing.general_utils import *
+from preprocessing.building_utils import *
+from preprocessing.plot_utils import *
+
+unit_length = 0.04
+reference_angle = 30
+n_building = 30
+n_unit_road = 200
+n_street = 50
+pad_idx = 0
+building_eos_idx = n_building - 1
+street_eos_idx = n_street - 1
+n_street_sample = 64
+n_unit_sample = 8
+
+city_name = "dublin"
+dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
+files = os.listdir(dir_path)
+filenum = len(files)
+
+one_hot_building_index_sequences = []
+building_index_sequences = []
+street_index_sequences = []
+building_center_position_datasets = []
+unit_center_position_datasets = []
+unit_position_datasets = []
+street_position_datasets = []
+street_unit_position_datasets = []
+adj_matrices_list = []
+building_polygons_datasets = []
+street_multiline_datasets = []
+
+for i in range(1, filenum+1):
+    building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+                                     'Normalized', 'Buildings', f'{city_name}_buildings{i}.geojson')
+    boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
+                                     'Normalized', 'Boundaries', f'{city_name}_boundaries{i}.geojson')
+
+    if os.path.exists(building_filename):
+        print(building_filename)
+        boundary_gdf = gpd.read_file(boundary_filename)
+        building_gdf = gpd.read_file(building_filename)
+
+        # Get building polygons for the current file and add them to the building_polygon list
+        building_polygons = [row['geometry'] for idx, row in building_gdf.iterrows()]
+        boundary_polygon = boundary_gdf.iloc[0]['geometry']
+
+        sorted_edges = sorted_boundary_edges(boundary_polygon, unit_length)
+        groups, _ = group_by_boundary_edge(building_polygons, boundary_polygon, sorted_edges)
+
+        _, boundary_lines = get_boundary_building_polygon_with_index(groups, boundary_polygon, unit_length, reference_angle)
+
+        unit_roads, closest_unit_index = split_into_unit_roads(boundary_lines, unit_length)
+
+        bounding_boxs = get_calculated_rectangle(groups, boundary_polygon, closest_unit_index, unit_length, reference_angle)
+        building_polygons = get_building_polygon(building_polygons, bounding_boxs, boundary_polygon)
+
+        building_index_sequence = []
+        one_hot_building_index_sequence = []
+        street_index_sequence = []
+        for unit_road_idx, unit_road in enumerate(unit_roads):
+            street_index_sequence.append(unit_road[0] + 1)  # unit index, street index
+            building_set = []
+            for building in building_polygons:
+                # rule 1
+                if unit_road[0] in building[1]:
+                    overlaps = project_polygon_onto_linestring_full(building[2], LineString(unit_road[1]))
+                    if overlaps:
+                        building_set.append(building[0])
+
+                # rule 2
+                p1 = np.array(unit_road[1])[0]
+                p2 = np.array(unit_road[1][1])
+                v_rotated = rotated_line_90(p1, p2, unit_length)
+
+                building_segments = get_segments_as_lists(building[2])
+
+                is_intersect = False
+                for segment in building_segments:
+                    if LineString(v_rotated).intersects(LineString(segment)):
+                        is_intersect = True
+
+                if is_intersect:
+                    building_set.append(building[0])
+            building_set = list(set(building_set))
+            building_set.append(building_eos_idx)
+            building_set = pad_list(building_set, n_building, 0)
+            building_index_sequence.append(building_set)
+
+            one_hot_building_indices = np.zeros(n_building)
+            one_hot_building_indices[building_set] = 1
+            one_hot_building_index_sequence.append(one_hot_building_indices)
+
+        building_index_sequence = np.array(building_index_sequence)
+        pad_sequence = np.zeros((n_unit_road - building_index_sequence.shape[0], n_building))
+        pad_sequence[:, 0] = building_eos_idx
+        building_index_sequence = np.concatenate((building_index_sequence, pad_sequence), axis=0)
+
+        street_index_sequence = np.array(street_index_sequence)
+        pad_sequence = np.zeros((n_unit_road - street_index_sequence.shape[0]))
+        pad_sequence[0] = street_eos_idx
+        pad_sequence[1:] = pad_idx
+        street_index_sequence = np.concatenate((street_index_sequence, pad_sequence), axis=0)
+
+        one_hot_building_index_sequence = np.array(one_hot_building_index_sequence)
+        pad_sequence = np.zeros((n_unit_road - one_hot_building_index_sequence.shape[0], n_building))
+        one_hot_building_index_sequence = np.concatenate((one_hot_building_index_sequence, pad_sequence), axis=0)
+
+        building_center_position_dataset = np.zeros((n_building, 2))
+        unit_center_position_dataset = np.zeros((n_unit_road, 2))
+        unit_position_dataset = np.zeros((n_unit_road, n_unit_sample, 2))
+        street_position_dataset = np.zeros((n_street, n_street_sample, 2))
+        street_unit_position_dataset = np.zeros((n_unit_road, n_street_sample, 2))
+
+        for building in building_polygons:
+            building_idx = building[0]
+            building_center_position_dataset[building_idx] = np.array([building[2].centroid.x, building[2].centroid.y])
+
+        streets = []
+        for street in boundary_lines:
+            if len(streets) == street[0]:
+                streets.append([street[1]])
+            else:
+                streets[-1] += [street[1]]
+        for idx, street in enumerate(streets):
+            street_position_dataset[idx + 1] = random_sample_points_on_multiple_lines(street, 64)
+
+        for idx, unit_road in enumerate(unit_roads):
+            p1 = np.array(unit_road[1])[0]
+            p2 = np.array(unit_road[1])[1]
+            unit_position_dataset[idx] = random_sample_points_on_line(p1, p2, 8)
+            street_unit_position_dataset[idx] = street_position_dataset[unit_road[0] + 1]
+
+            street_idx = unit_road[0]
+            for bounding_box in bounding_boxs:
+                if street_idx == bounding_box[0]:
+                    v_rotated = rotated_line_90_v2(p1, p2, unit_length, scale=100)
+                    intersection_points = bounding_box[1].intersection(LineString(v_rotated))
+                    if not intersection_points.is_empty:
+                        centroid = intersection_points.centroid
+                        unit_center_position_dataset[idx] = np.array([centroid.x, centroid.y])
+
+        building_index_sequences.append(building_index_sequence)
+        one_hot_building_index_sequences.append(one_hot_building_index_sequence)
+        street_index_sequences.append(street_index_sequence)
+        building_center_position_datasets.append(building_center_position_dataset)
+        unit_center_position_datasets.append(unit_center_position_dataset)
+        unit_position_datasets.append(unit_position_dataset)
+        street_position_datasets.append(street_position_dataset)
+        street_unit_position_datasets.append(street_unit_position_dataset)
+
+        adj_matrix = np.zeros((n_building + n_street, n_building + n_street))
+        for unit_road_idx, unit_road in enumerate(unit_roads):
+            street_index = [unit_road[0] + n_building]
+            building_indices = np.unique(building_index_sequence[unit_road_idx])
+            building_indices = building_indices[building_indices != pad_idx]
+            building_indices = building_indices[building_indices != building_eos_idx]
+            building_indices -= 1
+            # print(unit_road_idx, building_indices)
+
+            node_indices = np.concatenate((street_index, building_indices), axis=0)
+            for node1 in node_indices:
+                for node2 in node_indices:
+                    if node1 != node2:
+                        adj_matrix[int(node1)][int(node2)] = 1
+
+        street_indices = []
+        for boundary_line in boundary_lines:
+            if boundary_line[0] not in street_indices:
+                street_indices.append(boundary_line[0])
+        street_indices.append(street_indices[-1])
+        for i in range(len(street_indices) - 1):
+            adj_matrix[street_indices[i]][street_indices[i+1]] = 1
+            adj_matrix[street_indices[i+1]][street_indices[i]] = 1
+
+        adj_matrices_list.append(adj_matrix)
+
+        building_polygons_dataset = []
+        for building_polygon in building_polygons:
+            building_polygons_dataset.append(building_polygon)
+        building_polygons_datasets.append(building_polygons_dataset)
+
+        street_multiline_dataset = []
+        street_indices = []
+        for boundary_line in boundary_lines:
+            if boundary_line[0] not in street_indices:
+                street_indices.append(boundary_line[0])
+                street_multiline_dataset.append([boundary_line[1]])
+            else:
+                street_multiline_dataset[-1] += [boundary_line[1]]
+        for i in range(len(street_multiline_dataset)):
+            street_multiline_dataset[i] = MultiLineString(street_multiline_dataset[i])
+
+        street_multiline_datasets.append(street_multiline_dataset)
+
+        plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons)
+
+building_index_sequences = np.array(building_index_sequences)
+one_hot_building_index_sequences = np.array(one_hot_building_index_sequences)
+street_index_sequences = np.array(street_index_sequences)
+building_center_position_datasets = np.array(building_center_position_datasets)
+unit_center_position_datasets = np.array(unit_center_position_datasets)
+unit_position_datasets = np.array(unit_position_datasets)
+street_position_datasets = np.array(street_position_datasets)
+street_unit_position_datasets = np.array(street_unit_position_datasets)
+
+np.savez('./preprocessing/dataset/husg_transformer_dataset',
+         building_index_sequences=building_index_sequences,
+         one_hot_building_index_sequences=one_hot_building_index_sequences,
+         street_index_sequences=street_index_sequences,
+         building_center_position_datasets=building_center_position_datasets,
+         unit_center_position_datasets=unit_center_position_datasets,
+         unit_position_datasets=unit_position_datasets,
+         street_position_datasets=street_position_datasets,
+         street_unit_position_datasets=street_unit_position_datasets)
+
+graphs = [nx.from_numpy_matrix(adj_matrix) for adj_matrix in adj_matrices_list]
+nx.write_gpickle(graphs, './preprocessing/dataset/husg_diffusion_dataset_graphs.gpickle')
+
+with open('./preprocessing/dataset/husg_diffusion_building_polygons.pkl', 'wb') as file:
+    pickle.dump(building_polygons_datasets, file)
+
+with open('./preprocessing/dataset/husg_diffusion_street_multilines.pkl', 'wb') as file:
+    pickle.dump(street_multiline_datasets, file)
