@@ -10,40 +10,16 @@ class BoundaryDataset(Dataset):
     """
 
     def __init__(self):
-        self.src_unit_dataset = []
-        self.src_street_dataset = []
-        self.trg_dataset = []
-        self.gt_one_hot_dataset = []
-        self.gt_building_pos_dataset = []
-        self.gt_boundary_center_pos_dataset = []
-
-        self.test()
-
-    def test(self):
-        """
-        Test and populate the dataset with example data.
-        """
-        street = [[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]]
-        src_unit_seq = []
-        for i in range(len(street) - 1):
-            units = interpolate_points(street[i], street[i + 1])
-            src_unit_seq.append(units)
-        src_unit_seq = np.array(src_unit_seq)
-        src_unit_seq = np.reshape(src_unit_seq, (-1, 8, 2))
-
-        src_street_seq = []
-        for i in range(len(street) - 1):
-            street = sample_points(street[i], street[i + 1], n=32)
-            src_street_seq.append(street)
-        src_street_seq = np.array(src_street_seq)
-        src_street_seq = np.repeat(src_street_seq, repeats=5, axis=0)
-
-        trg_seq = np.ones((src_street_seq.shape[0], 10))
-        trg_seq[:, 2:] = 0
-
-        self.src_unit_dataset.append(src_unit_seq)
-        self.src_street_dataset.append(src_street_seq)
-        self.trg_dataset.append(trg_seq)
+        self.dataset_path = './dataset/husg_transformer_dataset.npz'
+        self.dataset = np.load(self.dataset_path)
+        self.unit_position_datasets = self.dataset['unit_position_datasets']
+        self.street_unit_position_datasets = self.dataset['street_unit_position_datasets']
+        self.one_hot_building_index_sequences = self.dataset['one_hot_building_index_sequences']
+        self.building_index_sequences = self.dataset['building_index_sequences']
+        self.building_index_sequences = self.dataset['building_index_sequences']
+        self.street_index_sequences = self.dataset['street_index_sequences']
+        self.building_center_position_datasets = self.dataset['building_center_position_datasets']
+        self.unit_center_position_datasets = self.dataset['unit_center_position_datasets']
 
     def __getitem__(self, index):
         """
@@ -55,11 +31,16 @@ class BoundaryDataset(Dataset):
         Returns:
         - tuple: A tuple containing source unit sequence, source street sequence, and target sequence.
         """
-        src_unit_seq = self.src_unit_dataset[index]
-        src_street_seq = self.src_street_dataset[index]
-        trg_seq = self.trg_dataset[index]
+        unit_position_dataset = self.unit_position_datasets[index]
+        street_position_dataset = self.street_unit_position_datasets[index]
+        building_index_sequence = self.building_index_sequences[index]
+        one_hot_building_index_sequence = self.one_hot_building_index_sequences[index]
+        building_center_position_dataset = self.building_center_position_datasets[index]
+        unit_center_position_dataset = self.unit_center_position_datasets[index]
 
-        return src_unit_seq, src_street_seq, trg_seq
+
+        return unit_position_dataset, street_position_dataset, building_index_sequence, \
+               one_hot_building_index_sequence, building_center_position_dataset, unit_center_position_dataset
 
     def __len__(self):
         """
@@ -68,4 +49,4 @@ class BoundaryDataset(Dataset):
         Returns:
         - int: Total number of items in the dataset.
         """
-        return len(self.src_unit_dataset)
+        return len(self.unit_position_datasets)

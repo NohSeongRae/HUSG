@@ -93,7 +93,7 @@ class Decoder(nn.Module):
         return dec_output
 
 class Transformer(nn.Module):
-    def __init__(self, n_building=100, pad_idx=0, d_model=512, d_inner=2048,
+    def __init__(self, n_building=100, pad_idx=0, eos_idx=29, d_model=512, d_inner=2048,
                  n_layer=6, n_head=8, d_k=64, d_v=64, dropout=0.1, n_boundary=200,
                  d_unit=8, d_street=32):
         super().__init__()
@@ -105,10 +105,11 @@ class Transformer(nn.Module):
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
                                d_k=d_k, d_v=d_v, pad_idx=pad_idx, dropout=dropout)
         self.pad_idx = pad_idx
+        self.eos_idx = eos_idx
         self.building_fc = nn.Linear(d_model, n_building, bias=False)
 
     def forward(self, src_unit_seq, src_street_seq, trg_seq):
-        src_pad_mask = get_pad_mask(trg_seq[:, :, 0], pad_idx=self.pad_idx).unsqueeze(-2)
+        src_pad_mask = get_pad_mask(trg_seq[:, :, 0], pad_idx=self.eos_idx).unsqueeze(-2)
         trg_pad_mask = get_pad_mask(trg_seq, pad_idx=self.pad_idx)
         sub_mask = get_subsequent_mask(trg_seq[:, :, 0])
         mask = src_pad_mask & sub_mask
