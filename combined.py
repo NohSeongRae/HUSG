@@ -3,8 +3,9 @@ import numpy as np
 import geopandas as gpd
 from collections import defaultdict
 import matplotlib.pyplot as plt
-from shapely.geometry import Polygon, LineString, Point
-
+import pickle
+from shapely.geometry import Polygon, LineString, Point, MultiLineString
+import networkx as nx
 from shapely.geometry import box
 
 unit_length = 0.04
@@ -65,12 +66,12 @@ def get_building_polygon(building_polygons, bounding_boxs, boundary):
 
         building_list.append([building_idx+1, bounding_box_indices, building_polygon])
 
-    # for bounding_box in bounding_boxs:
-    #     x, y = bounding_box[1].exterior.xy
-    #     plt.plot(x, y, color='black')
-    #     centroid = bounding_box[1].centroid
-    #     text = str(bounding_box[0]+1)
-    #     plt.text(centroid.x, centroid.y, text, fontsize=7, ha='center', va='center', color='black')
+    for bounding_box in bounding_boxs:
+        x, y = bounding_box[1].exterior.xy
+        plt.plot(x, y, color='black')
+        centroid = bounding_box[1].centroid
+        text = str(bounding_box[0]+1)
+        plt.text(centroid.x, centroid.y, text, fontsize=7, ha='center', va='center', color='black')
 
     return building_list
 
@@ -446,13 +447,38 @@ def closest_boundary_edge(building, boundary, sorted_edges):
 
 
 def group_by_boundary_edge(polygons, boundary, sorted_edges):
+    # Calculate centroid of the boundary
+    centroid = boundary.centroid
+
+    # Extracting boundary coordinates from the Polygon object
+    boundary_coords = list(boundary.boundary.coords[:-1])  # exclude the repeated last point
+
+    # Calculate distance and angle for each boundary point from centroid
+    distances_and_angles = []
+    for coord in boundary_coords:
+        dx, dy = coord[0] - centroid.x, coord[1] - centroid.y
+        distance = math.sqrt(dx ** 2 + dy ** 2)
+        angle = math.atan2(dy, dx)
+        distances_and_angles.append((distance, angle, coord))
+
+    # Sort by distance, then by angle (for clock-wise arrangement)
+    distances_and_angles.sort(key=lambda x: (x[0], -x[1]))
+
+    # Sorted boundary coords based on distance and angle
+    sorted_boundary_coords = [item[2] for item in distances_and_angles]
+
+    # Create boundary info with sorted coords
+    boundary_info = {i: (sorted_boundary_coords[i], sorted_boundary_coords[(i + 1) % len(sorted_boundary_coords)])
+                     for i in range(len(sorted_boundary_coords))}
+
     groups = {}
     for poly in polygons:
-        edge_index = closest_boundary_edge(poly, boundary, sorted_edges)
+        edge_index = closest_boundary_edge(poly, boundary, list(boundary_info.keys()))
         if edge_index not in groups:
             groups[edge_index] = []
         groups[edge_index].append(poly)
-    return groups
+
+    return groups, boundary_info
 
 
 def get_unit_length_points(boundary):
@@ -525,8 +551,7 @@ def get_boundary_building_polygon_with_index(groups, boundary):
 
     return building_polygons, boundary_lines
 
-
-def get_calculated_rectangle(groups, boundary):
+def get_calculated_rectangle(groups, boundary, closest_index):
     updated_indices = updated_boundary_edge_indices_v7(boundary)
 
     calculated_rectangles = set()
@@ -537,7 +562,6 @@ def get_calculated_rectangle(groups, boundary):
         edge_index = updated_indices[original_index]
 
         if edge_index in calculated_rectangles:
-
             continue
 
         cluster_polygons = groups[original_index]
@@ -566,6 +590,21 @@ def get_calculated_rectangle(groups, boundary):
         rect_polygons.append([edge_index, rect_polygon])
 
         calculated_rectangles.add(edge_index)
+
+    rect_index = []
+    for i in range(len(rect_polygons)):
+        rect_index.append(rect_polygons[i][0])
+
+    if closest_index != 0:
+        for i in range(len(rect_polygons)):
+            if rect_polygons[i][0] == closest_index:
+                rect_polygons[i][0] = 0
+            elif closest_index < rect_polygons[i][0] <= max(rect_index):
+                rect_polygons[i][0] -= closest_index
+            else:
+                rect_polygons[i][0] += (max(rect_index) - closest_index + 1)
+
+    # print(":rect_polygons", rect_polygons[0])
 
     return rect_polygons
 
@@ -729,6 +768,7 @@ def distance_to_origin_from_segment(segment):
     point = Point(0, 0)
     return line.distance(point)
 
+
 def split_into_unit_roads(boundary_lines, n):
 
     if boundary_lines[-1][0] == boundary_lines[0][0]:
@@ -737,22 +777,43 @@ def split_into_unit_roads(boundary_lines, n):
 
     boundary_lines = reverse_sort_and_connect_segments(boundary_lines)
 
+    # print("boundary lines", boundary_lines)
+
+    min_distance = float('inf')
+    closest_group_index = None
+
+    for segment in boundary_lines:
+        group_index, (start_point, end_point) = segment
+
+        # Calculate distances from the origin to both start and end points of the segment
+        distance_to_start = math.sqrt(start_point[0]**2 + start_point[1]**2)
+        distance_to_end = math.sqrt(end_point[0]**2 + end_point[1]**2)
+
+        # Check if either of the distances is the shortest found so far
+        if distance_to_start < min_distance:
+            min_distance = distance_to_start
+            closest_group_index = group_index
+        if distance_to_end < min_distance:
+            min_distance = distance_to_end
+            closest_group_index = group_index
+
+
+
     # Find the group index of the segment closest to the origin
-    closest_group_index = min(boundary_lines, key=lambda x: distance_to_origin_from_segment(x[1]))[0]
+    # closest_group_index = min(boundary_lines, key=lambda x: distance_to_origin_from_segment(x[1]))[0]
 
-    # Reorder the group indices
-    group_indices = sorted(set([item[0] for item in boundary_lines]))
-    group_indices_reordered = group_indices[closest_group_index:] + group_indices[:closest_group_index]
+    # # Reorder the group indices
+    # group_indices = sorted(set([item[0] for item in boundary_lines]))
+    # group_indices_reordered = group_indices[closest_group_index:] + group_indices[:closest_group_index]
+    #
+    # # Update the data with reordered group indices
+    # data_reordered = []
+    # for item in boundary_lines:
+    #     new_group_index = group_indices_reordered.index(item[0])
+    #     data_reordered.append([new_group_index, item[1]])
+    #
+    # boundary_lines = data_reordered
 
-    # Update the data with reordered group indices
-    data_reordered = []
-    for item in boundary_lines:
-        new_group_index = group_indices_reordered.index(item[0])
-        data_reordered.append([new_group_index, item[1]])
-
-    boundary_lines = data_reordered
-
-    # print(boundary_lines)
 
     unique_index = 0
 
@@ -822,6 +883,25 @@ def split_into_unit_roads(boundary_lines, n):
                 (unit_roads[-1][1][1][1] + unit_roads[0][1][0][1]) / 2]
         unit_roads[-1][1][1] = unit_roads[0][1][0] = mean
 
+
+
+    # plt.show()
+
+    unit_index = []
+    for i in range(len(unit_roads)):
+        unit_index.append(unit_roads[i][0])
+
+    if closest_group_index != 0:
+
+        for i in range(len(unit_roads)):
+            if unit_roads[i][0] == closest_group_index:
+                # print("asdfg", unit_roads[i][0])
+                unit_roads[i][0] = 0
+            elif closest_group_index < unit_roads[i][0] <= max(unit_index):
+                unit_roads[i][0] -= closest_group_index
+            else:
+                unit_roads[i][0] += (max(unit_index) - closest_group_index + 1)
+
     unique_index = 0
     for line in unit_roads:
         unique_index += 1
@@ -836,9 +916,8 @@ def split_into_unit_roads(boundary_lines, n):
         plt.text(centroid_x, centroid_y, building_text, fontsize=7, ha='center', va='center', color='black')
         # plt.text(centroid_x, centroid_y, unique_index-1, fontsize=7, ha='center', va='center', color='black')
 
-    # plt.show()
+    return unit_roads, closest_group_index
 
-    return unit_roads
 
 
 def project_point_onto_line(P, A, B):
@@ -926,6 +1005,9 @@ unit_center_position_datasets = []
 unit_position_datasets = []
 street_position_datasets = []
 street_unit_position_datasets = []
+adj_matrices_list = []
+building_polygons_datasets = []
+street_multiline_datasets = []
 
 for i in range(0, 200):
     building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
@@ -944,14 +1026,15 @@ for i in range(0, 200):
         boundary_polygon = boundary_gdf.iloc[0]['geometry']
 
         sorted_edges = sorted_boundary_edges(boundary_polygon)
-        groups = group_by_boundary_edge(building_polygons, boundary_polygon, sorted_edges)
-        bounding_boxs = get_calculated_rectangle(groups, boundary_polygon)
+        groups, boundary_info = group_by_boundary_edge(building_polygons, boundary_polygon, sorted_edges)
 
         _, boundary_lines = get_boundary_building_polygon_with_index(groups, boundary_polygon)
-        building_polygons = get_building_polygon(building_polygons, bounding_boxs, boundary_polygon)
         boundary_lines.sort(key=lambda x: x[0])
 
-        unit_roads = split_into_unit_roads(boundary_lines, unit_length)
+        unit_roads, closest_unit_index = split_into_unit_roads(boundary_lines, unit_length)
+
+        bounding_boxs = get_calculated_rectangle(groups, boundary_polygon, closest_unit_index)
+        building_polygons = get_building_polygon(building_polygons, bounding_boxs, boundary_polygon)
 
         n_building = 30
         n_unit_road = 200
@@ -979,8 +1062,8 @@ for i in range(0, 200):
                 p1 = np.array(unit_road[1])[0]
                 p2 = np.array(unit_road[1][1])
                 v_rotated = rotated_line_90(p1, p2)
-                # plt.plot([v_rotated[0][0], v_rotated[1][0]],
-                #          [v_rotated[0][1], v_rotated[1][1]], linewidth=1)
+                plt.plot([v_rotated[0][0], v_rotated[1][0]],
+                         [v_rotated[0][1], v_rotated[1][1]], linewidth=1)
 
                 building_segments = get_segments_as_lists(building[2])
 
@@ -1076,8 +1159,49 @@ for i in range(0, 200):
         street_position_datasets.append(street_position_dataset)
         street_unit_position_datasets.append(street_unit_position_dataset)
 
-        plt.show()
+        adj_matrix = np.zeros((n_building + n_street, n_building + n_street))
+        for unit_road_idx, unit_road in enumerate(unit_roads):
+            street_index = [unit_road[0] + n_building]
+            building_indices = np.unique(building_index_sequence[unit_road_idx])
+            building_indices = building_indices[building_indices != pad_idx]
+            building_indices = building_indices[building_indices != building_eos_idx]
+            building_indices -= 1
+            # print(unit_road_idx, building_indices)
 
+            node_indices = np.concatenate((street_index, building_indices), axis=0)
+            for node1 in node_indices:
+                for node2 in node_indices:
+                    if node1 != node2:
+                        adj_matrix[int(node1)][int(node2)] = 1
+
+        street_indices = []
+        for boundary_line in boundary_lines:
+            if boundary_line[0] not in street_indices:
+                street_indices.append(boundary_line[0])
+        street_indices.append(street_indices[-1])
+        for i in range(len(street_indices) - 1):
+            adj_matrix[street_indices[i]][street_indices[i+1]] = 1
+            adj_matrix[street_indices[i+1]][street_indices[i]] = 1
+
+        adj_matrices_list.append(adj_matrix)
+
+        building_polygons_dataset = []
+        for building_polygon in building_polygons:
+            building_polygons_dataset.append(building_polygon)
+        building_polygons_datasets.append(building_polygons_dataset)
+
+        street_multiline_dataset = []
+        street_indices = []
+        for boundary_line in boundary_lines:
+            if boundary_line[0] not in street_indices:
+                street_indices.append(boundary_line[0])
+                street_multiline_dataset.append([boundary_line[1]])
+            else:
+                street_multiline_dataset[-1] += [boundary_line[1]]
+        for i in range(len(street_multiline_dataset)):
+            street_multiline_dataset[i] = MultiLineString(street_multiline_dataset[i])
+
+        street_multiline_datasets.append(street_multiline_dataset)
 
 building_index_sequences = np.array(building_index_sequences)
 one_hot_building_index_sequences = np.array(one_hot_building_index_sequences)
@@ -1106,3 +1230,11 @@ np.savez('./husg_transformer_dataset',
          unit_position_datasets=unit_position_datasets,
          street_position_datasets=street_position_datasets,
          street_unit_position_datasets=street_unit_position_datasets)
+
+graphs = [nx.from_numpy_matrix(adj_matrix) for adj_matrix in adj_matrices_list]
+nx.write_gpickle(graphs, './husg_diffusion_dataset_graphs.gpickle')
+
+with open('./husg_diffusion_building_polygons.pkl', 'wb') as file:
+    pickle.dump(building_polygons_datasets, file)
+with open('./husg_diffusion_street_multilines.pkl', 'wb') as file:
+    pickle.dump(street_multiline_datasets, file)
