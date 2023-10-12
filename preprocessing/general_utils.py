@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from shapely.geometry import LineString
 
 def rotated_line_90(p1, p2, unit_length, scale=5):
     v = p2 - p1
@@ -37,11 +38,23 @@ def get_segments_as_lists(polygon):
 
     return segments_coords
 
+def extract_line_segments(polygon):
+    coords = list(polygon.exterior.coords)
+    line_segments = []
+
+    # Iterate through all coordinate pairs and create a line segment
+    for i in range(1, len(coords) - 1):  # Skipping the last segment to not connect the last and first points
+        segment = [coords[i - 1], coords[i]]
+        line_segments.append(segment)
+
+    return line_segments
+
 def random_sample_points_on_multiple_lines(lines, m):
     """
     lines: [(A1, B1), (A2, B2), ...]의 형태로 주어지는 n개의 직선
     m: 샘플링할 점의 개수
     """
+
     sampled_points = []
 
     for _ in range(m):

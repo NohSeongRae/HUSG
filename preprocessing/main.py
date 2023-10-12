@@ -79,7 +79,7 @@ def merge_geometries_by_index(bounding_boxs, geometries):
 
 
 
-for i in range(1, filenum+1):
+for i in range(435, filenum+1):
     building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                      'Normalized', 'Buildings', f'{city_name}_buildings{i}.geojson')
     boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
@@ -140,8 +140,10 @@ for i in range(1, filenum+1):
         # Filter geometries based on the indices found in rect_polygons
         filtered_geometries = [item for item in geometries if item[0] in rect_indices]
 
+        boundary_lines = []
+        for i in range(len(geometries)):
+            boundary_lines.append([i, extract_line_segments(geometries[i][1])])
         geometries = filtered_geometries
-
 
         try:
             bounding_boxs = merge_geometries_by_index(rect_polygons, geometries)
@@ -170,6 +172,8 @@ for i in range(1, filenum+1):
                 p1 = np.array(unit_road[1])[0]
                 p2 = np.array(unit_road[1][1])
                 v_rotated = rotated_line_90(p1, p2, unit_length)
+                # plt.plot([v_rotated[0][0], v_rotated[1][0]],
+                #          [v_rotated[0][1], v_rotated[1][1]], linewidth=1)
 
                 building_segments = get_segments_as_lists(building[2])
 
@@ -220,8 +224,9 @@ for i in range(1, filenum+1):
                 streets.append([street[1]])
             else:
                 streets[-1] += [street[1]]
-        for idx, street in enumerate(streets):
-            street_position_dataset[idx + 1] = random_sample_points_on_multiple_lines(street, 64)
+
+        for idx, street in enumerate(boundary_lines):
+            street_position_dataset[idx + 1] = random_sample_points_on_multiple_lines(street[1], 64)
 
         for idx, unit_road in enumerate(unit_roads):
             p1 = np.array(unit_road[1])[0]
@@ -254,7 +259,6 @@ for i in range(1, filenum+1):
             building_indices = building_indices[building_indices != pad_idx]
             building_indices = building_indices[building_indices != building_eos_idx]
             building_indices -= 1
-            # print(unit_road_idx, building_indices)
 
             node_indices = np.concatenate((street_index, building_indices), axis=0)
             for node1 in node_indices:
@@ -265,8 +269,10 @@ for i in range(1, filenum+1):
         street_indices = []
         for boundary_line in boundary_lines:
             if boundary_line[0] not in street_indices:
-                street_indices.append(boundary_line[0])
-        street_indices.append(street_indices[-1])
+                street_indices.append(boundary_line[0] + n_building)
+        street_indices = np.unique(street_indices).tolist()
+        street_indices.append(street_indices[0])
+
         for i in range(len(street_indices) - 1):
             adj_matrix[street_indices[i]][street_indices[i+1]] = 1
             adj_matrix[street_indices[i+1]][street_indices[i]] = 1
@@ -281,17 +287,11 @@ for i in range(1, filenum+1):
         street_multiline_dataset = []
         street_indices = []
         for boundary_line in boundary_lines:
-            if boundary_line[0] not in street_indices:
-                street_indices.append(boundary_line[0])
-                street_multiline_dataset.append([boundary_line[1]])
-            else:
-                street_multiline_dataset[-1] += [boundary_line[1]]
-        for i in range(len(street_multiline_dataset)):
-            street_multiline_dataset[i] = MultiLineString(street_multiline_dataset[i])
+            street_multiline_dataset = MultiLineString(boundary_line[1])
 
         street_multiline_datasets.append(street_multiline_dataset)
 
-        plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons)
+        plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_building, street_position_dataset)
 
 building_index_sequences = np.array(building_index_sequences)
 one_hot_building_index_sequences = np.array(one_hot_building_index_sequences)
