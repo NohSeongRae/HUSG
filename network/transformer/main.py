@@ -108,14 +108,15 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, trg_index_seq, trg_one_hot_seq, building_center_pos, unit_center_pos = data
+                src_unit_seq, src_street_seq, trg_building_seq, trg_one_hot_seq, trg_street_seq = data
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)[:, :-1]
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)[:, :-1]
-                trg_index_seq = trg_index_seq.to(device=self.device, dtype=torch.long)[:, :-1]
+                trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)[:, :-1]
+                trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)[:, :-1]
                 trg_one_hot_seq = trg_one_hot_seq.to(device=self.device, dtype=torch.long)[:, 1:]
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq, trg_index_seq)
+                output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
 
                 # Compute the losses
                 loss_ce = self.cross_entropy_loss(output, trg_one_hot_seq)

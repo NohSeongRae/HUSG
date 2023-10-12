@@ -16,10 +16,7 @@ class BoundaryDataset(Dataset):
         self.street_unit_position_datasets = self.dataset['street_unit_position_datasets']
         self.one_hot_building_index_sequences = self.dataset['one_hot_building_index_sequences']
         self.building_index_sequences = self.dataset['building_index_sequences']
-        self.building_index_sequences = self.dataset['building_index_sequences']
         self.street_index_sequences = self.dataset['street_index_sequences']
-        self.building_center_position_datasets = self.dataset['building_center_position_datasets']
-        self.unit_center_position_datasets = self.dataset['unit_center_position_datasets']
 
     def __getitem__(self, index):
         """
@@ -35,12 +32,11 @@ class BoundaryDataset(Dataset):
         street_position_dataset = self.street_unit_position_datasets[index]
         building_index_sequence = self.building_index_sequences[index]
         one_hot_building_index_sequence = self.one_hot_building_index_sequences[index]
-        building_center_position_dataset = self.building_center_position_datasets[index]
-        unit_center_position_dataset = self.unit_center_position_datasets[index]
+        street_index_sequences = self.street_index_sequences[index]
 
 
         return unit_position_dataset, street_position_dataset, building_index_sequence, \
-               one_hot_building_index_sequence, building_center_position_dataset, unit_center_position_dataset
+               one_hot_building_index_sequence, street_index_sequences
 
     def __len__(self):
         """

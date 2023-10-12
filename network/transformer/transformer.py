@@ -5,6 +5,19 @@ import numpy as np
 
 from network.transformer.layer import EncoderLayer, DecoderLayer
 
+def get_street_mask(seq):
+    street_mask = seq[:, :, None] == seq[:, None, :]
+
+    return street_mask
+
+def get_local_mask(seq):
+    sz_b, len_s = seq.size()
+    tril_mask1 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-1)
+    tril_mask2 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-6)
+    local_mask = (tril_mask1 - tril_mask2).bool()
+
+    return local_mask
+
 def get_pad_mask(seq, pad_idx):
     mask = (seq != pad_idx)
     return mask
@@ -77,7 +90,7 @@ class Decoder(nn.Module):
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.d_model = d_model
 
-    def forward(self, seq, enc_output, mask, trg_pad_mask):
+    def forward(self, seq, enc_output, mask, trg_pad_mask, trg_street_mask, trg_local_mask):
         dec_output = self.building_emb(seq)
         trg_pad_mask = trg_pad_mask.unsqueeze(dim=-1).repeat((1, 1, 1, self.d_model))
         dec_output = dec_output * trg_pad_mask
@@ -88,7 +101,7 @@ class Decoder(nn.Module):
         dec_output = self.layer_norm(dec_output)
 
         for dec_layer in self.layer_stack:
-            dec_output, _, _ = dec_layer(dec_output, enc_output, mask)
+            dec_output, _, _ = dec_layer(dec_output, enc_output, mask, trg_street_mask, trg_local_mask)
 
         return dec_output
 
@@ -108,14 +121,18 @@ class Transformer(nn.Module):
         self.eos_idx = eos_idx
         self.building_fc = nn.Linear(d_model, n_building, bias=False)
 
-    def forward(self, src_unit_seq, src_street_seq, trg_seq):
-        src_pad_mask = get_pad_mask(trg_seq[:, :, 0], pad_idx=self.eos_idx).unsqueeze(-2)
-        trg_pad_mask = get_pad_mask(trg_seq, pad_idx=self.pad_idx)
-        sub_mask = get_subsequent_mask(trg_seq[:, :, 0])
+    def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq):
+        src_pad_mask = get_pad_mask(trg_building_seq[:, :, 0], pad_idx=self.eos_idx).unsqueeze(-2)
+        trg_pad_mask = get_pad_mask(trg_building_seq, pad_idx=self.pad_idx)
+        trg_street_mask = get_street_mask(trg_street_seq)
+        trg_local_mask = get_local_mask(trg_street_seq)
+        sub_mask = get_subsequent_mask(trg_building_seq[:, :, 0])
         mask = src_pad_mask & sub_mask
+        trg_street_mask = trg_street_mask & mask
+        trg_local_mask = trg_local_mask & mask
 
         enc_output = self.encoder(src_unit_seq, src_street_seq, src_pad_mask)
-        dec_output = self.decoder(trg_seq, enc_output, mask, trg_pad_mask)
+        dec_output = self.decoder(trg_building_seq, enc_output, mask, trg_pad_mask, trg_street_mask, trg_local_mask)
 
         output = self.building_fc(dec_output)
 
