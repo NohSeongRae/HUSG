@@ -221,6 +221,7 @@ def project_polygon_onto_linestring_full(polygon, linestring):
 
     # Check if the projected polygon overlaps with the linestring
     projected_polygon = Polygon(proj_coords)
+
     if projected_polygon.is_valid:
         overlap = projected_polygon.intersects(linestring)
     else:

@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Polygon
 
 def rotated_line_90(p1, p2, unit_length, scale=5):
     v = p2 - p1
@@ -39,8 +39,14 @@ def get_segments_as_lists(polygon):
     return segments_coords
 
 def extract_line_segments(polygon):
-    coords = list(polygon.exterior.coords)
+    if isinstance(polygon, Polygon):
+        coords = list(polygon.exterior.coords)
+    if isinstance(polygon, LineString):
+        coords = [[polygon.coords[0], polygon.coords[1]]]
+        return coords
+
     line_segments = []
+
 
     # Iterate through all coordinate pairs and create a line segment
     for i in range(1, len(coords) - 1):  # Skipping the last segment to not connect the last and first points

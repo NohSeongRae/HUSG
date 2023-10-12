@@ -79,7 +79,7 @@ def merge_geometries_by_index(bounding_boxs, geometries):
 
 
 
-for i in range(435, filenum+1):
+for i in range(0, 500):
     building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                      'Normalized', 'Buildings', f'{city_name}_buildings{i}.geojson')
     boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
@@ -142,7 +142,8 @@ for i in range(435, filenum+1):
 
         boundary_lines = []
         for i in range(len(geometries)):
-            boundary_lines.append([i, extract_line_segments(geometries[i][1])])
+            polygon = geometries[i][1]
+            boundary_lines.append([len(boundary_lines), extract_line_segments(polygon)])
         geometries = filtered_geometries
 
         try:
@@ -227,6 +228,7 @@ for i in range(435, filenum+1):
 
         for idx, street in enumerate(boundary_lines):
             street_position_dataset[idx + 1] = random_sample_points_on_multiple_lines(street[1], 64)
+        # print(np.mean(street_position_dataset, axis=1))
 
         for idx, unit_road in enumerate(unit_roads):
             p1 = np.array(unit_road[1])[0]
@@ -291,7 +293,7 @@ for i in range(435, filenum+1):
 
         street_multiline_datasets.append(street_multiline_dataset)
 
-        plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_building, street_position_dataset)
+        # plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_building, street_position_dataset)
 
 building_index_sequences = np.array(building_index_sequences)
 one_hot_building_index_sequences = np.array(one_hot_building_index_sequences)
@@ -302,7 +304,7 @@ unit_position_datasets = np.array(unit_position_datasets)
 street_position_datasets = np.array(street_position_datasets)
 street_unit_position_datasets = np.array(street_unit_position_datasets)
 
-np.savez('./preprocessing/dataset/husg_transformer_dataset',
+np.savez('./dataset/husg_transformer_dataset',
          building_index_sequences=building_index_sequences,
          one_hot_building_index_sequences=one_hot_building_index_sequences,
          street_index_sequences=street_index_sequences,
@@ -313,10 +315,12 @@ np.savez('./preprocessing/dataset/husg_transformer_dataset',
          street_unit_position_datasets=street_unit_position_datasets)
 
 graphs = [nx.from_numpy_matrix(adj_matrix) for adj_matrix in adj_matrices_list]
-nx.write_gpickle(graphs, './preprocessing/dataset/husg_diffusion_dataset_graphs.gpickle')
+nx.write_gpickle(graphs, './dataset/husg_diffusion_dataset_graphs.gpickle')
 
-with open('./preprocessing/dataset/husg_diffusion_building_polygons.pkl', 'wb') as file:
+with open('./dataset/husg_diffusion_building_polygons.pkl', 'wb') as file:
     pickle.dump(building_polygons_datasets, file)
 
-with open('./preprocessing/dataset/husg_diffusion_street_multilines.pkl', 'wb') as file:
+with open('./dataset/husg_diffusion_street_multilines.pkl', 'wb') as file:
     pickle.dump(street_multiline_datasets, file)
+
+print('save finish!!')
