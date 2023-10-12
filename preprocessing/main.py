@@ -79,7 +79,7 @@ def merge_geometries_by_index(bounding_boxs, geometries):
 
 
 
-for i in range(0, 500):
+for i in range(0, filenum):
     building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                      'Normalized', 'Buildings', f'{city_name}_buildings{i}.geojson')
     boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
@@ -257,7 +257,7 @@ for i in range(0, 500):
         adj_matrix = np.zeros((n_building + n_street, n_building + n_street))
         for unit_road_idx, unit_road in enumerate(unit_roads):
             street_index = [unit_road[0] + n_building]
-            building_indices = np.unique(building_index_sequence[unit_road_idx])
+            building_indices = np.unique(building_index_sequence[unit_road_idx-2:unit_road_idx+3])  # building edge!
             building_indices = building_indices[building_indices != pad_idx]
             building_indices = building_indices[building_indices != building_eos_idx]
             building_indices -= 1
