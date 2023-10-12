@@ -1,10 +1,15 @@
 import math
 from math import atan2
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, Point, Polygon
+from shapely.ops import unary_union
 
-from preprocessing.gemoetry_utils import distance_to_origin, calculate_angle_from_reference, compute_angle, \
+from gemoetry_utils import distance_to_origin, calculate_angle_from_reference, compute_angle, \
     find_polygon_with_farthest_edge, normalize_geometry, create_combined_edge, create_rectangle
-from preprocessing.general_utils import compute_distance
+from general_utils import compute_distance
+
+# from preprocessing.gemoetry_utils import distance_to_origin, calculate_angle_from_reference, compute_angle, \
+#     find_polygon_with_farthest_edge, normalize_geometry, create_combined_edge, create_rectangle
+# from preprocessing.general_utils import compute_distance
 
 def sort_polygons_clockwise_using_boundary_centroid_corrected(polygons, boundary_polygon):
     """Sort polygons clockwise based on the angle from the boundary polygon's centroid."""
@@ -41,6 +46,7 @@ def get_building_polygon(building_polygons, bounding_boxs, boundary):
 def updated_boundary_edge_indices_v5(boundary, unit_length):
     """Generate updated indices for boundary edges."""
     original_indices = list(range(len(boundary.exterior.coords) - 1))
+
     updated_indices = original_indices.copy()
 
     adjustment = 0  # 인덱스 조정값
@@ -96,14 +102,17 @@ def updated_boundary_edge_indices_v7(boundary, unit_length, reference_angle):
     start1, end1 = merged_segments[-1]
     start2, end2 = merged_segments[0]
     angle = compute_angle(boundary.exterior.coords[start1], boundary.exterior.coords[end1], boundary.exterior.coords[end2])
+
+    check_first_last_angle = False
     if 0 <= angle <= 30 or 330 <= angle <= 360:
+        check_first_last_angle = True
         last_index_value = updated_indices[start1]
         first_index_value = updated_indices[start2]
         for i in range(len(updated_indices)):
             if updated_indices[i] == last_index_value:
                 updated_indices[i] = first_index_value
 
-    return updated_indices
+    return updated_indices, check_first_last_angle
 
 def sorted_boundary_edges(boundary, unit_length):
     # Find the centroid of the boundary
@@ -210,7 +219,7 @@ def get_continuous_groups(indices):
     return groups
 
 def get_boundary_building_polygon_with_index(groups, boundary, unit_length, reference_angle):
-    updated_indices = updated_boundary_edge_indices_v7(boundary, unit_length, reference_angle)
+    updated_indices, _ = updated_boundary_edge_indices_v7(boundary, unit_length, reference_angle)
 
     building_polygons = []
     boundary_lines = []
@@ -256,12 +265,200 @@ def get_boundary_building_polygon_with_index(groups, boundary, unit_length, refe
     boundary_lines.sort(key=lambda x: x[0])
     return building_polygons, boundary_lines
 
-def get_calculated_rectangle(groups, boundary, closest_index, unit_length, reference_angle):
-    updated_indices = updated_boundary_edge_indices_v7(boundary, unit_length, reference_angle)
+
+def create_closed_polygons(segments):
+
+    # Group segments by group_index
+    grouped_segments = {}
+    for segment in segments:
+        group_index, line = segment
+        if group_index not in grouped_segments:
+            grouped_segments[group_index] = []
+        grouped_segments[group_index].append(line)
+
+    geometries = []
+    for group_index, lines in grouped_segments.items():
+        # Extract the start point of the first segment and the end point of the last segment
+        start_point = lines[0][0]
+        end_point = lines[-1][1]
+
+        # Create the closed polygon
+        polygon_points = [start_point] + [line[1] for line in lines] + [end_point]
+        polygon_obj = Polygon(polygon_points)
+
+        # Check if the created polygon is a line (area is zero)
+        if polygon_obj.area == 0:
+            line_obj = LineString([start_point, end_point])
+            geometries.append([group_index, line_obj])
+        else:
+            geometries.append([group_index, polygon_obj])
+
+    return geometries
+
+
+import math
+
+
+from shapely.geometry import Polygon
+import math
+
+# Helper functions
+
+def subtract_vectors(v1, v2):
+    return (v1[0]-v2[0], v1[1]-v2[1])
+
+def add_vectors(v1, v2):
+    return (v1[0]+v2[0], v1[1]+v2[1])
+
+def scale_vector(v, scale):
+    return (v[0]*scale, v[1]*scale)
+
+def magnitude(v):
+    return (v[0]**2 + v[1]**2)**0.5
+
+def normalize_vector(v):
+    mag = magnitude(v)
+    return (v[0]/mag, v[1]/mag)
+
+def perpendicular_vector(v):
+    """Return a vector perpendicular to the given vector v."""
+    return (-v[1], v[0])
+
+
+
+# Construct rectangles
+def construct_rectangles(segments, lengths, boundary_polygon):
+    # print("segments", segments)
+    # print("lengths", lengths)
+    # print("boundary polygon", boundary_polygon)
+
+    grouped_segments = {}
+    for seg in segments:
+        idx, line = seg
+        if idx not in grouped_segments:
+            grouped_segments[idx] = []
+        grouped_segments[idx].append(line)
+
+    group_endpoints = {}
+    for idx, lines in grouped_segments.items():
+        start_point = lines[0][0]
+        end_point = lines[-1][1]
+        # start_point = min([line[0] for line in lines], key=lambda x: (x[0], x[1]))
+        # end_point = max([line[1] for line in lines], key=lambda x: (x[0], x[1]))
+        group_endpoints[idx] = (start_point, end_point)
+
+    rectangles = []
+    for idx, (start, end) in group_endpoints.items():
+        # Check if the idx exists in lengths
+        if idx not in [l[0] for l in lengths]:
+            continue
+
+        length = [l[1] for l in lengths if l[0] == idx][0]
+
+        direction_vector = subtract_vectors(end, start)
+        perpendicular_dir = perpendicular_vector(direction_vector)
+        normalized_perpendicular = normalize_vector(perpendicular_dir)
+
+        # Create two possible rectangles (one in each direction)
+        top_right1 = add_vectors(start, scale_vector(normalized_perpendicular, length))
+        bottom_right1 = add_vectors(end, scale_vector(normalized_perpendicular, length))
+        rect1 = Polygon([start, end, bottom_right1, top_right1])
+
+        top_right2 = add_vectors(start, scale_vector(normalized_perpendicular, -length))
+        bottom_right2 = add_vectors(end, scale_vector(normalized_perpendicular, -length))
+        rect2 = Polygon([start, end, bottom_right2, top_right2])
+
+        # Choose the rectangle with the larger intersection area with boundary_polygon
+        intersection_area1 = rect1.intersection(boundary_polygon).area
+        intersection_area2 = rect2.intersection(boundary_polygon).area
+        chosen_rect = rect1 if intersection_area1 > intersection_area2 else rect2
+
+        rectangles.append([idx, chosen_rect])
+
+    return rectangles
+
+
+
+def extend_polygon(segments, heights, points):
+
+    # Convert the list of heights and reference points to dictionaries for easier access
+    height_dict = {group_index: height for group_index, height in heights}
+    reference_point_dict = {group_index: Point(coord) for group_index, coord in points}
+
+    # Create the closed polygons or lines first
+    geometries = create_closed_polygons(segments)
+
+    # Extend each geometry and keep the group_index
+    extended_geometries = []
+    for group_index, geometry in geometries:
+        if isinstance(geometry, LineString):
+            start_point = geometry.coords[0]
+            end_point = geometry.coords[1]
+        else:  # Polygon
+            start_point = geometry.exterior.coords[0]
+            end_point = geometry.exterior.coords[-1]
+
+        # Determine the direction to extend the rectangle
+        dx = end_point[0] - start_point[0]
+        dy = end_point[1] - start_point[1]
+
+        # Normalize the direction
+        length = (dx**2 + dy**2)**0.5
+        if length == 0:
+            continue
+        dx /= length
+        dy /= length
+
+        # Get the direction perpendicular to the line
+        perp_dx1, perp_dy1 = -dy, dx
+        perp_dx2, perp_dy2 = dy, -dx
+
+        # Decide which direction to use based on the reference point's position
+        reference_point = reference_point_dict.get(group_index, Point(0, 0))
+        midpoint = Point((start_point[0] + end_point[0]) / 2, (start_point[1] + end_point[1]) / 2)
+        if midpoint.distance(Point(midpoint.x + perp_dx1, midpoint.y + perp_dy1)) < midpoint.distance(reference_point):
+            perp_dx, perp_dy = perp_dx1, perp_dy1
+        else:
+            perp_dx, perp_dy = perp_dx2, perp_dy2
+
+        # Get the appropriate height for the current group_index from the height_dict
+        height = height_dict.get(group_index, 0)  # Default to 0 if not found
+
+        # Calculate the other two vertices of the rectangle
+        rect_point1 = (start_point[0] + height * perp_dx, start_point[1] + height * perp_dy)
+        rect_point2 = (end_point[0] + height * perp_dx, end_point[1] + height * perp_dy)
+
+        # Create the rectangle
+        rectangle = Polygon([start_point, end_point, rect_point2, rect_point1, start_point])
+
+        # Merge the original geometry with the rectangle
+        extended_geometry_obj = unary_union([geometry, rectangle])
+
+        extended_geometries.append([group_index, extended_geometry_obj])
+
+    return extended_geometries
+
+
+def adjust_group_indices(data_list, closest_index, rect_index):
+    if closest_index == 0:
+        return
+
+    for item in data_list:
+        if item[0] == closest_index:
+            item[0] = 0
+        elif closest_index < item[0] <= max(rect_index):
+            item[0] -= closest_index
+        else:
+            item[0] += (max(rect_index) - closest_index + 1)
+
+def get_calculated_rectangle(groups, boundary, closest_index, unit_length, reference_angle, linestring_list):
+    updated_indices, check_angle = updated_boundary_edge_indices_v7(boundary, unit_length, reference_angle)
 
     calculated_rectangles = set()
 
     rect_polygons = []
+    rect_heights = []
+    farthest_points = []
 
     for original_index in groups:
         edge_index = updated_indices[original_index]
@@ -275,7 +472,12 @@ def get_calculated_rectangle(groups, boundary, closest_index, unit_length, refer
 
         continuous_groups = get_continuous_groups(updated_indices)
         group_for_edge = [group for group in continuous_groups if updated_indices[group[0]] == edge_index][0]
+
         same_index_originals = list(range(group_for_edge[0], group_for_edge[1] + 1))
+
+        # if group_for_edge in continuous_groups:
+        #     if check_angle == True:
+        #
 
         # Create combined edge for these original indices
         combined_edge = create_combined_edge(boundary, same_index_originals)
@@ -284,15 +486,17 @@ def get_calculated_rectangle(groups, boundary, closest_index, unit_length, refer
         farthest_point = None
         max_distance = 0
         for point in farthest_polygon.exterior.coords:
-            distance = combined_edge.distance(Point(point))
+            distance = linestring_list[edge_index][1].distance(Point(point))
             if distance > max_distance:
                 max_distance = distance
                 farthest_point = point
 
-        combined_edge = create_combined_edge(boundary, same_index_originals)
-        rect_polygon = create_rectangle(combined_edge, farthest_point)
+        # combined_edge = create_combined_edge(boundary, same_index_originals)
+        rect_polygon, rect_height = create_rectangle(combined_edge, farthest_point, linestring_list, edge_index)
 
+        farthest_points.append([edge_index, farthest_point])
         rect_polygons.append([edge_index, rect_polygon])
+        rect_heights.append([edge_index, rect_height])
 
         calculated_rectangles.add(edge_index)
 
@@ -300,16 +504,11 @@ def get_calculated_rectangle(groups, boundary, closest_index, unit_length, refer
     for i in range(len(rect_polygons)):
         rect_index.append(rect_polygons[i][0])
 
-    if closest_index != 0:
-        for i in range(len(rect_polygons)):
-            if rect_polygons[i][0] == closest_index:
-                rect_polygons[i][0] = 0
-            elif closest_index < rect_polygons[i][0] <= max(rect_index):
-                rect_polygons[i][0] -= closest_index
-            else:
-                rect_polygons[i][0] += (max(rect_index) - closest_index + 1)
+    adjust_group_indices(rect_polygons, closest_index, rect_index)
+    adjust_group_indices(rect_heights, closest_index, rect_index)
+    adjust_group_indices(farthest_points, closest_index, rect_index)
 
-    return rect_polygons
+    return rect_polygons, rect_heights, farthest_points
 
 def sort_boundary_lines(boundary_lines):
     # Calculate the centroid of all points
@@ -363,23 +562,7 @@ def split_into_unit_roads(boundary_lines, n):
 
     boundary_lines = reverse_sort_and_connect_segments(boundary_lines)
 
-    min_distance = float('inf')
-    closest_group_index = None
-
-    for segment in boundary_lines:
-        group_index, (start_point, end_point) = segment
-
-        # Calculate distances from the origin to both start and end points of the segment
-        distance_to_start = math.sqrt(start_point[0]**2 + start_point[1]**2)
-        distance_to_end = math.sqrt(end_point[0]**2 + end_point[1]**2)
-
-        # Check if either of the distances is the shortest found so far
-        if distance_to_start < min_distance:
-            min_distance = distance_to_start
-            closest_group_index = group_index
-        if distance_to_end < min_distance:
-            min_distance = distance_to_end
-            closest_group_index = group_index
+    closest_group_index = min(boundary_lines, key=lambda x: distance_to_origin_from_segment(x[1]))[0]
 
     unit_roads = []
     residual_length = 0
@@ -439,5 +622,7 @@ def split_into_unit_roads(boundary_lines, n):
                 unit_roads[i][0] -= closest_group_index
             else:
                 unit_roads[i][0] += (max(unit_index) - closest_group_index + 1)
+
+    unit_roads.sort(key=lambda x: x[0])
 
     return unit_roads, closest_group_index

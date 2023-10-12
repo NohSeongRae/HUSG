@@ -4,10 +4,15 @@ import pickle
 from shapely.geometry import MultiLineString
 import networkx as nx
 
-from preprocessing.gemoetry_utils import *
-from preprocessing.general_utils import *
-from preprocessing.building_utils import *
-from preprocessing.plot_utils import *
+from gemoetry_utils import *
+from general_utils import *
+from building_utils import *
+from plot_utils import *
+
+# from preprocessing.gemoetry_utils import *
+# from preprocessing.general_utils import *
+# from preprocessing.building_utils import *
+# from preprocessing.plot_utils import *
 
 unit_length = 0.04
 reference_angle = 30
@@ -37,6 +42,43 @@ adj_matrices_list = []
 building_polygons_datasets = []
 street_multiline_datasets = []
 
+
+from shapely.ops import unary_union
+
+
+def merge_geometries_by_index(bounding_boxs, geometries):
+    # Create a dictionary to store merged geometries by unique index
+    merged_geometries = {}
+
+    # Iterate over bounding_boxs and merge geometries
+    for idx, geom in bounding_boxs:
+        if idx in merged_geometries:
+            merged_geometries[idx].append(geom)
+        else:
+            merged_geometries[idx] = [geom]
+
+    # Iterate over geometries and merge them
+    for idx, geom in geometries:
+        if idx in merged_geometries:
+            merged_geometries[idx].append(geom)
+        else:
+            merged_geometries[idx] = [geom]
+
+    # Use unary_union to merge geometries by index
+    for idx, geoms in merged_geometries.items():
+        try:
+            merged_geometries[idx] = unary_union(geoms)
+        except Exception:  # Catching the general exception here
+            # If an error occurs, set bounding_boxs to just rect_polygons
+            merged_geometries[idx] = [g for g in bounding_boxs if g[0] == idx][0][1]
+
+    # Convert dictionary to list format
+    result = [[idx, geom] for idx, geom in merged_geometries.items()]
+
+    return result
+
+
+
 for i in range(1, filenum+1):
     building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                      'Normalized', 'Buildings', f'{city_name}_buildings{i}.geojson')
@@ -53,13 +95,62 @@ for i in range(1, filenum+1):
         boundary_polygon = boundary_gdf.iloc[0]['geometry']
 
         sorted_edges = sorted_boundary_edges(boundary_polygon, unit_length)
+
         groups, _ = group_by_boundary_edge(building_polygons, boundary_polygon, sorted_edges)
+
+        # print("groups ", groups.keys())
 
         _, boundary_lines = get_boundary_building_polygon_with_index(groups, boundary_polygon, unit_length, reference_angle)
 
         unit_roads, closest_unit_index = split_into_unit_roads(boundary_lines, unit_length)
 
-        bounding_boxs = get_calculated_rectangle(groups, boundary_polygon, closest_unit_index, unit_length, reference_angle)
+        for _, segment in unit_roads:
+            segment[0] = tuple(segment[0])
+            segment[1] = tuple(segment[1])
+
+        organized_data = {}
+        for group_index, segment in unit_roads:
+            if group_index not in organized_data:
+                organized_data[group_index] = []
+            organized_data[group_index].append(segment)
+
+        linestrings = {}
+        for group_index, segments in organized_data.items():
+            # Sort the segments to connect them in order
+            segments.sort(key=lambda x: x[0])  # Assume that segments are in order and there are no gaps
+            # Flatten the list of segments and create a linestring
+            coordinates = [coord for segment in segments for coord in segment]
+            linestrings[group_index] = LineString(coordinates)
+
+        linestring_list = [[group_index, linestring] for group_index, linestring in linestrings.items()]
+
+        nearest_linestring_for_polygon = find_nearest_linestring_for_each_polygon(building_polygons, linestring_list)
+        max_distance_for_linestring = find_maximum_distance_for_each_linestring(nearest_linestring_for_polygon)
+
+        _, box_heights, farthest_points = get_calculated_rectangle(groups, boundary_polygon, closest_unit_index, unit_length, reference_angle, linestring_list)
+
+        # 예제 사용:
+        rect_polygons = construct_rectangles(unit_roads, max_distance_for_linestring, boundary_polygon)
+
+        geometries = create_closed_polygons(unit_roads)
+
+        # Extract all unique indices from rect_polygons
+        rect_indices = [item[0] for item in rect_polygons]
+
+        # Filter geometries based on the indices found in rect_polygons
+        filtered_geometries = [item for item in geometries if item[0] in rect_indices]
+
+        geometries = filtered_geometries
+
+
+        try:
+            bounding_boxs = merge_geometries_by_index(rect_polygons, geometries)
+        except Exception:  # Catch any exception that occurs during the merge
+            bounding_boxs = rect_polygons
+
+        # polygons = extend_polygon(unit_roads, box_heights, farthest_points)
+        # plot_polygons(polygons)
+
         building_polygons = get_building_polygon(building_polygons, bounding_boxs, boundary_polygon)
 
         building_index_sequence = []

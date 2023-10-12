@@ -2,6 +2,43 @@ import numpy as np
 import math
 from math import sqrt
 from shapely.geometry import Polygon, LineString, Point
+from shapely.ops import unary_union
+
+
+def find_maximum_distance_from_polygon_to_linestring(polygon, linestring):
+    max_distance = 0
+    for coord in polygon.exterior.coords:
+        point = Point(coord)
+        point_distance = point.distance(linestring)
+        max_distance = max(max_distance, point_distance)
+    return max_distance
+
+
+def find_nearest_linestring_for_each_polygon(polygons, linestrings):
+    linestring_distances = {idx: [] for idx, _ in linestrings}
+
+    for poly in polygons:
+        min_distance = float('inf')
+        nearest_line_index = None
+
+        for idx, line in linestrings:
+            distance = find_maximum_distance_from_polygon_to_linestring(poly, line)
+            if distance < min_distance:
+                min_distance = distance
+                nearest_line_index = idx
+
+        linestring_distances[nearest_line_index].append(min_distance)
+
+    return linestring_distances
+
+
+def find_maximum_distance_for_each_linestring(linestring_distances):
+    max_distance_list = []
+    for idx, distances in linestring_distances.items():
+        if distances:  # Check if the list is not empty
+            max_distance_list.append([idx, max(distances)])
+    return max_distance_list
+
 
 def distance_to_origin(point):
     """Calculate the distance between a point and the origin."""
@@ -103,7 +140,10 @@ def normalize_geometry(geometry, minx, miny, maxx, maxy):
         normalized_coords = [((x - minx) / (maxx - minx), (y - miny) / (maxy - miny)) for x, y in geometry.coords]
         return LineString(normalized_coords)
 
-def create_rectangle(boundary_edge, farthest_point):
+def create_rectangle(boundary_edge, farthest_point, linestring_list, edge_index):
+    rect_edge = linestring_list[edge_index][1]
+    # rect_edge = boundary_edge
+
     # Extract coordinates from boundary edge
     x0, y0 = boundary_edge.coords[0]
     x1, y1 = boundary_edge.coords[-1]
@@ -114,6 +154,10 @@ def create_rectangle(boundary_edge, farthest_point):
 
     # Calculate the length of the boundary_edge
     length_boundary_edge = sqrt(dx ** 2 + dy ** 2)
+
+    x0, y0 = rect_edge.coords[0]
+    x1, y1 = rect_edge.coords[-1]
+
 
     # Calculate unit vector of the boundary_edge
     ux = dx / length_boundary_edge
@@ -138,7 +182,10 @@ def create_rectangle(boundary_edge, farthest_point):
     y3 = y0 + perp_uy * distance_to_farthest_point
 
     coords = [(x0, y0), (x1, y1), (x2, y2), (x3, y3)]
-    return Polygon(coords)
+
+
+    return Polygon(coords), distance_to_farthest_point
+
 
 def find_polygon_with_farthest_edge(polygons, boundary_edge):
     farthest_polygon = None
