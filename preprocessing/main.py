@@ -44,7 +44,7 @@ street_unit_position_datasets = []
 adj_matrices_list = []
 building_polygons_datasets = []
 street_multiline_datasets = []
-
+unit_coords_datasets = []
 
 from shapely.ops import unary_union
 
@@ -233,6 +233,7 @@ for i in range(0, filenum):
         street_position_dataset = np.zeros((n_street, n_street_sample, 2))
         street_unit_position_dataset = np.zeros((n_unit_road, n_street_sample, 2))
 
+
         for building in building_polygons:
             building_idx = building[0]
             building_center_position_dataset[building_idx] = np.array([building[2].centroid.x, building[2].centroid.y])
@@ -263,6 +264,10 @@ for i in range(0, filenum):
                         centroid = intersection_points.centroid
                         unit_center_position_dataset[idx] = np.array([centroid.x, centroid.y])
 
+            file_name = building_filename.split('\\')[-1]
+            unit_coords_dataset = [file_name, unit_road[1]]
+
+
         building_index_sequences.append(building_index_sequence)
         building_index_set_sequences.append(building_index_set_sequence)
         one_hot_building_index_set_sequences.append(one_hot_building_index_set_sequence)
@@ -270,6 +275,7 @@ for i in range(0, filenum):
         building_center_position_datasets.append(building_center_position_dataset)
         unit_center_position_datasets.append(unit_center_position_dataset)
         unit_position_datasets.append(unit_position_dataset)
+        unit_coords_datasets.append(unit_coords_dataset)
         street_position_datasets.append(street_position_dataset)
         street_unit_position_datasets.append(street_unit_position_dataset)
 
@@ -286,6 +292,8 @@ for i in range(0, filenum):
                 for node2 in node_indices:
                     if node1 != node2:
                         adj_matrix[int(node1)][int(node2)] = 1
+
+
 
         street_indices = []
         for boundary_line in boundary_lines:
@@ -312,36 +320,39 @@ for i in range(0, filenum):
 
         street_multiline_datasets.append(street_multiline_dataset)
 
-        # plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_building, street_position_dataset)
+        plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_building, street_position_dataset)
 
-building_index_sequences = np.array(building_index_sequences)
-building_index_set_sequences = np.array(building_index_set_sequences)
-one_hot_building_index_set_sequences = np.array(one_hot_building_index_set_sequences)
-street_index_sequences = np.array(street_index_sequences)
-building_center_position_datasets = np.array(building_center_position_datasets)
-unit_center_position_datasets = np.array(unit_center_position_datasets)
-unit_position_datasets = np.array(unit_position_datasets)
-street_position_datasets = np.array(street_position_datasets)
-street_unit_position_datasets = np.array(street_unit_position_datasets)
-
-np.savez('./dataset/husg_transformer_dataset',
-         building_index_sequences=building_index_sequences,
-         building_index_set_sequences=building_index_set_sequences,
-         one_hot_building_index_set_sequences=one_hot_building_index_set_sequences,
-         street_index_sequences=street_index_sequences,
-         building_center_position_datasets=building_center_position_datasets,
-         unit_center_position_datasets=unit_center_position_datasets,
-         unit_position_datasets=unit_position_datasets,
-         street_position_datasets=street_position_datasets,
-         street_unit_position_datasets=street_unit_position_datasets)
-
-graphs = [nx.from_numpy_matrix(adj_matrix) for adj_matrix in adj_matrices_list]
-nx.write_gpickle(graphs, './dataset/husg_diffusion_dataset_graphs.gpickle')
-
-with open('./dataset/husg_diffusion_building_polygons.pkl', 'wb') as file:
-    pickle.dump(building_polygons_datasets, file)
-
-with open('./dataset/husg_diffusion_street_multilines.pkl', 'wb') as file:
-    pickle.dump(street_multiline_datasets, file)
-
-print('save finish!!')
+# building_index_sequences = np.array(building_index_sequences) # 0 (x), 1 (o), 2 (end)
+# building_index_set_sequences = np.array(building_index_set_sequences)
+# one_hot_building_index_set_sequences = np.array(one_hot_building_index_set_sequences)
+# street_index_sequences = np.array(street_index_sequences)
+# building_center_position_datasets = np.array(building_center_position_datasets)
+# unit_center_position_datasets = np.array(unit_center_position_datasets)
+# unit_position_datasets = np.array(unit_position_datasets)
+# street_position_datasets = np.array(street_position_datasets)
+# street_unit_position_datasets = np.array(street_unit_position_datasets)
+#
+# np.savez('./dataset/husg_transformer_dataset',
+#          building_index_sequences=building_index_sequences,
+#          building_index_set_sequences=building_index_set_sequences,
+#          one_hot_building_index_set_sequences=one_hot_building_index_set_sequences,
+#          street_index_sequences=street_index_sequences,
+#          building_center_position_datasets=building_center_position_datasets,
+#          unit_center_position_datasets=unit_center_position_datasets,
+#          unit_position_datasets=unit_position_datasets,
+#          street_position_datasets=street_position_datasets,
+#          street_unit_position_datasets=street_unit_position_datasets)
+#
+# graphs = [nx.from_numpy_matrix(adj_matrix) for adj_matrix in adj_matrices_list]
+# nx.write_gpickle(graphs, './dataset/husg_diffusion_dataset_graphs.gpickle')
+#
+# with open('./dataset/husg_diffusion_building_polygons.pkl', 'wb') as file:
+#     pickle.dump(building_polygons_datasets, file)
+#
+# with open('./dataset/husg_diffusion_street_multilines.pkl', 'wb') as file:
+#     pickle.dump(street_multiline_datasets, file)
+#
+# with open('./dataset/husg_unit_coords.pkl', 'wb') as file:
+#     pickle.dump(unit_coords_datasets, file)
+#
+# print('save finish!!')
