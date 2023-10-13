@@ -9,10 +9,10 @@ from tqdm import tqdm
 
 from network.transformer.transformer import Transformer
 from network.transformer.dataloader import BoundaryDataset
-
+import loss
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
-                 n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard):
+                 n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard, loss_func):
         """
         Initialize the trainer with the specified parameters.
 
@@ -41,6 +41,7 @@ class Trainer:
         self.use_checkpoint = use_checkpoint
         self.checkpoint_epoch = checkpoint_epoch
         self.use_tensorboard = use_tensorboard
+        self.loss_func=loss_func
 
         # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -61,30 +62,30 @@ class Trainer:
                                           lr=5e-4,
                                           betas=(0.9, 0.98))
 
-    def cross_entropy_loss(self, pred, trg):
-        """
-        Compute the binary cross-entropy loss between predictions and targets.
-
-        Args:
-        - pred (torch.Tensor): Model predictions.
-        - trg (torch.Tensor): Ground truth labels.
-
-        Returns:
-        - torch.Tensor: Computed BCE loss.
-        """
-
-        loss = F.binary_cross_entropy_with_logits(pred, trg.float(), reduction='none')
-
-        # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        mask = torch.zeros_like(trg)
-        mask[:, :, 0] = 1
-        mask[:, :, -1] = 1
-
-        # mask 적용
-        masked_loss = loss * mask
-
-        # 손실의 평균 반환
-        return masked_loss.mean()
+    # def cross_entropy_loss(self, pred, trg):
+    #     """
+    #     Compute the binary cross-entropy loss between predictions and targets.
+    #
+    #     Args:
+    #     - pred (torch.Tensor): Model predictions.
+    #     - trg (torch.Tensor): Ground truth labels.
+    #
+    #     Returns:
+    #     - torch.Tensor: Computed BCE loss.
+    #     """
+    #
+    #     loss = F.binary_cross_entropy_with_logits(pred, trg.float(), reduction='none')
+    #
+    #     # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
+    #     mask = torch.zeros_like(trg)
+    #     mask[:, :, 0] = 1
+    #     mask[:, :, -1] = 1
+    #
+    #     # mask 적용
+    #     masked_loss = loss * mask
+    #
+    #     # 손실의 평균 반환
+    #     return masked_loss.mean()
 
     def train(self):
         """Training loop for the transformer model."""
@@ -119,7 +120,7 @@ class Trainer:
                 output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
 
                 # Compute the losses
-                loss_ce = self.cross_entropy_loss(output, trg_one_hot_seq)
+                loss_ce = self.loss_func(output, trg_one_hot_seq)
                 loss_total = loss_ce
 
                 # Accumulate the losses for reporting
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
     parser.add_argument("--n_layer", type=int, default=6, help="Number of transformer layers.")
     parser.add_argument("--n_head", type=int, default=8, help="Number of attention heads.")
-    parser.add_argument("--n_building", type=int, default=30, help="Number of building blocks.")
+    parser.add_argument("--n_building", type=int, default=1, help="binary classification for building existence.")
     parser.add_argument("--n_boundary", type=int, default=200, help="Number of boundary or token.")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")

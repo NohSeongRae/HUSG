@@ -17,9 +17,11 @@ class EncoderLayer(nn.Module):
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1):
         super().__init__()
         self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        self.street_attn=MultiHeadAttention(n_head,d_model,d_k,d_v,dropout=dropout)
+        self.local_attn=MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=dropout)
 
-    def forward(self, enc_input, slf_attn_mask=None):
+    def forward(self, enc_input, slf_attn_mask=None,street_attn_mask=None, local_attn_mask=None):
         """
         Forward pass for the Encoder layer.
 
@@ -30,9 +32,20 @@ class EncoderLayer(nn.Module):
         Returns:
         - tuple: Tuple containing the encoded output and self attention tensor.
         """
-        enc_output, enc_slf_attn = self.slf_attn(
+
+        enc_slf_output, enc_slf_attn = self.slf_attn(
             enc_input, enc_input, enc_input, mask=slf_attn_mask
         )
+
+        enc_street_output, enc_street_attn=self.slf_attn(
+            enc_input, enc_input, enc_input, mask=street_attn_mask
+        )
+        enc_local_output, enc_local_attn=self.slf_attn(
+            enc_input, enc_input, enc_input, mask=local_attn_mask
+        )
+
+        enc_output=enc_slf_output+enc_street_output+enc_local_output
+
         enc_output = self.pos_ffn(enc_output)
         return enc_output, enc_slf_attn
 
