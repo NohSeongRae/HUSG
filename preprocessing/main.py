@@ -1,6 +1,8 @@
 import os
 import geopandas as gpd
 import pickle
+
+import numpy as np
 from shapely.geometry import MultiLineString
 import networkx as nx
 
@@ -30,7 +32,8 @@ dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{ci
 files = os.listdir(dir_path)
 filenum = len(files)
 
-one_hot_building_index_sequences = []
+one_hot_building_index_set_sequences = []
+building_index_set_sequences = []
 building_index_sequences = []
 street_index_sequences = []
 building_center_position_datasets = []
@@ -102,6 +105,10 @@ for i in range(0, filenum):
 
         _, boundary_lines = get_boundary_building_polygon_with_index(groups, boundary_polygon, unit_length, reference_angle)
 
+        # exception
+        unique_group_indices = set([seg[0] for seg in boundary_lines])
+        if len(unique_group_indices) == 1:  # one-street
+            continue
         unit_roads, closest_unit_index = split_into_unit_roads(boundary_lines, unit_length)
 
         for _, segment in unit_roads:
@@ -156,8 +163,9 @@ for i in range(0, filenum):
 
         building_polygons = get_building_polygon(building_polygons, bounding_boxs, boundary_polygon)
 
+        building_index_set_sequence = []
         building_index_sequence = []
-        one_hot_building_index_sequence = []
+        one_hot_building_index_set_sequence = []
         street_index_sequence = []
         for unit_road_idx, unit_road in enumerate(unit_roads):
             street_index_sequence.append(unit_road[0] + 1)  # unit index, street index
@@ -186,18 +194,28 @@ for i in range(0, filenum):
                 if is_intersect:
                     building_set.append(building[0])
             building_set = list(set(building_set))
+            if len(building_set) == 0:
+                building_index_sequence.append(0)
+            else:
+                building_index_sequence.append(1)
+
             building_set.append(building_eos_idx)
             building_set = pad_list(building_set, n_building, 0)
-            building_index_sequence.append(building_set)
+            building_index_set_sequence.append(building_set)
 
             one_hot_building_indices = np.zeros(n_building)
             one_hot_building_indices[building_set] = 1
-            one_hot_building_index_sequence.append(one_hot_building_indices)
+            one_hot_building_index_set_sequence.append(one_hot_building_indices)
 
         building_index_sequence = np.array(building_index_sequence)
-        pad_sequence = np.zeros((n_unit_road - building_index_sequence.shape[0], n_building))
-        pad_sequence[:, 0] = building_eos_idx
+        pad_sequence = np.zeros(n_unit_road - building_index_sequence.shape[0])
+        pad_sequence[:] = 2     # eos_token
         building_index_sequence = np.concatenate((building_index_sequence, pad_sequence), axis=0)
+
+        building_index_set_sequence = np.array(building_index_set_sequence)
+        pad_sequence = np.zeros((n_unit_road - building_index_set_sequence.shape[0], n_building))
+        pad_sequence[:, 0] = building_eos_idx
+        building_index_set_sequence = np.concatenate((building_index_set_sequence, pad_sequence), axis=0)
 
         street_index_sequence = np.array(street_index_sequence)
         pad_sequence = np.zeros((n_unit_road - street_index_sequence.shape[0]))
@@ -205,9 +223,9 @@ for i in range(0, filenum):
         pad_sequence[1:] = pad_idx
         street_index_sequence = np.concatenate((street_index_sequence, pad_sequence), axis=0)
 
-        one_hot_building_index_sequence = np.array(one_hot_building_index_sequence)
-        pad_sequence = np.zeros((n_unit_road - one_hot_building_index_sequence.shape[0], n_building))
-        one_hot_building_index_sequence = np.concatenate((one_hot_building_index_sequence, pad_sequence), axis=0)
+        one_hot_building_index_set_sequence = np.array(one_hot_building_index_set_sequence)
+        pad_sequence = np.zeros((n_unit_road - one_hot_building_index_set_sequence.shape[0], n_building))
+        one_hot_building_index_set_sequence = np.concatenate((one_hot_building_index_set_sequence, pad_sequence), axis=0)
 
         building_center_position_dataset = np.zeros((n_building, 2))
         unit_center_position_dataset = np.zeros((n_unit_road, 2))
@@ -246,7 +264,8 @@ for i in range(0, filenum):
                         unit_center_position_dataset[idx] = np.array([centroid.x, centroid.y])
 
         building_index_sequences.append(building_index_sequence)
-        one_hot_building_index_sequences.append(one_hot_building_index_sequence)
+        building_index_set_sequences.append(building_index_set_sequence)
+        one_hot_building_index_set_sequences.append(one_hot_building_index_set_sequence)
         street_index_sequences.append(street_index_sequence)
         building_center_position_datasets.append(building_center_position_dataset)
         unit_center_position_datasets.append(unit_center_position_dataset)
@@ -257,7 +276,7 @@ for i in range(0, filenum):
         adj_matrix = np.zeros((n_building + n_street, n_building + n_street))
         for unit_road_idx, unit_road in enumerate(unit_roads):
             street_index = [unit_road[0] + n_building]
-            building_indices = np.unique(building_index_sequence[unit_road_idx-2:unit_road_idx+3])  # building edge!
+            building_indices = np.unique(building_index_set_sequence[unit_road_idx-2:unit_road_idx+3])  # building edge!
             building_indices = building_indices[building_indices != pad_idx]
             building_indices = building_indices[building_indices != building_eos_idx]
             building_indices -= 1
@@ -296,7 +315,8 @@ for i in range(0, filenum):
         # plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_building, street_position_dataset)
 
 building_index_sequences = np.array(building_index_sequences)
-one_hot_building_index_sequences = np.array(one_hot_building_index_sequences)
+building_index_set_sequences = np.array(building_index_set_sequences)
+one_hot_building_index_set_sequences = np.array(one_hot_building_index_set_sequences)
 street_index_sequences = np.array(street_index_sequences)
 building_center_position_datasets = np.array(building_center_position_datasets)
 unit_center_position_datasets = np.array(unit_center_position_datasets)
@@ -306,7 +326,8 @@ street_unit_position_datasets = np.array(street_unit_position_datasets)
 
 np.savez('./dataset/husg_transformer_dataset',
          building_index_sequences=building_index_sequences,
-         one_hot_building_index_sequences=one_hot_building_index_sequences,
+         building_index_set_sequences=building_index_set_sequences,
+         one_hot_building_index_set_sequences=one_hot_building_index_set_sequences,
          street_index_sequences=street_index_sequences,
          building_center_position_datasets=building_center_position_datasets,
          unit_center_position_datasets=unit_center_position_datasets,
