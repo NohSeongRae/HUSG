@@ -14,7 +14,6 @@ class BoundaryDataset(Dataset):
         self.dataset = np.load(self.dataset_path)
         self.unit_position_datasets = self.dataset['unit_position_datasets']
         self.street_unit_position_datasets = self.dataset['street_unit_position_datasets']
-        self.one_hot_building_index_sequences = self.dataset['one_hot_building_index_sequences']
         self.building_index_sequences = self.dataset['building_index_sequences']
         self.street_index_sequences = self.dataset['street_index_sequences']
 
@@ -31,12 +30,9 @@ class BoundaryDataset(Dataset):
         unit_position_dataset = self.unit_position_datasets[index]
         street_position_dataset = self.street_unit_position_datasets[index]
         building_index_sequence = self.building_index_sequences[index]
-        one_hot_building_index_sequence = self.one_hot_building_index_sequences[index]
         street_index_sequences = self.street_index_sequences[index]
 
-
-        return unit_position_dataset, street_position_dataset, building_index_sequence, \
-               one_hot_building_index_sequence, street_index_sequences
+        return unit_position_dataset, street_position_dataset, building_index_sequence, street_index_sequences
 
     def __len__(self):
         """

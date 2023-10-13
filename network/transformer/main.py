@@ -7,12 +7,13 @@ import numpy as np
 import random
 from tqdm import tqdm
 
+from network.transformer.transformer import get_pad_mask
 from network.transformer.transformer import Transformer
 from network.transformer.dataloader import BoundaryDataset
 import loss
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
-                 n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard, loss_func):
+                 n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard):
         """
         Initialize the trainer with the specified parameters.
 
@@ -29,7 +30,7 @@ class Trainer:
         self.batch_size = batch_size
         self.max_epoch = max_epoch
         self.pad_idx = pad_idx
-        self.eos_idx = n_building - 1
+        self.eos_idx = 2
         self.d_model = d_model
         self.d_street = d_street
         self.d_unit = d_unit
@@ -41,7 +42,7 @@ class Trainer:
         self.use_checkpoint = use_checkpoint
         self.checkpoint_epoch = checkpoint_epoch
         self.use_tensorboard = use_tensorboard
-        self.loss_func=loss_func
+
 
         # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -62,30 +63,27 @@ class Trainer:
                                           lr=5e-4,
                                           betas=(0.9, 0.98))
 
-    # def cross_entropy_loss(self, pred, trg):
-    #     """
-    #     Compute the binary cross-entropy loss between predictions and targets.
-    #
-    #     Args:
-    #     - pred (torch.Tensor): Model predictions.
-    #     - trg (torch.Tensor): Ground truth labels.
-    #
-    #     Returns:
-    #     - torch.Tensor: Computed BCE loss.
-    #     """
-    #
-    #     loss = F.binary_cross_entropy_with_logits(pred, trg.float(), reduction='none')
-    #
-    #     # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-    #     mask = torch.zeros_like(trg)
-    #     mask[:, :, 0] = 1
-    #     mask[:, :, -1] = 1
-    #
-    #     # mask 적용
-    #     masked_loss = loss * mask
-    #
-    #     # 손실의 평균 반환
-    #     return masked_loss.mean()
+
+    def cross_entropy_loss(self, pred, trg):
+        """
+        Compute the binary cross-entropy loss between predictions and targets.
+
+        Args:
+        - pred (torch.Tensor): Model predictions.
+        - trg (torch.Tensor): Ground truth labels.
+
+        Returns:
+        - torch.Tensor: Computed BCE loss.
+        """
+        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
+
+        # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
+        mask = get_pad_mask(trg[:, 1:], pad_idx=self.eos_idx).float()
+
+        # mask 적용
+        masked_loss = loss * mask
+        # 손실의 평균 반환
+        return masked_loss.mean()
 
     def train(self):
         """Training loop for the transformer model."""
@@ -109,18 +107,19 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, trg_building_seq, trg_one_hot_seq, trg_street_seq = data
-                src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)[:, :-1]
-                src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)[:, :-1]
-                trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)[:, :-1]
-                trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)[:, :-1]
-                trg_one_hot_seq = trg_one_hot_seq.to(device=self.device, dtype=torch.long)[:, 1:]
+                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq = data
+                gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
+                src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
+                src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
+                trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
+                trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
+                output = self.transformer(src_unit_seq, src_street_seq,
+                                          trg_building_seq, trg_street_seq)
 
                 # Compute the losses
-                loss_ce = self.loss_func(output, trg_one_hot_seq)
+                loss_ce = self.cross_entropy_loss(output, gt_building_seq.detach())
                 loss_total = loss_ce
 
                 # Accumulate the losses for reporting
@@ -150,7 +149,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=10, help="Maximum number of epochs for training.")
     parser.add_argument("--pad_idx", type=int, default=0, help="Padding index for sequences.")
-    parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
+    parser.add_argument("--d_model", type=int, default=256, help="Dimension of the model.")
     parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
     parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
     parser.add_argument("--n_layer", type=int, default=6, help="Number of transformer layers.")
