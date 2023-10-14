@@ -89,10 +89,12 @@ class Decoder(nn.Module):
         self.d_model = d_model
         self.n_iter = n_iter
 
+        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+
         self.block_box_decoder_1 = nn.Linear(d_model, d_model)
         self.block_box_decoder_2 = nn.Linear(d_model, 1)
 
-        self.edge_decoder_1 = nn.Linear((d_model + n_building) * 2, d_model)
+        self.edge_decoder_1 = nn.Linear(d_model + n_building, d_model)
         self.edge_decoder_2 = nn.Linear(d_model, 1)
 
         self.lot_inital_decoder = nn.Linear(d_model, d_model * n_building)
@@ -117,7 +119,7 @@ class Decoder(nn.Module):
         batch_size = z.shape[0]
         d_position = torch.eye(self.n_building, dtype=torch.float32).to(self.device).repeat(batch_size, 1)
         expanded_lot_init = torch.cat((lot_init, d_position), dim=1)
-        expanded_lot_init = expanded_lot_init.unsqueeze(2).expand(-1, -1, self.n_building, -1)
+        expanded_lot_init = expanded_lot_init.unsqueeze(1).expand(-1, self.n_building, -1)
         expanded_lot_init = F.relu(self.edge_decoder_1(expanded_lot_init))
         adj_matrix = F.sigmoid(self.edge_decoder_2(expanded_lot_init).squeeze(-1))
         threshold = 0.5
@@ -139,6 +141,7 @@ class Decoder(nn.Module):
                 adj_matrix, aspect_ratio)
 
     def generate_edge_index(self, binary_adj_matrix, batch_size):
+        binary_adj_matrix = binary_adj_matrix.view(-1, self.n_building, self.n_building)
         edge_indices = []
 
         # Create edge_index for each graph in the batch
@@ -147,7 +150,7 @@ class Decoder(nn.Module):
             edge_index = torch.stack(torch.where(adj_matrix))
 
             # Offset node indices by the number of nodes in previous graphs
-            edge_index[0, :] += b * self.n_building
+            edge_index += b * self.n_building
 
             edge_indices.append(edge_index)
 

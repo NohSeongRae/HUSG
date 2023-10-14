@@ -1,7 +1,8 @@
 import argparse
 import torch
 import torch.nn.functional as F
-from torch_geometric.data import DataLoader
+from torch_geometric.loader import DataLoader
+from torch_geometric.data import Batch
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import random
@@ -33,11 +34,14 @@ class Trainer():
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
         # Initialize the dataset and dataloader
-        self.dataset = BlockplannerDataset(n_building=n_building)
+        self.dataset = BlockplannerDataset(n_building=n_building, n_semantic=n_semantic)
         self.dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
 
         # Initialize the Blockplanner model
-        self.model = BlockPlanner(n_building=self.n_building, n_semantic=self.n_semantic, d_model=self.d_model, n_iter=self.n_iter)
+        self.model = BlockPlanner(n_building=self.n_building,
+                                  n_semantic=self.n_semantic,
+                                  d_model=self.d_model,
+                                  n_iter=self.n_iter).to(device=self.device)
 
         # Set the optimizer for the training process
         self.optimizer = torch.optim.Adam(self.model.parameters(),
@@ -56,6 +60,7 @@ class Trainer():
 
         mask_weight = 1.5 * (real_adj_matrix == 1).float() + (real_adj_matrix == 0).float()
         loss_adj_matrix = mask_weight * F.l1_loss(pred_adj_matrix, real_adj_matrix)
+        loss_adj_matrix = loss_adj_matrix.mean()
 
         loss = self.w_x * (loss_lot + loss_edge + loss_adj_matrix)
         return loss
@@ -83,23 +88,23 @@ class Trainer():
             for data in self.dataloader:
                 self.optimizer.zero_grad()
 
-                data = data.to(device=self.device).view(-1, 5)
+                data = data.to(device=self.device)
                 outputs = self.model(data)
 
                 recon_loss = self.calc_reconstruction_loss(pred_geometry=outputs['lot_geometry'],
-                                                           real_geometry=[],
+                                                           real_geometry=data.geometry,
                                                            pred_aspect_ratio=outputs['aspect_ratio'],
-                                                           real_aspect_ratio=[])
+                                                           real_aspect_ratio=data.aspect_ratio)
                 exist_loss = self.calc_existence_loss(pred_lot_prob=outputs['lot_exists_prob'],
-                                                      real_lot_prob=[],
-                                                      pred_edge_prob=[],
-                                                      real_edge_prob=[],
+                                                      real_lot_prob=data.node_exists_prob,
+                                                      pred_edge_prob=outputs['adj_matrix'],
+                                                      real_edge_prob=data.adj_matrix,
                                                       pred_adj_matrix=outputs['adj_matrix'],
-                                                      real_adj_matrix=[])
-                landuse_loss = self.calc_landuse_loss(pred_land_use=['land_use_attribute'],
-                                                      real_land_use=[])
+                                                      real_adj_matrix=data.adj_matrix)
+                landuse_loss = self.calc_landuse_loss(pred_land_use=outputs['land_use_attribute'],
+                                                      real_land_use=data.semantic)
                 geometric_loss = self.calc_geometric_validation(pred_geometry=outputs['lot_geometry'],
-                                                                real_geometry=[])
+                                                                real_geometry=data.geometry)
                 regularization_loss = self.calc_variational_regularization_loss(mu=outputs['mu'],
                                                                                 log_var=outputs['log_var'])
 
@@ -114,11 +119,11 @@ class Trainer():
 
                 self.optimizer.step()
 
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss CE: {recon_loss_mean:.4f}")
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss CE: {exist_loss_mean:.4f}")
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss CE: {landuse_loss_mean:.4f}")
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss CE: {geometric_loss_mean:.4f}")
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss CE: {regularization_loss_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon Mean: {recon_loss_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Exist Mean: {exist_loss_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss LandUse Mean: {landuse_loss_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Geometric Mean: {geometric_loss_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL Mean: {regularization_loss_mean:.4f}")
 
 
 if __name__ == '__main__':
