@@ -137,11 +137,12 @@ class Trainer:
             if self.use_tensorboard:
                 self.writer.add_scalar("Train/loss-obj", loss_ce_mean, epoch + 1)
 
-            torch.save({
-                'epoch': epoch,
-                'model_state_dict': self.transformer.state_dict(),
-                'optimizer_state_dict': self.optimizer.state_dict(),
-            }, "./models/transformer_epoch_" + str(epoch) + ".pt")
+            if epoch%50 == 0:
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': self.transformer.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                }, "./models/transformer_epoch_" + str(epoch) + ".pt")
 
 if __name__ == '__main__':
     # Set the argparse
@@ -151,7 +152,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=10, help="Maximum number of epochs for training.")
     parser.add_argument("--pad_idx", type=int, default=0, help="Padding index for sequences.")
-    parser.add_argument("--d_model", type=int, default=256, help="Dimension of the model.")
+    parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
     parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
     parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
     parser.add_argument("--n_layer", type=int, default=6, help="Number of transformer layers.")
