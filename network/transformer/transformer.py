@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from network.transformer.layer import EncoderLayer, DecoderLayer
+from layer import EncoderLayer, DecoderLayer
 
 def get_street_mask(seq):
     street_mask = seq[:, :, None] == seq[:, None, :]

@@ -1,3 +1,5 @@
+import sys
+import os
 import argparse
 import torch
 import torch.nn.functional as F
@@ -7,9 +9,9 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from network.transformer.transformer import get_pad_mask
-from network.transformer.transformer import Transformer
-from network.transformer.dataloader import BoundaryDataset
+from transformer import get_pad_mask
+from transformer import Transformer
+from dataloader import BoundaryDataset
 import loss
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
