@@ -130,6 +130,7 @@ def create_combined_edge(boundary, edge_indices):
         combined_coords.append(boundary.exterior.coords[idx + 1])
     return LineString(combined_coords)
 
+
 def normalize_geometry(geometry, minx, miny, maxx, maxy):
     """Normalize the coordinates of a geometry."""
     if isinstance(geometry, Polygon):
@@ -139,6 +140,7 @@ def normalize_geometry(geometry, minx, miny, maxx, maxy):
     elif isinstance(geometry, LineString):
         normalized_coords = [((x - minx) / (maxx - minx), (y - miny) / (maxy - miny)) for x, y in geometry.coords]
         return LineString(normalized_coords)
+
 
 def create_rectangle(boundary_edge, farthest_point, linestring_list, edge_index):
     rect_edge = linestring_list[edge_index][1]
