@@ -2,8 +2,6 @@ import torch
 from torch.utils.data import Dataset
 import numpy as np
 
-from network.transformer.utils import *
-
 class BoundaryDataset(Dataset):
     """
     Dataset class for boundary data.
