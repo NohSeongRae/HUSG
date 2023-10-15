@@ -128,7 +128,7 @@ def divide_polygon_into_grids(polygon, num_grids):
                 grids.append(grid)
     return grids
 
-for index in range(30, total_file_num):
+for index in range(4, total_file_num):
     with open(unit_coords_path, 'rb') as f:
         unit_coords_data = pickle.load(f)
 
@@ -279,6 +279,6 @@ for index in range(30, total_file_num):
 
     inference_image_path = os.path.join(inference_image_root_path, f'{city_name}_{fileindex}.png')
 
-    plt.savefig(inference_image_path)
+    # plt.savefig(inference_image_path)
 
-    # plt.show()
+    plt.show()

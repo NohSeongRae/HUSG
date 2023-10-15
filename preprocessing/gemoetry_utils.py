@@ -203,6 +203,23 @@ def find_polygon_with_farthest_edge(polygons, boundary_edge):
 
     return farthest_polygon
 
+def angle_between(line1, line2):
+    """Calculate the angle in degrees between two LineStrings."""
+    # Extracting start and end coordinates of each LineString
+    v1_start, v1_end = np.array(line1.coords[0]), np.array(line1.coords[-1])
+    v2_start, v2_end = np.array(line2.coords[0]), np.array(line2.coords[-1])
+
+    # Calculating direction vectors for each LineString
+    v1 = v1_end - v1_start
+    v2 = v2_end - v2_start
+
+    dot_product = np.dot(v1, v2)
+    magnitude_product = np.linalg.norm(v1) * np.linalg.norm(v2)
+    cosine_angle = dot_product / magnitude_product
+    angle = np.degrees(np.arccos(np.clip(cosine_angle, -1.0, 1.0)))
+    return angle
+
+
 def project_point_onto_line(P, A, B):
     AP = P - A
     AB = B - A
@@ -217,12 +234,21 @@ def project_polygon_onto_linestring_full(polygon, linestring):
 
     poly_coords = np.array(polygon.exterior.coords)
     line_coords = np.array(linestring.coords)
+    line_direction = line_coords[-1] - line_coords[0]
 
-    # Project vertices of polygon onto linestring
-    proj_coords = np.array([project_point_onto_line(p, line_coords[0], line_coords[-1]) for p in poly_coords])
+    # List to store projected coordinates
+    proj_coords = []
+
+    for i in range(len(poly_coords) - 1):
+        segment = LineString([poly_coords[i], poly_coords[i + 1]])
+        if angle_between(segment, linestring) < 45:
+            proj_coords.extend([project_point_onto_line(p, line_coords[0], line_coords[-1]) for p in [poly_coords[i], poly_coords[i+1]]])
+
+    # Convert the list to a numpy array
+    proj_coords = np.array(proj_coords)
 
     # Check if the projected polygon overlaps with the linestring
-    projected_polygon = Polygon(proj_coords)
+    projected_polygon = LineString(proj_coords)
 
     if projected_polygon.is_valid:
         overlap = projected_polygon.intersects(linestring)

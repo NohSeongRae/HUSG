@@ -5,11 +5,12 @@ import re
 import numpy as np
 from shapely.geometry import MultiLineString
 import networkx as nx
+from tqdm import tqdm
 
 from gemoetry_utils import *
 from general_utils import *
 from building_utils import *
-from plot_utils import *
+# from plot_utils import *
 
 # from preprocessing.gemoetry_utils import *
 # from preprocessing.general_utils import *
@@ -76,13 +77,12 @@ def merge_geometries_by_index(bounding_boxs, geometries):
     return result
 
 
-city_names = ["atlanta", "barcelona", "budapest", "dallas", "dublin",
-              "firenze", "houston", "lasvegas", "littlerock", "manchester",
-              "milan", "minneapolis", "nottingham", "paris", "philadelphia",
-              "phoenix", "portland", "richmond", "saintpaul", "sanfrancisco",
-              "singapore", "toronto", "vienna", "washington", "zurich",
-              "miami", "seattle", "boston", "providence", "neworleans",
-              "denver", "vancouver", "pittsburgh", "tampa"]
+city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+              "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+              "sanfrancisco", "miami", "seattle", "boston", "providence",
+              "neworleans", "denver", "pittsburgh", "tampa", "washington",
+              "minneapolis"]
+
 
 all_building_index_sequences = []
 all_building_index_set_sequences = []
@@ -106,15 +106,15 @@ for city_name in city_names:
                                      'Normalized', 'Boundaries')
 
     # Iterate over all .geojson files in the directory
-    for building_filepath in sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key):
+    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)):
         boundary_filepath = building_filepath.replace('buildings', 'boundaries')
 
         # Construct the full paths
         building_filename = os.path.join(building_dir_path, building_filepath)
         boundary_filename = os.path.join(boundary_dir_path, boundary_filepath)
 
-        if os.path.exists(building_filename):
-            print(building_filename)
+        if os.path.exists(building_filename) and os.path.exists(boundary_filename):
+            # print(building_filename)
             boundary_gdf = gpd.read_file(boundary_filename)
             building_gdf = gpd.read_file(building_filename)
 
@@ -217,8 +217,9 @@ for city_name in city_names:
 
                     is_intersect = False
                     for segment in building_segments:
-                        if LineString(v_rotated).intersects(LineString(segment)):
-                            is_intersect = True
+                        if angle_between(LineString(v_rotated), LineString(segment)) > 45:
+                            if LineString(v_rotated).intersects(LineString(segment)):
+                                is_intersect = True
 
                     if is_intersect:
                         building_set.append(building[0])
@@ -375,7 +376,13 @@ for city_name in city_names:
 # street_position_datasets = np.array(street_position_datasets)
 # street_unit_position_datasets = np.array(street_unit_position_datasets)
 
-np.savez('./dataset/husg_transformer_dataset',
+folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset')
+if not os.path.exists(folder_path):
+    os.makedirs(folder_path)
+
+transformer_path = os.path.join(folder_path, 'husg_transformer_dataset')
+
+np.savez(transformer_path,
          building_index_sequences=np.array(all_building_index_sequences),
          building_index_set_sequences=np.array(all_building_index_set_sequences),
          one_hot_building_index_set_sequences=np.array(all_one_hot_building_index_set_sequences),
@@ -386,16 +393,20 @@ np.savez('./dataset/husg_transformer_dataset',
          street_position_datasets=np.array(all_street_position_datasets),
          street_unit_position_datasets=np.array(all_street_unit_position_datasets))
 
+husg_diffusion_dataset_graphs_path = os.path.join(folder_path, 'husg_diffusion_dataset_graphs.gpickle')
 graphs = [nx.from_numpy_matrix(adj_matrix) for adj_matrix in adj_matrices_list]
-nx.write_gpickle(graphs, './dataset/husg_diffusion_dataset_graphs.gpickle')
+nx.write_gpickle(graphs, husg_diffusion_dataset_graphs_path)
 
-with open('./dataset/husg_diffusion_building_polygons.pkl', 'wb') as file:
+husg_diffusion_building_polygons_path = os.path.join(folder_path, 'husg_diffusion_building_polygons.pkl')
+with open(husg_diffusion_building_polygons_path, 'wb') as file:
     pickle.dump(building_polygons_datasets, file)
 
-with open('./dataset/husg_diffusion_street_multilines.pkl', 'wb') as file:
+husg_diffusion_street_multilines_path = os.path.join(folder_path, 'husg_diffusion_street_multilines.pkl')
+with open(husg_diffusion_street_multilines_path, 'wb') as file:
     pickle.dump(street_multiline_datasets, file)
 
-with open('./dataset/husg_unit_coords.pkl', 'wb') as file:
+husg_unit_coords_path = os.path.join(folder_path, 'husg_unit_coords.pkl')
+with open(husg_unit_coords_path, 'wb') as file:
     pickle.dump(unit_coords_datasets, file)
 
 print('save finish!!')
