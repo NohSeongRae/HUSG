@@ -7,13 +7,25 @@ class BoundaryDataset(Dataset):
     Dataset class for boundary data.
     """
 
-    def __init__(self):
+    def __init__(self, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train'):
         self.dataset_path = './dataset/husg_transformer_dataset.npz'
         self.dataset = np.load(self.dataset_path)
-        self.unit_position_datasets = self.dataset['unit_position_datasets']
-        self.street_unit_position_datasets = self.dataset['street_unit_position_datasets']
-        self.building_index_sequences = self.dataset['building_index_sequences']
-        self.street_index_sequences = self.dataset['street_index_sequences']
+
+        self.total_size = len(self.dataset['unit_position_datasets'])
+        if data_type == 'train':
+            start_index = 0
+            end_index = int(self.total_size * train_ratio)
+        elif data_type == 'val':
+            start_index = int(self.total_size * train_ratio)
+            end_index = int(self.total_size * (train_ratio + val_ratio))
+        else:
+            start_index = int(self.total_size * (train_ratio + val_ratio))
+            end_index = int(self.total_size * (train_ratio + val_ratio + test_ratio))
+
+        self.unit_position_datasets = self.dataset['unit_position_datasets'][start_index:end_index]
+        self.street_unit_position_datasets = self.dataset['street_unit_position_datasets'][start_index:end_index]
+        self.building_index_sequences = self.dataset['building_index_sequences'][start_index:end_index]
+        self.street_index_sequences = self.dataset['street_index_sequences'][start_index:end_index]
 
     def __getitem__(self, index):
         """
