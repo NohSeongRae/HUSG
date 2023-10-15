@@ -2,6 +2,7 @@ import sys
 import os
 import argparse
 import torch
+import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -16,7 +17,8 @@ import loss
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
-                 train_ratio, val_ratio, test_ratio, data_type, val_epoch, save_epoch):
+                 train_ratio, val_ratio, test_ratio, data_type, val_epoch, save_epoch,
+                 weight_decay, scheduler_step, scheduler_gamma):
         """
         Initialize the trainer with the specified parameters.
 
@@ -51,6 +53,9 @@ class Trainer:
         self.data_type = data_type
         self.val_epoch = val_epoch
         self.save_epoch = save_epoch
+        self.weight_decay = weight_decay
+        self.scheduler_step = scheduler_step
+        self.scheduler_gamma = scheduler_gamma
 
         # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -77,7 +82,9 @@ class Trainer:
         # Set the optimizer for the training process
         self.optimizer = torch.optim.Adam(self.transformer.parameters(),
                                           lr=5e-4,
-                                          betas=(0.9, 0.98))
+                                          betas=(0.9, 0.98),
+                                          weight_decay=self.weight_decay)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=5, gamma=0.1)
 
 
     def cross_entropy_loss(self, pred, trg):
@@ -143,6 +150,8 @@ class Trainer:
                 # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
+
+            self.scheduler.step()
 
             # Print the average losses for the current epoch
             loss_mean /= len(self.train_dataloader)
@@ -213,6 +222,9 @@ if __name__ == '__main__':
     parser.add_argument("--data_type", type=str, default='train', help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=50, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=50, help="Use checkpoint index.")
+    parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
+    parser.add_argument("--scheduler_step", type=int, default=50, help="Use checkpoint index.")
+    parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
 
 
     opt = parser.parse_args()
@@ -229,5 +241,6 @@ if __name__ == '__main__':
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
-                      data_type=opt.data_type, val_epoch=opt.val_epoch, save_epoch=opt.save_epoch)
+                      data_type=opt.data_type, val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
+                      weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma)
     trainer.train()
