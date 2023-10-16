@@ -43,7 +43,7 @@ def plot(transformer_output, index):
 
     building_exists_index = []
 
-    for idx in range(len(building_index_sequences)):
+    for idx in range(len(unit_coords)):
         if building_index_sequences[idx] >= 0.5:
             building_exists_index.append(idx)
 
@@ -76,3 +76,4 @@ def plot(transformer_output, index):
     fileindex = extract_numbers_from_boundaryfile(original_boundary)
 
     plt.savefig('./images/' + str(fileindex) + '.png')
+    plt.clf()
