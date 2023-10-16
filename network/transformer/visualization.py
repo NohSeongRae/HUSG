@@ -8,14 +8,12 @@ from scipy.spatial import Voronoi
 from shapely.ops import cascaded_union
 import os
 
-city_name = "dublin"
 unit_length = 0.04
 
 unit_coords_path = './dataset/husg_unit_coords.pkl'
-npz_path = './dataset/husg_transformer_dataset.npz'
 
-boundary_root_path = 'Z:/iiixr-drive/Projects/2023_City_Team/dublin_dataset/Normalized/Boundaries/'
-inference_image_root_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'inference_image')
+#boundary_root_path = 'Z:/iiixr-drive/Projects/2023_City_Team/dublin_dataset/Normalized/Boundaries/'
+#inference_image_root_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'inference_image')
 
 
 def count_files_in_directory(directory_path):
@@ -46,7 +44,7 @@ def plot(transformer_output, index):
     building_exists_index = []
 
     for idx in range(len(building_index_sequences)):
-        if building_index_sequences[idx] == 1:
+        if building_index_sequences[idx] >= 0.5:
             building_exists_index.append(idx)
 
     unit_with_building = []
@@ -77,4 +75,4 @@ def plot(transformer_output, index):
 
     fileindex = extract_numbers_from_boundaryfile(original_boundary)
 
-    plt.savefig('./images/' + city_name + '_' + fileindex + '.png')
+    plt.savefig('./images/' + str(fileindex) + '.png')

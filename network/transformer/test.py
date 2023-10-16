@@ -105,12 +105,13 @@ class Trainer:
                 # Get the model's predictions
                 output = self.transformer(src_unit_seq, src_street_seq,
                                           trg_building_seq, trg_street_seq)
-
+                print(output.shape)
+                print(gt_building_seq.shape)
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
 
-                plot(output.detach().cpu().numpy(), idx)
+                plot(output.squeeze().detach().cpu().numpy(), idx + self.test_dataset.start_index)
 
 if __name__ == '__main__':
     # Set the argparse
