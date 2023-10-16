@@ -78,4 +78,3 @@ def plot(transformer_output, index):
     fileindex = extract_numbers_from_boundaryfile(original_boundary)
 
     plt.savefig('./images/' + city_name + '_' + fileindex + '.png')
-    plt.show()
