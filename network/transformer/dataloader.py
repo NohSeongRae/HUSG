@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 import numpy as np
+import pickle
 
 class BoundaryDataset(Dataset):
     """
@@ -9,23 +10,28 @@ class BoundaryDataset(Dataset):
 
     def __init__(self, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train'):
         self.dataset_path = './dataset/husg_transformer_dataset.npz'
+        self.sub_dataset_path = './dataset/husg_unit_coords.pkl'
+
         self.dataset = np.load(self.dataset_path)
+        with open(self.sub_dataset_path, 'rb') as f:
+            self.unit_coords_data = pickle.load(f)
 
         self.total_size = len(self.dataset['unit_position_datasets'])
         if data_type == 'train':
-            start_index = 0
-            end_index = int(self.total_size * train_ratio)
+            self.start_index = 0
+            self.end_index = int(self.total_size * train_ratio)
         elif data_type == 'val':
-            start_index = int(self.total_size * train_ratio)
-            end_index = int(self.total_size * (train_ratio + val_ratio))
+            self.start_index = int(self.total_size * train_ratio)
+            self.end_index = int(self.total_size * (train_ratio + val_ratio))
         else:
-            start_index = int(self.total_size * (train_ratio + val_ratio))
-            end_index = int(self.total_size * (train_ratio + val_ratio + test_ratio))
+            self.start_index = int(self.total_size * (train_ratio + val_ratio))
+            self.end_index = int(self.total_size * (train_ratio + val_ratio + test_ratio))
 
-        self.unit_position_datasets = self.dataset['unit_position_datasets'][start_index:end_index]
-        self.street_unit_position_datasets = self.dataset['street_unit_position_datasets'][start_index:end_index]
-        self.building_index_sequences = self.dataset['building_index_sequences'][start_index:end_index]
-        self.street_index_sequences = self.dataset['street_index_sequences'][start_index:end_index]
+        self.unit_position_datasets = self.dataset['unit_position_datasets'][self.start_index:self.end_index]
+        self.street_unit_position_datasets = self.dataset['street_unit_position_datasets'][self.start_index:self.end_index]
+        self.building_index_sequences = self.dataset['building_index_sequences'][self.start_index:self.end_index]
+        self.street_index_sequences = self.dataset['street_index_sequences'][self.start_index:self.end_index]
+        self.unit_coords_data = self.unit_coords_data[self.start_index:self.end_index]
 
     def __getitem__(self, index):
         """

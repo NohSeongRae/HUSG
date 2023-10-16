@@ -13,7 +13,8 @@ from tqdm import tqdm
 from transformer import get_pad_mask
 from transformer import Transformer
 from dataloader import BoundaryDataset
-import loss
+from visualization import plot
+
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, train_ratio, val_ratio, test_ratio, data_type, checkpoint_epoch):
@@ -108,6 +109,8 @@ class Trainer:
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
+
+                plot(output.detach().cpu().numpy(), idx)
 
 if __name__ == '__main__':
     # Set the argparse
