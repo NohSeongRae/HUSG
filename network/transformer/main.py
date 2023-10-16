@@ -84,7 +84,7 @@ class Trainer:
                                           lr=5e-4,
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=5, gamma=0.1)
+        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
 
 
     def cross_entropy_loss(self, pred, trg):
@@ -189,6 +189,9 @@ class Trainer:
                     loss_mean /= len(self.val_dataloader)
                     print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss CE: {loss_mean:.4f}")
 
+                    if self.use_tensorboard:
+                        self.writer.add_scalar("Val/loss-obj", loss_mean, epoch + 1)
+
             if (epoch + 1) % self.save_epoch == 0:
                 torch.save({
                     'epoch': epoch,
@@ -213,7 +216,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_boundary", type=int, default=200, help="Number of boundary or token.")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
-    parser.add_argument("--use_tensorboard", type=bool, default=False, help="Use tensorboard.")
+    parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
     parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--train_ratio", type=float, default=0.8, help="Use checkpoint index.")
@@ -223,11 +226,15 @@ if __name__ == '__main__':
     parser.add_argument("--val_epoch", type=int, default=50, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=50, help="Use checkpoint index.")
     parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
-    parser.add_argument("--scheduler_step", type=int, default=50, help="Use checkpoint index.")
+    parser.add_argument("--scheduler_step", type=int, default=200, help="Use checkpoint index.")
     parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
 
 
     opt = parser.parse_args()
+
+    # Convert namespace to dictionary and iterate over it to print all key-value pairs
+    for arg in vars(opt):
+        print(f"{arg}: {getattr(opt, arg)}")
 
     # Set the random seed for reproducibility
     random.seed(opt.seed)
