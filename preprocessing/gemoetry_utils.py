@@ -4,7 +4,6 @@ from math import sqrt
 from shapely.geometry import Polygon, LineString, Point
 from shapely.ops import unary_union
 
-
 def find_maximum_distance_from_polygon_to_linestring(polygon, linestring):
     max_distance = 0
     for coord in polygon.exterior.coords:
@@ -214,7 +213,7 @@ def angle_between(line1, line2):
     v2 = v2_end - v2_start
 
     dot_product = np.dot(v1, v2)
-    magnitude_product = np.linalg.norm(v1) * np.linalg.norm(v2)
+    magnitude_product = np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-5
     cosine_angle = dot_product / magnitude_product
     angle = np.degrees(np.arccos(np.clip(cosine_angle, -1.0, 1.0)))
     return angle
@@ -250,8 +249,12 @@ def project_polygon_onto_linestring_full(polygon, linestring):
     # Check if the projected polygon overlaps with the linestring
     projected_polygon = LineString(proj_coords)
 
-    if projected_polygon.is_valid:
+    if projected_polygon.is_empty or linestring.is_empty:
+        return False
+
+    if projected_polygon.is_valid and linestring.is_valid:
         overlap = projected_polygon.intersects(linestring)
     else:
         overlap = False
     return overlap
+

@@ -5,13 +5,9 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from shapely.geometry import Polygon, LineString, Point
 
-from etc.cityname import *
+# from etc.cityname import *
 
-city_name = city_name
-
-dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
-files = os.listdir(dir_path)
-filenum = len(files)
+# city_name = city_name
 
 building_polygons = []
 
@@ -67,8 +63,11 @@ def normalize_coordinates(geometry, min_x, min_y, max_x, max_y):
 # building_gdf.to_file(os.path.join(new_dir_path, "normalized_buildings.geojson"), driver='GeoJSON')
 # boundary_gdf.to_file(os.path.join(new_dir_path, "normalized_boundaries.geojson"), driver='GeoJSON')
 
-fig, ax = plt.subplots()
 
+city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+"philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+"sanfrancisco", "miami", "seattle", "boston", "providence",
+"neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
 def sort_key(filename):
     # 파일 이름에서 숫자만 추출
@@ -77,10 +76,11 @@ def sort_key(filename):
 
 
 for city_name in city_names:
+    print("city : ", city_name)
     building_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                     'filtered_data', 'Buildings')
+                                     'density20_building120_filtered_data', 'Buildings')
     boundary_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                     'filtered_data', 'Boundaries')
+                                     'density20_building120_filtered_data', 'Boundaries')
 
     # Iterate over all .geojson files in the directory
     for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)):
@@ -121,10 +121,10 @@ for city_name in city_names:
             # new_dir_path = "path_to_new_directory"
             building_new_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
                                                  f'{city_name}_dataset',
-                                                 'Normalized', 'Buildings')
+                                                 'density20_building120_Normalized', 'Buildings')
             boundary_new_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
                                                  f'{city_name}_dataset',
-                                                 'Normalized', 'Boundaries')
+                                                 'density20_building120_Normalized', 'Boundaries')
             os.makedirs(building_new_dir_path, exist_ok=True)
             os.makedirs(boundary_new_dir_path, exist_ok=True)
 

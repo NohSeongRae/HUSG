@@ -14,7 +14,7 @@ sys.path.append(husg_directory_path)
 # from etc import filepath as filepath
 import matplotlib.pyplot as plt
 from shapely.geometry import shape
-from etc.cityname import city_name
+# from etc.cityname import city_name
 
 
 def calculate_area(circumference):

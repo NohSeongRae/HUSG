@@ -22,7 +22,7 @@ def calculate_area(circumference):
     area = math.pi * radius ** 2
     return area
 
-def buildingnum(city_name_list, filtered_list, upperlimit, lowerlimit):
+def buildingnum(city_name_list, upperlimit, lowerlimit):
     city_building_num_list = []
     filtered_buildingnum_list = []
 
@@ -51,31 +51,30 @@ def buildingnum(city_name_list, filtered_list, upperlimit, lowerlimit):
         building_num_list = []
 
         for i in tqdm(range(1, filenum + 1)):
-            if i in filtered_list:
-                boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
-                                                 'Boundaries', f'{city_name_list[cityidx]}_boundaries{i}.geojson')
-                building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
-                                                 'Combined_Buildings', f'{city_name_list[cityidx]}_buildings{i}.geojson')
+            boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
+                                             'Boundaries', f'{city_name_list[cityidx]}_boundaries{i}.geojson')
+            building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name_list[cityidx]}_dataset',
+                                             'Combined_Buildings', f'{city_name_list[cityidx]}_buildings{i}.geojson')
 
-                if os.path.exists(boundary_filename):
-                    with open(boundary_filename, "r", encoding='UTF-8') as file:
-                        boundary_data = json.load(file)
+            if os.path.exists(boundary_filename):
+                with open(boundary_filename, "r", encoding='UTF-8') as file:
+                    boundary_data = json.load(file)
 
-                if os.path.exists(building_filename):
-                    with open(building_filename, "r", encoding='UTF-8') as file:
-                        building_data = json.load(file)
+            if os.path.exists(building_filename):
+                with open(building_filename, "r", encoding='UTF-8') as file:
+                    building_data = json.load(file)
 
-                    building_geometry = []
+                building_geometry = []
 
-                    for feature in building_data['features']:
-                        building_geometry.append(shape(feature['geometry']))
+                for feature in building_data['features']:
+                    building_geometry.append(shape(feature['geometry']))
 
-                    # print(building_geometry)
+                # print(building_geometry)
 
-                    building_num = len(building_geometry)
+                building_num = len(building_geometry)
 
-                    if building_num >= lowerlimit and building_num <= upperlimit:
-                        filtered_buildingnum_list.append(i)
+                if building_num >= lowerlimit and building_num <= upperlimit:
+                    filtered_buildingnum_list.append(i)
 
 
 

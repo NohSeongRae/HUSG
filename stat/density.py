@@ -88,9 +88,10 @@ def density(city_name_list, filtered_list, lowerlimit):
 
                     boundary_circle_ratio = (boundary_area / circle_area) * 100
 
-                    if boundary_circle_ratio >= lowerlimit:
-                        if boundary_length >= 0 and boundary_length <= 0.02:
-                            filtered_denstiy_list.append(i)
+                    density = (building_area / boundary_area) * 100
+
+                    if density >= lowerlimit:
+                        filtered_denstiy_list.append(i)
                             # filtered_denstiy_list.append(i)
 
 

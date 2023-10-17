@@ -9,12 +9,12 @@ current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
 sys.path.append(husg_directory_path)
 
-from etc import variables as variables
-from etc import filepath as filepath
+# from etc import variables as variables
+# from etc import filepath as filepath
 import matplotlib.pyplot as plt
 from shapely.geometry import shape
 
-from etc.cityname import city_name
+# from etc.cityname import city_name
 
 def remove_duplicate_coordinates(features):
     seen_coordinates = set()

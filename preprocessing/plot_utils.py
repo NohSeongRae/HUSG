@@ -62,7 +62,7 @@ def plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons,
 
     image_filename = os.path.join(folder_path, f'{file_name}.png')
 
-    plt.savefig(image_filename)
-    plt.clf()
+    # plt.savefig(image_filename)
+    # plt.clf()
 
-    # plt.show()
+    plt.show()

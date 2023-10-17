@@ -15,7 +15,7 @@ from buildingnum import buildingnum
 from tqdm import tqdm
 
 import shutil
-from etc import filepath as filepath
+# from etc import filepath as filepath
 import json
 
 # if not os.path.exists(filepath.stat):
@@ -26,18 +26,21 @@ import json
 # city_names_all = ["barcelona", "budapest", "firenze", "manchester", "milan", "nottingham", "paris", "singapore", "toronto", "vienna", "zurich"]
 # city_names_all = ["losangeles", "miami", "seattle", "boston", "providence", "tampa"]
 
-city_names_all = ["neworleans", "denver", "vancouver"]
+city_names_all = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+"philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+"sanfrancisco", "miami", "seattle", "boston", "providence",
+"neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
 
 for city in tqdm(range(len(city_names_all))):
     city_name = city_names_all[city]
 
     filtereddata_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                'filtered_data')
+                                'density20_building120_filtered_data')
     filteredbuilding_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                    'filtered_data', 'Buildings')
+                                    'density20_building120_filtered_data', 'Buildings')
     filteredboundary_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                    'filtered_data', 'Boundaries')
+                                    'density20_building120_filtered_data', 'Boundaries')
 
     if not os.path.exists(filtereddata_path):
         os.makedirs(filtereddata_path)
@@ -49,11 +52,10 @@ for city in tqdm(range(len(city_names_all))):
         os.makedirs(filteredboundary_path)
 
 
-    boundarysize_filtered = boundarysize([city_name], upperlimit=1.8 * 1e-6, lowerlimit=0.2 * 1e-6)
-    buildingnum_filtered = buildingnum([city_name], boundarysize_filtered, upperlimit=20, lowerlimit=2)
-    density_filtered = density([city_name], buildingnum_filtered, lowerlimit=40)
-    print(len(density_filtered))
-
+    # boundarysize_filtered = boundarysize([city_name], upperlimit=1.8 * 1e-6, lowerlimit=0.2 * 1e-6)
+    buildingnum_filtered = buildingnum([city_name], upperlimit=120, lowerlimit=1)
+    density_filtered = density([city_name], buildingnum_filtered, lowerlimit=20)
+    # print(len(density_filtered))
 
     whole_filtered = density_filtered
 
@@ -65,10 +67,10 @@ for city in tqdm(range(len(city_names_all))):
     for i in range(1, filenum+1):
         if i in whole_filtered:
             boundary_filtered_data_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
-                                             f'{city_name}_dataset', 'filtered_data', 'Boundaries')
+                                             f'{city_name}_dataset', 'density20_building120_filtered_data', 'Boundaries')
 
             building_filtered_data_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
-                                             f'{city_name}_dataset', 'filtered_data', 'Buildings')
+                                             f'{city_name}_dataset', 'density20_building120_filtered_data', 'Buildings')
 
             boundary_data_filepath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
                                              f'{city_name}_dataset',
