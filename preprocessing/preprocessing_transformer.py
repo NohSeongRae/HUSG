@@ -17,33 +17,7 @@ from plot_utils import *
 # from preprocessing.building_utils import *
 # from preprocessing.plot_utils import *
 
-unit_length = 0.04
-reference_angle = 30
-n_building = 30
-n_unit_road = 200
-n_street = 50
-pad_idx = 0
-building_eos_idx = n_building - 1
-street_eos_idx = n_street - 1
-n_street_sample = 64
-n_unit_sample = 8
-
-one_hot_building_index_set_sequences = []
-building_index_set_sequences = []
-building_index_sequences = []
-street_index_sequences = []
-building_center_position_datasets = []
-unit_center_position_datasets = []
-unit_position_datasets = []
-street_position_datasets = []
-street_unit_position_datasets = []
-adj_matrices_list = []
-building_polygons_datasets = []
-street_multiline_datasets = []
-unit_coords_datasets = []
-
 from shapely.ops import unary_union
-
 
 def merge_geometries_by_index(bounding_boxs, geometries):
     # Create a dictionary to store merged geometries by unique index
@@ -76,6 +50,16 @@ def merge_geometries_by_index(bounding_boxs, geometries):
 
     return result
 
+unit_length = 0.04
+reference_angle = 30
+n_building = 30
+n_unit_road = 200
+n_street = 50
+pad_idx = 0
+building_eos_idx = n_building - 1
+street_eos_idx = n_street - 1
+n_street_sample = 64
+n_unit_sample = 8
 
 city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
@@ -84,20 +68,20 @@ city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
 
 city_counts = {}
 
-
-all_building_index_sequences = []
-all_street_index_sequences = []
-all_unit_position_datasets = []
-all_street_unit_position_datasets = []
-
 def sort_key(filename):
     # 파일 이름에서 숫자만 추출
     num = int(''.join(filter(str.isdigit, filename)))
     return num
 
 for city_name in city_names:
-    print("city_name : ", city_name)
+    building_index_sequences = []
+    street_index_sequences = []
+    unit_center_position_datasets = []
+    unit_position_datasets = []
+    street_unit_position_datasets = []
+    unit_coords_datasets = []
 
+    print("city_name : ", city_name)
     city_counts[city_name] = 0
 
     building_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
@@ -135,6 +119,10 @@ for city_name in city_names:
             if len(unique_group_indices) == 1:  # one-street
                 continue
             unit_roads, closest_unit_index = split_into_unit_roads(boundary_lines, unit_length)
+
+            if len(unit_roads) >= 200:
+                city_counts[city_name] += 1
+                continue
 
             for _, segment in unit_roads:
                 segment[0] = tuple(segment[0])
@@ -226,11 +214,6 @@ for city_name in city_names:
 
             building_index_sequence = np.array(building_index_sequence)
 
-
-            if building_index_sequence.shape[0] >= 200:
-                city_counts[city_name] += 1
-                continue
-
             pad_sequence = np.zeros(n_unit_road - building_index_sequence.shape[0])
             pad_sequence[:] = 2     # eos_token
             building_index_sequence = np.concatenate((building_index_sequence, pad_sequence), axis=0)
@@ -246,6 +229,7 @@ for city_name in city_names:
             unit_position_dataset = np.zeros((n_unit_road, n_unit_sample, 2))
             street_position_dataset = np.zeros((n_street, n_street_sample, 2))
             street_unit_position_dataset = np.zeros((n_unit_road, n_street_sample, 2))
+            unit_coords_dataset = np.zeros((n_unit_road, 2, 2))
 
             street_index_bool = False
 
@@ -265,38 +249,35 @@ for city_name in city_names:
                 street_unit_position_dataset[idx] = street_position_dataset[unit_road[0] + 1]
 
                 file_name = boundary_filename.split('\\')[-1]
-                unit_coords_datasets.append([file_name, unit_road[1]])
-
+                unit_coords_dataset[idx] = [[unit_road[1][0][0], unit_road[1][0][1]], [unit_road[1][1][0], unit_road[1][1][1]]]
 
             building_index_sequences.append(building_index_sequence)
             street_index_sequences.append(street_index_sequence)
             unit_position_datasets.append(unit_position_dataset)
             street_unit_position_datasets.append(street_unit_position_dataset)
+            unit_coords_datasets.append(unit_coords_dataset)
 
-    all_building_index_sequences.extend(building_index_sequences)
-    all_street_index_sequences.extend(street_index_sequences)
-    all_unit_position_datasets.extend(unit_position_datasets)
-    all_street_unit_position_datasets.extend(street_unit_position_datasets)
+    building_index_sequences = np.array(building_index_sequences)
+    street_index_sequences = np.array(street_index_sequences)
+    unit_position_datasets = np.array(unit_position_datasets)
+    street_unit_position_datasets = np.array(street_unit_position_datasets)
+    unit_coords_datasets = np.array(unit_coords_datasets)
 
-folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset')
-if not os.path.exists(folder_path):
-    os.makedirs(folder_path)
+    folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', city_name)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
 
-transformer_path = os.path.join(folder_path, 'husg_transformer_dataset')
+    transformer_path = os.path.join(folder_path, 'husg_transformer_dataset')
 
-np.savez(transformer_path,
-         building_index_sequences=np.array(all_building_index_sequences),
-         street_index_sequences=np.array(all_street_index_sequences),
-         unit_position_datasets=np.array(all_unit_position_datasets),
-         street_unit_position_datasets=np.array(all_street_unit_position_datasets))
+    np.savez(transformer_path,
+             building_index_sequences=np.array(building_index_sequences),
+             street_index_sequences=np.array(street_index_sequences),
+             unit_position_datasets=np.array(unit_position_datasets),
+             street_unit_position_datasets=np.array(street_unit_position_datasets),
+             unit_coords_datasets=unit_coords_datasets)
 
-husg_unit_coords_path = os.path.join(folder_path, 'husg_unit_coords.pkl')
-with open(husg_unit_coords_path, 'wb') as file:
-    pickle.dump(unit_coords_datasets, file)
+    for city, count in city_counts.items():
+        print(f"{city} : {count}")
 
-for city, count in city_counts.items():
-    print(f"{city} : {count}")
-
-print("Total:", sum(city_counts.values()))
-
-print("save finish")
+    print("Total:", sum(city_counts.values()))
+    print("save finish")
