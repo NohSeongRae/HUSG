@@ -197,7 +197,7 @@ class Trainer:
                     'epoch': epoch,
                     'model_state_dict': self.transformer.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
-                }, "./models/transformer_epoch_" + str(epoch) + ".pt")
+                }, "./models/transformer_epoch_" + str(epoch + 1) + ".pt")
 
 if __name__ == '__main__':
     # Set the argparse
