@@ -14,11 +14,19 @@ class EncoderLayer(nn.Module):
     - d_v (int): Dimension of the value.
     - dropout (float, optional): Dropout rate. Default is 0.1.
     """
-    def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1):
+    def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1,
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
-        self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
-        self.street_attn=MultiHeadAttention(n_head,d_model,d_k,d_v,dropout=dropout)
-        self.local_attn=MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        self.use_global_attn = use_global_attn
+        self.use_street_attn = use_street_attn
+        self.use_local_attn = use_local_attn
+
+        if use_global_attn:
+            self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        if use_street_attn:
+            self.street_attn=MultiHeadAttention(n_head,d_model,d_k,d_v,dropout=dropout)
+        if use_local_attn:
+            self.local_attn=MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=dropout)
 
     def forward(self, enc_input, slf_attn_mask=None,street_attn_mask=None, local_attn_mask=None):
@@ -32,22 +40,28 @@ class EncoderLayer(nn.Module):
         Returns:
         - tuple: Tuple containing the encoded output and self attention tensor.
         """
+        enc_output = torch.zeros(enc_input.shape)
 
-        enc_slf_output, enc_slf_attn = self.slf_attn(
-            enc_input, enc_input, enc_input, mask=slf_attn_mask
-        )
+        if self.use_global_attn:
+            enc_slf_output, enc_slf_attn = self.slf_attn(
+                enc_input, enc_input, enc_input, mask=slf_attn_mask
+            )
+            enc_output += enc_slf_output
 
-        enc_street_output, enc_street_attn=self.slf_attn(
-            enc_input, enc_input, enc_input, mask=street_attn_mask
-        )
-        enc_local_output, enc_local_attn=self.slf_attn(
-            enc_input, enc_input, enc_input, mask=local_attn_mask
-        )
-
-        enc_output=enc_slf_output+enc_street_output+enc_local_output
+        if self.use_street_attn:
+            enc_street_output, enc_street_attn=self.slf_attn(
+                enc_input, enc_input, enc_input, mask=street_attn_mask
+            )
+            enc_output += enc_street_output
+        if self.use_local_attn:
+            enc_local_output, enc_local_attn=self.slf_attn(
+                enc_input, enc_input, enc_input, mask=local_attn_mask
+            )
+            enc_output += enc_local_output
 
         enc_output = self.pos_ffn(enc_output)
-        return enc_output, enc_slf_attn
+
+        return enc_output
 
 class DecoderLayer(nn.Module):
     """
@@ -61,11 +75,19 @@ class DecoderLayer(nn.Module):
     - d_v (int): Dimension of the value.
     - dropout (float, optional): Dropout rate. Default is 0.1.
     """
-    def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1):
+    def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1,
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
-        self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
-        self.street_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
-        self.local_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        self.use_global_attn = use_global_attn
+        self.use_street_attn = use_street_attn
+        self.use_local_attn = use_local_attn
+
+        if use_global_attn:
+            self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        if use_street_attn:
+            self.street_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        if use_local_attn:
+            self.local_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.enc_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=dropout)
 
@@ -81,23 +103,32 @@ class DecoderLayer(nn.Module):
         Returns:
         - tuple: Tuple containing the decoded output, decoder self attention tensor, and encoder attention tensor.
         """
-        # global attention
-        dec_slf_output, dec_slf_attn = self.slf_attn(
-            dec_input, dec_input, dec_input, mask=slf_attn_mask
-        )
-        # street attention
-        dec_street_output, dec_street_attn = self.slf_attn(
-            dec_input, dec_input, dec_input, mask=street_attn_mask
-        )
-        # local attention
-        dec_local_output, dec_local_attn = self.slf_attn(
-            dec_input, dec_input, dec_input, mask=local_attn_mask
-        )
+        dec_output = torch.zeros(dec_input.shape)
 
-        dec_output = dec_slf_output + dec_street_output + dec_local_output
+        # global attention
+        if self.use_global_attn:
+            dec_slf_output, dec_slf_attn = self.slf_attn(
+                dec_input, dec_input, dec_input, mask=slf_attn_mask
+            )
+            dec_output += dec_slf_output
+
+        # street attention
+        if self.use_street_attn:
+            dec_street_output, dec_street_attn = self.slf_attn(
+                dec_input, dec_input, dec_input, mask=street_attn_mask
+            )
+            dec_output += dec_street_output
+
+        # local attention
+        if self.use_local_attn:
+            dec_local_output, dec_local_attn = self.slf_attn(
+                dec_input, dec_input, dec_input, mask=local_attn_mask
+            )
+            dec_output += dec_local_output
 
         dec_output, dec_enc_attn = self.enc_attn(
             dec_output, enc_output, enc_output, mask=slf_attn_mask
         )
         dec_output = self.pos_ffn(dec_output)
-        return dec_output, dec_slf_attn, dec_enc_attn
+
+        return dec_output

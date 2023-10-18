@@ -49,7 +49,8 @@ class PositionalEncoding(nn.Module):
         return x + self.pos_table[:, :x.size(1)].clone().detach()
 
 class Encoder(nn.Module):
-    def __init__(self, n_layer, n_head, d_k, d_v, d_model, d_inner, d_unit, d_street, dropout=0.1, n_boundary=200):
+    def __init__(self, n_layer, n_head, d_k, d_v, d_model, d_inner, d_unit, d_street, dropout=0.1, n_boundary=200,
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
         self.pos_enc = nn.Linear(2, 1)
@@ -57,7 +58,9 @@ class Encoder(nn.Module):
         self.street_enc = nn.Linear(d_street, d_model)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
-            EncoderLayer(d_model, d_inner, n_head, d_k,d_v, dropout)
+            EncoderLayer(d_model, d_inner, n_head, d_k,d_v, dropout,
+                         use_global_attn=use_global_attn, use_street_attn=use_street_attn,
+                         use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -71,12 +74,13 @@ class Encoder(nn.Module):
         enc_output = self.layer_norm(enc_output)
 
         for enc_layer in self.layer_stack:
-            enc_output, _ = enc_layer(enc_output, mask,src_street_mask,src_local_mask)
+            enc_output = enc_layer(enc_output, mask,src_street_mask,src_local_mask)
 
         return enc_output
 
 class Decoder(nn.Module):
-    def __init__(self, n_building, n_layer, n_head, d_k, d_v, d_model, d_inner, pad_idx, eos_idx, dropout=0.1, n_boundary=200):
+    def __init__(self, n_building, n_layer, n_head, d_k, d_v, d_model, d_inner, pad_idx, eos_idx, dropout=0.1, n_boundary=200,
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
         self.building_emb = nn.Embedding(3, d_model, padding_idx=eos_idx)
@@ -84,7 +88,9 @@ class Decoder(nn.Module):
         self.pos_enc = PositionalEncoding(d_model, n_boundary=n_boundary)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
-            DecoderLayer(d_model, d_inner, n_head, d_k,d_v, dropout)
+            DecoderLayer(d_model, d_inner, n_head, d_k,d_v, dropout,
+                         use_global_attn=use_global_attn, use_street_attn=use_street_attn,
+                         use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -101,22 +107,26 @@ class Decoder(nn.Module):
         dec_output = self.layer_norm(dec_output)
 
         for dec_layer in self.layer_stack:
-            dec_output, _, _ = dec_layer(dec_output, enc_output, mask, trg_local_mask,trg_street_mask)
+            dec_output = dec_layer(dec_output, enc_output, mask, trg_local_mask,trg_street_mask)
 
         return dec_output
 
 class Transformer(nn.Module):
     def __init__(self, n_building=100, pad_idx=0, eos_idx=2, d_model=512, d_inner=2048,
                  n_layer=6, n_head=8, d_k=64, d_v=64, dropout=0.1, n_boundary=200,
-                 d_unit=8, d_street=32):
+                 d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
         self.encoder = Encoder(n_boundary=n_boundary,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
-                               d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout)
+                               d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
+                               use_global_attn=use_global_attn, use_street_attn=use_street_attn,
+                               use_local_attn=use_local_attn)
         self.decoder = Decoder(n_building=n_building, n_boundary=n_boundary, eos_idx=eos_idx,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
-                               d_k=d_k, d_v=d_v, pad_idx=pad_idx, dropout=dropout)
+                               d_k=d_k, d_v=d_v, pad_idx=pad_idx, dropout=dropout,
+                               use_global_attn=use_global_attn, use_street_attn=use_street_attn,
+                               use_local_attn=use_local_attn)
         self.pad_idx = pad_idx
         self.eos_idx = eos_idx
         self.building_fc = nn.Linear(d_model, 1, bias=False)

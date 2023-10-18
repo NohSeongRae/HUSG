@@ -17,8 +17,9 @@ import loss
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
-                 train_ratio, val_ratio, test_ratio, data_type, val_epoch, save_epoch,
-                 weight_decay, scheduler_step, scheduler_gamma):
+                 train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
+                 weight_decay, scheduler_step, scheduler_gamma,
+                 use_global_attn, use_street_attn, use_local_attn):
         """
         Initialize the trainer with the specified parameters.
 
@@ -50,30 +51,35 @@ class Trainer:
         self.train_ratio = train_ratio
         self.val_ratio = val_ratio
         self.test_ratio = test_ratio
-        self.data_type = data_type
         self.val_epoch = val_epoch
         self.save_epoch = save_epoch
         self.weight_decay = weight_decay
         self.scheduler_step = scheduler_step
         self.scheduler_gamma = scheduler_gamma
+        self.use_global_attn = use_global_attn
+        self.use_street_attn = use_street_attn
+        self.use_local_attn = use_local_attn
 
         # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train')
-        self.train_dataloader = DataLoader(self.train_dataset, batch_size=32, shuffle=True)
+        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
 
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='val', load=False)
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=32, shuffle=True)
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True)
 
         # Initialize the Transformer model
         self.transformer = Transformer(n_building=self.n_building, n_boundary=self.n_boundary, pad_idx=self.pad_idx,
                                        d_street=self.d_street, d_unit=self.d_unit, d_model=self.d_model,
                                        d_inner=self.d_model * 4, n_layer=self.n_layer, n_head=self.n_head,
                                        d_k=self.d_model//self.n_head, d_v=self.d_model//self.n_head,
-                                       dropout=self.dropout, eos_idx=self.eos_idx).to(device=self.device)
+                                       dropout=self.dropout, eos_idx=self.eos_idx,
+                                       use_global_attn=use_global_attn,
+                                       use_street_attn=use_street_attn,
+                                       use_local_attn=use_local_attn).to(device=self.device)
 
         # Set the optimizer for the training process
         self.optimizer = torch.optim.Adam(self.transformer.parameters(),
@@ -218,12 +224,14 @@ if __name__ == '__main__':
     parser.add_argument("--train_ratio", type=float, default=0.8, help="Use checkpoint index.")
     parser.add_argument("--val_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
-    parser.add_argument("--data_type", type=str, default='train', help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
     parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
     parser.add_argument("--scheduler_step", type=int, default=200, help="Use checkpoint index.")
     parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
+    parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
+    parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
+    parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
 
 
     opt = parser.parse_args()
@@ -244,6 +252,7 @@ if __name__ == '__main__':
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
-                      data_type=opt.data_type, val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
-                      weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma)
+                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
+                      weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
+                      use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn)
     trainer.train()
