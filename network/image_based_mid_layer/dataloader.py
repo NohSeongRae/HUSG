@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import numpy as np
 import pickle
 
-class MidLayerDataset(Dataset):
+class ImageDataset(Dataset):
     """
     Dataset class for boundary data.
     """

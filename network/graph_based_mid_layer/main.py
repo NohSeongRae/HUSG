@@ -10,13 +10,14 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from network.image_based_mid_layer.model import ImageNet
-from network.image_based_mid_layer.dataloader import ImageDataset
+from network.graph_based_mid_layer.model import VQVAE
+from network.graph_based_mid_layer.dataloader import VQVAEDataset
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
-                 weight_decay, scheduler_step, scheduler_gamma):
+                 weight_decay, scheduler_step, scheduler_gamma,
+                 d_in, d_model, d_out, n_embed, n_res_layer, commitment_cost):
         """
         Initialize the trainer with the specified parameters.
 
@@ -25,7 +26,7 @@ class Trainer:
         - max_epoch (int): Maximum number of training epochs.
         - pad_idx (int): Padding index for sequences.
         - d_model (int): Dimension of the model.
-        - n_layer (int): Number of image_based_image_net layers.
+        - n_layer (int): Number of image_based_vqvae layers.
         - n_head (int): Number of multi-head attentions.
         """
 
@@ -43,43 +44,50 @@ class Trainer:
         self.weight_decay = weight_decay
         self.scheduler_step = scheduler_step
         self.scheduler_gamma = scheduler_gamma
+        self.d_in = d_in
+        self.d_model = d_model
+        self.d_out = d_out
+        self.n_embed = n_embed
+        self.n_res_layer = n_res_layer
+        self.commitment_cost = commitment_cost
 
         # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
         # Initialize the dataset and dataloader
-        self.train_dataset = ImageDataset(train_ratio=self.train_ratio,
+        self.train_dataset = VQVAEDataset(train_ratio=self.train_ratio,
                                           val_ratio=self.val_ratio,
                                           test_ratio=self.test_ratio,
                                           data_type='train')
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
-        self.val_dataset = ImageDataset(train_ratio=self.train_ratio,
+        self.val_dataset = VQVAEDataset(train_ratio=self.train_ratio,
                                         val_ratio=self.val_ratio,
                                         test_ratio=self.test_ratio,
                                         data_type='val')
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True)
 
         # Initialize the Transformer model
-        self.image_net = ImageNet(n_mask=8).to(device=self.device)
+        self.vqvae = VQVAE(d_in=d_in, d_model=d_model, d_out=d_out, n_embed=n_embed,
+                           n_res_layer=n_res_layer, commitment_cost=commitment_cost).to(device=self.device)
 
         # Set the optimizer for the training process
-        self.optimizer = torch.optim.Adam(self.image_net.parameters(),
+        self.optimizer = torch.optim.Adam(self.vqvae.parameters(),
                                           lr=5e-4,
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
 
-    def cross_entropy_loss(self, pred, trg):
-        loss = F.binary_cross_entropy(torch.sigmoid(pred), trg)
+    def recon_loss(self, pred, trg):
+        loss = F.mse_loss(pred, trg)
         return loss
 
     def train(self):
-        """Training loop for the image_based_image_net model."""
+        """Training loop for the image_based_vqvae model."""
         epoch_start = 0
 
         if self.use_checkpoint:
-            checkpoint = torch.load("./models/image_net_epoch_" + str(self.checkpoint_epoch) + ".pt")
-            self.image_net.load_state_dict(checkpoint['model_state_dict'])
+            checkpoint = torch.load("./models/vqvae_epoch_" + str(self.checkpoint_epoch) + ".pt")
+            self.vqvae.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             epoch_start = checkpoint['epoch']
 
@@ -87,7 +95,8 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in tqdm(range(epoch_start, self.max_epoch)):
-            loss_mean = 0
+            loss_recon_mean = 0
+            loss_vq_mean = 0
 
             # Iterate over batches
             for data in self.train_dataloader:
@@ -100,14 +109,16 @@ class Trainer:
                 target_data = target_data.to(device=self.device, dtype=torch.float32)
 
                 # Get the model's predictions
-                output = self.image_net(input_data)
+                output, loss_vq = self.vqvae(input_data)
 
                 # Compute the losses
-                loss = self.cross_entropy_loss(output, target_data)
-                loss_total = loss
+                loss_recon = self.recon_loss(output, target_data)
+                loss_total = loss_recon + loss_vq
 
                 # Accumulate the losses for reporting
-                loss_mean += loss.detach().item()
+                loss_recon_mean += loss_recon.detach().item()
+                loss_vq_mean += loss_vq.detach().item()
+
                 # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
@@ -115,15 +126,19 @@ class Trainer:
             self.scheduler.step()
 
             # Print the average losses for the current epoch
-            loss_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss CE: {loss_mean:.4f}")
+            loss_recon_mean /= len(self.train_dataloader)
+            loss_vq_mean /= len(self.train_dataloader)
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon: {loss_recon_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss VQ: {loss_vq_mean:.4f}")
 
             if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-obj", loss_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-recon", loss_recon_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-vq", loss_vq_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
-                self.image_net.eval()
-                loss_mean = 0
+                self.vqvae.eval()
+                loss_recon_mean = 0
+                loss_vq_mean = 0
 
                 with torch.no_grad():
                     # Iterate over batches
@@ -134,31 +149,35 @@ class Trainer:
                         target_data = target_data.to(device=self.device, dtype=torch.long)
 
                         # Get the model's predictions
-                        output = self.image_net(input_data)
+                        output, loss_vq = self.vqvae(input_data)
 
                         # Compute the losses
-                        loss = self.cross_entropy_loss(output, target_data)
+                        loss_recon = self.recon_loss(output, target_data)
 
                         # Accumulate the losses for reporting
-                        loss_mean += loss.detach().item()
+                        loss_recon_mean += loss_recon.detach().item()
+                        loss_vq_mean += loss_vq.detach().item()
 
                     # Print the average losses for the current epoch
-                    loss_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss CE: {loss_mean:.4f}")
+                    loss_recon_mean /= len(self.val_dataloader)
+                    loss_vq_mean /= len(self.train_dataloader)
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recon: {loss_recon_mean:.4f}")
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss VQ: {loss_vq_mean:.4f}")
 
                     if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-obj", loss_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-recon", loss_recon_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-vq", loss_vq_mean, epoch + 1)
 
             if (epoch + 1) % self.save_epoch == 0:
                 torch.save({
                     'epoch': epoch,
-                    'model_state_dict': self.image_net.state_dict(),
+                    'model_state_dict': self.vqvae.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
-                }, "./models/image_net_epoch_" + str(epoch + 1) + ".pt")
+                }, "./models/vqvae_epoch_" + str(epoch + 1) + ".pt")
 
 if __name__ == '__main__':
     # Set the argparse
-    parser = argparse.ArgumentParser(description="Initialize a image_based_image_net with user-defined hyperparameters.")
+    parser = argparse.ArgumentParser(description="Initialize a image_based_vqvae with user-defined hyperparameters.")
 
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
@@ -175,6 +194,12 @@ if __name__ == '__main__':
     parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
     parser.add_argument("--scheduler_step", type=int, default=200, help="Use checkpoint index.")
     parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
+    parser.add_argument("--d_in", type=int, default=3, help="Use checkpoint index.")
+    parser.add_argument("--d_model", type=int, default=256, help="Use checkpoint index.")
+    parser.add_argument("--d_out", type=int, default=3, help="Use checkpoint index.")
+    parser.add_argument("--n_embed", type=int, default=100, help="Use checkpoint index.")
+    parser.add_argument("--n_res_layer", type=int, default=2, help="Use checkpoint index.")
+    parser.add_argument("--commitment_cost", type=float, default=0.25, help="Use checkpoint index.")
 
 
     opt = parser.parse_args()
@@ -194,5 +219,7 @@ if __name__ == '__main__':
                       use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
-                      weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma)
+                      weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
+                      d_in=opt.d_in, d_model=opt.d_model, d_out=opt.d_out, n_embed=opt.n_embed,
+                      n_res_layer=opt.n_res_layer, commitment_cost=opt.commitment_cost)
     trainer.train()

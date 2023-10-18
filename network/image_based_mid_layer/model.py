@@ -61,7 +61,7 @@ class Decoder(nn.Module):
 
         return d1
 
-class MidLayer(nn.Module):
+class ImageNet(nn.Module):
     def __init__(self, n_mask):
         super().__init__()
 
