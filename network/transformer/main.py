@@ -157,10 +157,10 @@ class Trainer:
 
             # Print the average losses for the current epoch
             loss_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss CE: {loss_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
 
             if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-obj", loss_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-bce", loss_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.eval()
@@ -189,10 +189,10 @@ class Trainer:
 
                     # Print the average losses for the current epoch
                     loss_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss CE: {loss_mean:.4f}")
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {loss_mean:.4f}")
 
                     if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-obj", loss_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
 
             if (epoch + 1) % self.save_epoch == 0:
                 torch.save({
