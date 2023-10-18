@@ -50,7 +50,7 @@ class PositionalEncoding(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(self, n_layer, n_head, d_k, d_v, d_model, d_inner, d_unit, d_street, dropout=0.1, n_boundary=200,
-                 use_global_attn=True, use_street_attn=True, use_local_attn=True, local_rank=0):
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
         self.pos_enc = nn.Linear(2, 1)
@@ -60,7 +60,7 @@ class Encoder(nn.Module):
         self.layer_stack = nn.ModuleList([
             EncoderLayer(d_model, d_inner, n_head, d_k,d_v, dropout,
                          use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                         use_local_attn=use_local_attn, local_rank=local_rank)
+                         use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -80,7 +80,7 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, n_building, n_layer, n_head, d_k, d_v, d_model, d_inner, pad_idx, eos_idx, dropout=0.1, n_boundary=200,
-                 use_global_attn=True, use_street_attn=True, use_local_attn=True, local_rank=0):
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
         self.building_emb = nn.Embedding(3, d_model, padding_idx=eos_idx)
@@ -90,7 +90,7 @@ class Decoder(nn.Module):
         self.layer_stack = nn.ModuleList([
             DecoderLayer(d_model, d_inner, n_head, d_k,d_v, dropout,
                          use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                         use_local_attn=use_local_attn, local_rank=local_rank)
+                         use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -114,20 +114,19 @@ class Decoder(nn.Module):
 class Transformer(nn.Module):
     def __init__(self, n_building=100, pad_idx=0, eos_idx=2, d_model=512, d_inner=2048,
                  n_layer=6, n_head=8, d_k=64, d_v=64, dropout=0.1, n_boundary=200,
-                 d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True,
-                 local_rank=0):
+                 d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
         self.encoder = Encoder(n_boundary=n_boundary,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
                                d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                               use_local_attn=use_local_attn, local_rank=local_rank)
+                               use_local_attn=use_local_attn)
         self.decoder = Decoder(n_building=n_building, n_boundary=n_boundary, eos_idx=eos_idx,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
                                d_k=d_k, d_v=d_v, pad_idx=pad_idx, dropout=dropout,
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                               use_local_attn=use_local_attn, local_rank=local_rank)
+                               use_local_attn=use_local_attn)
         self.pad_idx = pad_idx
         self.eos_idx = eos_idx
         self.building_fc = nn.Linear(d_model, 1, bias=False)

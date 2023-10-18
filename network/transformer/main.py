@@ -88,7 +88,7 @@ class Trainer:
                                        dropout=self.dropout, eos_idx=self.eos_idx,
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
-                                       use_local_attn=use_local_attn, local_rank=local_rank).to(device=self.device)
+                                       use_local_attn=use_local_attn).to(device=self.device)
         self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank])
 
         # Set the optimizer for the training process
