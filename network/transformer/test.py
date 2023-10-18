@@ -48,9 +48,10 @@ class Trainer:
         self.test_ratio = test_ratio
         self.data_type = data_type
         self.checkpoint_epoch = checkpoint_epoch
+        self.local_rank = 0
 
         # Set the device for training (either GPU or CPU based on availability)
-        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+        self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Initialize the dataset and dataloader
         self.test_dataset = BoundaryDataset(train_ratio=self.train_ratio,

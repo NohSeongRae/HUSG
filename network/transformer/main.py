@@ -23,7 +23,7 @@ class Trainer:
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
                  weight_decay, scheduler_step, scheduler_gamma,
-                 use_global_attn, use_street_attn, use_local_attn):
+                 use_global_attn, use_street_attn, use_local_attn, local_rank):
         """
         Initialize the trainer with the specified parameters.
 
@@ -63,9 +63,10 @@ class Trainer:
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
+        self.local_rank = local_rank
 
         # Set the device for training (either GPU or CPU based on availability)
-        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+        self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train')
@@ -87,7 +88,7 @@ class Trainer:
                                        dropout=self.dropout, eos_idx=self.eos_idx,
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
-                                       use_local_attn=use_local_attn).to(device=self.device)
+                                       use_local_attn=use_local_attn, local_rank=local_rank).to(device=self.device)
         self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[0, 1, 2])
 
         # Set the optimizer for the training process
@@ -256,7 +257,6 @@ if __name__ == '__main__':
 
     # ddp
     rank = opt.local_rank
-    print(rank)
     torch.cuda.set_device(rank)
     dist.init_process_group(backend='nccl')
 
@@ -268,6 +268,7 @@ if __name__ == '__main__':
                       train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
-                      use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn)
+                      use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
+                      local_rank=opt.local_rank)
 
     trainer.train()

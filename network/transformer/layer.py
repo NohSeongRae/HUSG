@@ -15,11 +15,11 @@ class EncoderLayer(nn.Module):
     - dropout (float, optional): Dropout rate. Default is 0.1.
     """
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1,
-                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True, local_rank=0):
         super().__init__()
 
         # Set the device for training (either GPU or CPU based on availability)
-        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+        self.device = torch.device(f'cuda:{local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
@@ -80,11 +80,11 @@ class DecoderLayer(nn.Module):
     - dropout (float, optional): Dropout rate. Default is 0.1.
     """
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1,
-                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True, local_rank=0):
         super().__init__()
 
         # Set the device for training (either GPU or CPU based on availability)
-        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+        self.device = torch.device(f'cuda:{local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
