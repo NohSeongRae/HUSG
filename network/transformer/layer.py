@@ -17,6 +17,10 @@ class EncoderLayer(nn.Module):
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1,
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
+
+        # Set the device for training (either GPU or CPU based on availability)
+        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
@@ -40,7 +44,7 @@ class EncoderLayer(nn.Module):
         Returns:
         - tuple: Tuple containing the encoded output and self attention tensor.
         """
-        enc_output = torch.zeros(enc_input.shape)
+        enc_output = torch.zeros(enc_input.shape).to(device=self.device)
 
         if self.use_global_attn:
             enc_slf_output, enc_slf_attn = self.slf_attn(
@@ -78,6 +82,10 @@ class DecoderLayer(nn.Module):
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1,
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
+
+        # Set the device for training (either GPU or CPU based on availability)
+        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
@@ -103,7 +111,7 @@ class DecoderLayer(nn.Module):
         Returns:
         - tuple: Tuple containing the decoded output, decoder self attention tensor, and encoder attention tensor.
         """
-        dec_output = torch.zeros(dec_input.shape)
+        dec_output = torch.zeros(dec_input.shape).to(device=self.device)
 
         # global attention
         if self.use_global_attn:
