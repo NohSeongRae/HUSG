@@ -203,10 +203,10 @@ class Trainer:
                     if self.use_tensorboard:
                         self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
 
-            if (epoch + 1) % self.save_epoch == 0:
+            if (epoch + 1) % self.save_epoch == 0 and self.local_rank == 0:
                 torch.save({
                     'epoch': epoch,
-                    'model_state_dict': self.transformer.state_dict(),
+                    'model_state_dict': self.transformer.module.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
                 }, "./models/transformer_epoch_" + str(epoch + 1) + ".pt")
 
