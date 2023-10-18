@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import numpy as np
 import pickle
+from tqdm import tqdm
 
 class BoundaryDataset(Dataset):
     """
@@ -23,7 +24,7 @@ class BoundaryDataset(Dataset):
         all_street_index_sequences = []
         all_unit_coords_datasets = []
 
-        for city_name in self.city_names:
+        for city_name in tqdm(self.city_names):
             data = np.load(self.dataset_path + city_name + self.file_name)
 
             all_unit_position_datasets.append(data['unit_position_datasets'])
