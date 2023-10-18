@@ -95,7 +95,7 @@ class Trainer:
         with torch.no_grad():
             for idx, data in enumerate(self.test_dataloader):
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq = data
+                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, _ = data
                 gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
