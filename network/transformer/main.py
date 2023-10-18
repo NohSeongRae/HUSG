@@ -60,17 +60,13 @@ class Trainer:
         # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
-        # Initialize the dataset and dataloader
-        self.train_dataset = BoundaryDataset(train_ratio=self.train_ratio,
-                                             val_ratio=self.val_ratio,
-                                             test_ratio=self.test_ratio,
-                                             data_type='train')
-        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
-        self.val_dataset = BoundaryDataset(train_ratio=self.train_ratio,
-                                           val_ratio=self.val_ratio,
-                                           test_ratio=self.test_ratio,
-                                           data_type='val')
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True)
+        # Only the first dataset initialization will load the full dataset from disk
+        self.train_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train')
+        self.train_dataloader = DataLoader(self.train_dataset, batch_size=32, shuffle=True)
+
+        # Subsequent initializations will use the already loaded full dataset
+        self.val_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='val', load=False)
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=32, shuffle=True)
 
         # Initialize the Transformer model
         self.transformer = Transformer(n_building=self.n_building, n_boundary=self.n_boundary, pad_idx=self.pad_idx,
@@ -121,11 +117,11 @@ class Trainer:
         if self.use_tensorboard:
             self.writer = SummaryWriter()
 
-        for epoch in tqdm(range(epoch_start, self.max_epoch)):
+        for epoch in range(epoch_start, self.max_epoch):
             loss_mean = 0
 
             # Iterate over batches
-            for data in self.train_dataloader:
+            for data in tqdm(self.train_dataloader):
                 # Zero the gradients
                 self.optimizer.zero_grad()
 
@@ -223,8 +219,8 @@ if __name__ == '__main__':
     parser.add_argument("--val_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--data_type", type=str, default='train', help="Use checkpoint index.")
-    parser.add_argument("--val_epoch", type=int, default=50, help="Use checkpoint index.")
-    parser.add_argument("--save_epoch", type=int, default=50, help="Use checkpoint index.")
+    parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
+    parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
     parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
     parser.add_argument("--scheduler_step", type=int, default=200, help="Use checkpoint index.")
     parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
