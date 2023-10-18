@@ -71,13 +71,13 @@ class Trainer:
         # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train')
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=3, rank=rank)
-        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,
+        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8)
 
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='val', load=False)
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=3, rank=rank)
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True,
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8)
 
         # Initialize the Transformer model
