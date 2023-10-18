@@ -168,7 +168,7 @@ class Trainer:
 
                 with torch.no_grad():
                     # Iterate over batches
-                    for data in self.val_dataloader:
+                    for data in tqdm(self.val_dataloader):
                         # Get the source and target sequences from the batch
                         src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, _ = data
                         gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
