@@ -2,10 +2,14 @@ import sys
 import os
 import argparse
 import torch
+import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel
+
 import numpy as np
 import random
 from tqdm import tqdm
@@ -13,7 +17,7 @@ from tqdm import tqdm
 from transformer import get_pad_mask
 from transformer import Transformer
 from dataloader import BoundaryDataset
-import loss
+
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
@@ -65,11 +69,15 @@ class Trainer:
 
         # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train')
-        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset)
+        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,
+                                           sampler=self.train_sampler, num_workers=n_workers)
 
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='val', load=False)
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True)
+        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset)
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True,
+                                         sampler=self.val_sampler, num_workers=n_workers)
 
         # Initialize the Transformer model
         self.transformer = Transformer(n_building=self.n_building, n_boundary=self.n_boundary, pad_idx=self.pad_idx,
@@ -80,6 +88,7 @@ class Trainer:
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
                                        use_local_attn=use_local_attn).to(device=self.device)
+        self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[0, 1, 2])
 
         # Set the optimizer for the training process
         self.optimizer = torch.optim.Adam(self.transformer.parameters(),
@@ -87,7 +96,6 @@ class Trainer:
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
-
 
     def cross_entropy_loss(self, pred, trg):
         """
@@ -232,7 +240,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
-
+    parser.add_argument("--local_rank", type=int)
 
     opt = parser.parse_args()
 
@@ -246,6 +254,12 @@ if __name__ == '__main__':
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed_all(opt.seed)
 
+    # ddp
+    rank = opt.local_rank
+    print(rank)
+    torch.cuda.set_device(rank)
+    dist.init_process_group(backend='nccl')
+
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx,
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
@@ -255,4 +269,5 @@ if __name__ == '__main__':
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
                       use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn)
+
     trainer.train()
