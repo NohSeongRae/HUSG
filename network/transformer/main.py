@@ -70,15 +70,15 @@ class Trainer:
 
         # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train')
-        self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset)
+        self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=3, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,
-                                           sampler=self.train_sampler, num_workers=n_workers)
+                                           sampler=self.train_sampler, num_workers=8)
 
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = BoundaryDataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='val', load=False)
-        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset)
+        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=3, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True,
-                                         sampler=self.val_sampler, num_workers=n_workers)
+                                         sampler=self.val_sampler, num_workers=8)
 
         # Initialize the Transformer model
         self.transformer = Transformer(n_building=self.n_building, n_boundary=self.n_boundary, pad_idx=self.pad_idx,
@@ -89,7 +89,7 @@ class Trainer:
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
                                        use_local_attn=use_local_attn, local_rank=local_rank).to(device=self.device)
-        self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[0, 1, 2])
+        self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank])
 
         # Set the optimizer for the training process
         self.optimizer = torch.optim.Adam(self.transformer.parameters(),
