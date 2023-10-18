@@ -10,8 +10,8 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from network.mid_layer.model import MidLayer
-from network.mid_layer.dataloader import MidLayerDataset
+from network.image_based_mid_layer.model import MidLayer
+from network.image_based_mid_layer.dataloader import MidLayerDataset
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
@@ -25,7 +25,7 @@ class Trainer:
         - max_epoch (int): Maximum number of training epochs.
         - pad_idx (int): Padding index for sequences.
         - d_model (int): Dimension of the model.
-        - n_layer (int): Number of mid_layer layers.
+        - n_layer (int): Number of image_based_mid_layer layers.
         - n_head (int): Number of multi-head attentions.
         """
 
@@ -74,7 +74,7 @@ class Trainer:
         return loss
 
     def train(self):
-        """Training loop for the mid_layer model."""
+        """Training loop for the image_based_mid_layer model."""
         epoch_start = 0
 
         if self.use_checkpoint:
@@ -158,7 +158,7 @@ class Trainer:
 
 if __name__ == '__main__':
     # Set the argparse
-    parser = argparse.ArgumentParser(description="Initialize a mid_layer with user-defined hyperparameters.")
+    parser = argparse.ArgumentParser(description="Initialize a image_based_mid_layer with user-defined hyperparameters.")
 
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")

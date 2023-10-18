@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
 
-from network.mid_layer.encoder import ResnetBlock, BasicBlock1DConv
-from network.mid_layer.decoder import DecoderBlock
+from network.image_based_mid_layer.encoder import ResnetBlock, BasicBlock1DConv
+from network.image_based_mid_layer.decoder import DecoderBlock
 
 nonlinearity = partial(F.relu, inplace=True)
 
