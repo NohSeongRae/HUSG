@@ -173,9 +173,11 @@ def closest_boundary_edge(building, boundary, sorted_edges):
 def group_by_boundary_edge(polygons, boundary, sorted_edges):
     # Calculate centroid of the boundary
     centroid = boundary.centroid
-
-    # Extracting boundary coordinates from the Polygon object
-    boundary_coords = list(boundary.boundary.coords[:-1])  # exclude the repeated last point
+    try:
+        # Extracting boundary coordinates from the Polygon object
+        boundary_coords = list(boundary.boundary.coords[:-1])  # exclude the repeated last point
+    except:
+        return False, False
 
     # Calculate distance and angle for each boundary point from centroid
     distances_and_angles = []

@@ -61,10 +61,14 @@ street_eos_idx = n_street - 1
 n_street_sample = 64
 n_unit_sample = 8
 
-city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
-              "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
-              "sanfrancisco", "miami", "seattle", "boston", "providence",
-              "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+# city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+#               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+#               "sanfrancisco", "miami", "seattle", "boston", "providence",
+#               "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+
+# city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
+city_names = ["neworleans", "denver", "pittsburgh", "tampa", "washington"]
+
 
 city_counts = {}
 
@@ -109,6 +113,8 @@ for city_name in city_names:
             sorted_edges = sorted_boundary_edges(boundary_polygon, unit_length)
 
             groups, _ = group_by_boundary_edge(building_polygons, boundary_polygon, sorted_edges)
+            if not groups:
+                continue
 
             # print("groups ", groups.keys())
 
