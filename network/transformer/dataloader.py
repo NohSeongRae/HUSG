@@ -15,9 +15,10 @@ class BoundaryDataset(Dataset):
     def load_full_dataset(cls):
         dataset_path = '../../../../mnt/2_transformer/train_dataset/'
         city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
-                           "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
-                           "sanfrancisco", "miami", "seattle", "boston", "providence",
-                           "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+                      "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+                      "sanfrancisco", "miami", "seattle", "boston", "providence",
+                      "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+        city_names = ['atlanta']
         file_name = '/husg_transformer_dataset.npz'
 
         if cls.full_dataset is None:
