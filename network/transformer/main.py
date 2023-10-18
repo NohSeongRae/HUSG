@@ -89,7 +89,7 @@ class Trainer:
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
                                        use_local_attn=use_local_attn).to(device=self.device)
-        self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank])
+        self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank], find_unused_parameters=True)
 
         # Set the optimizer for the training process
         self.optimizer = torch.optim.Adam(self.transformer.parameters(),
