@@ -30,7 +30,7 @@ class BoundaryDataset(Dataset):
             all_street_unit_position_datasets.append(data['street_unit_position_datasets'])
             all_building_index_sequences.append(data['building_index_sequences'])
             all_street_index_sequences.append(data['street_index_sequences'])
-            all_unit_coords_datasets.append(data['unit_coords_data'])
+            all_unit_coords_datasets.append(data['unit_coords_datasets'])
 
         # Concatenate data from all cities for each key
         self.unit_position_datasets = np.concatenate(all_unit_position_datasets, axis=0)
