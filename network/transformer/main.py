@@ -188,9 +188,10 @@ class Trainer:
                         trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
                         trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
 
-                        # Get the model's predictions
-                        output = self.transformer(src_unit_seq, src_street_seq,
-                                                  trg_building_seq, trg_street_seq)
+                        for t in range(0, self.n_boundary - 1):
+                            output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
+                            next_token = (torch.sigmoid(output) > 0.5).long()[:, t]
+                            trg_building_seq[:, t + 1] = next_token
 
                         # Compute the losses
                         loss = self.cross_entropy_loss(output, gt_building_seq.detach())
@@ -243,7 +244,7 @@ if __name__ == '__main__':
     parser.add_argument("--val_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
-    parser.add_argument("--save_epoch", type=int, default=1, help="Use checkpoint index.")
+    parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
     parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
     parser.add_argument("--scheduler_step", type=int, default=200, help="Use checkpoint index.")
     parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
