@@ -17,7 +17,7 @@ from allmask import allmask
 # "sanfrancisco", "miami", "seattle", "boston", "providence",
 # "neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
-city_names = ["atlanta"]
+city_names = ["dallas", "houston", "lasvegas", "littlerock"]
 
 image_size = 120
 linewidth = 5
@@ -26,6 +26,7 @@ unit_length = 0.04
 cp_node_size = 5
 
 for city_name in city_names:
+    print("city name", city_name)
     city_npz_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', f'{city_name}', 'husg_transformer_dataset.npz')
     building_center_npz_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', f'{city_name}', 'husg_building_center_position.npz')
 
