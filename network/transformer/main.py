@@ -23,7 +23,7 @@ class Trainer:
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
                  weight_decay, scheduler_step, scheduler_gamma,
-                 use_global_attn, use_street_attn, use_local_attn, local_rank):
+                 use_global_attn, use_street_attn, use_local_attn, local_rank, save_dir_path):
         """
         Initialize the trainer with the specified parameters.
 
@@ -64,6 +64,7 @@ class Trainer:
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
         self.local_rank = local_rank
+        self.save_dir_path = save_dir_path
 
         print('local_rank', self.local_rank)
 
@@ -213,11 +214,12 @@ class Trainer:
                     'model_state_dict': self.transformer.module.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
                 }
-                print('save 1')
-                # 실제 파일 저장은 랭크 0에서만 수행
+
                 if self.local_rank == 0:
-                    print('save 2')
-                    torch.save(checkpoint, "./models/transformer_epoch_" + str(epoch + 1) + ".pth")
+                    save_path = os.path.join("./models", self.save_dir_path)
+                    if not os.path.exists(save_path):
+                        os.makedirs(save_path)
+                    torch.save(checkpoint, os.path.join(save_path, "transformer_epoch_" + str(epoch + 1) + ".pth"))
 
 
 if __name__ == '__main__':
@@ -252,6 +254,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--local_rank", type=int)
+    parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
 
     opt = parser.parse_args()
 
@@ -279,6 +282,6 @@ if __name__ == '__main__':
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
                       use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
-                      local_rank=opt.local_rank)
+                      local_rank=opt.local_rank, save_dir_path=opt.save_dir_path)
 
     trainer.train()
