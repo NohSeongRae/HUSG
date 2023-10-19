@@ -102,7 +102,7 @@ class Trainer:
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                 trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
-                unit_coord_seq = unit_coord_seq.to(device=self.device, dtype=torch.long)
+                unit_coord_seq = unit_coord_seq.to(device=self.device, dtype=torch.float32)
 
                 # Get the model's predictions
                 output = self.transformer(src_unit_seq, src_street_seq,
@@ -113,7 +113,7 @@ class Trainer:
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
 
                 mask = get_pad_mask(gt_building_seq, pad_idx=self.eos_idx).float()
-                plot(output.squeeze().detach().cpu().numpy(),
+                plot(torch.sigmoid(output).squeeze().detach().cpu().numpy(),
                      gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
                      mask.squeeze().detach().cpu().numpy(),
