@@ -28,14 +28,10 @@ def extract_numbers_from_boundaryfile(s):
 def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
-    print(transformer_output.shape, gt_output.shape, unit_coord_seq.shape, mask.shape, test_idx)
     # ax1: 예측 결과 시각화
     for idx in range(len(unit_coord_seq)):
-        x = unit_coord_seq[idx][:][0]
-        y = unit_coord_seq[idx][:][1]
-        print(unit_coord_seq[idx])
-        print(x, y)
-        print('---')
+        x = unit_coord_seq[idx][0][:]
+        y = unit_coord_seq[idx][1][:]
         if mask[idx] == 0:
             break
         elif transformer_output[idx] >= 0.5:
@@ -47,9 +43,8 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
 
     # ax2: Ground Truth 시각화
     for idx in range(len(unit_coord_seq)):
-        x = unit_coord_seq[idx][:][0]
-        y = unit_coord_seq[idx][:][1]
-
+        x = unit_coord_seq[idx][0][:]
+        y = unit_coord_seq[idx][1][:]
         if mask[idx] == 0:
             break
         elif gt_output[idx] >= 0.5:
