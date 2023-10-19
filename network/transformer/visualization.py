@@ -25,55 +25,37 @@ def extract_number_from_string(s):
 def extract_numbers_from_boundaryfile(s):
     return int(re.search(r'(\d+)', s).group())
 
-def plot(transformer_output, index):
-    with open(unit_coords_path, 'rb') as f:
-        unit_coords_data = pickle.load(f)
+def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
-    unique_boundary_indices = list(set([seg[0] for seg in unit_coords_data]))
-    sorted_boundary_indices = sorted(unique_boundary_indices, key=extract_number_from_string)
-    original_boundary = sorted_boundary_indices[index]
+    # ax1: 예측 결과 시각화
+    for idx in range(len(unit_coord_seq)):
+        x = unit_coord_seq[idx][:][0]
+        y = unit_coord_seq[idx][:][1]
 
-    building_index_sequences = transformer_output
+        if mask[idx] == 0:
+            break
+        elif transformer_output[idx] >= 0.5:
+            ax1.plot(x, y, 'r-')
+        else:
+            ax1.plot(x, y, 'black')
+    ax1.set_title('Prediction')
+    ax1.grid(True)
 
-    unit_coords = []
+    # ax2: Ground Truth 시각화
+    for idx in range(len(unit_coord_seq)):
+        x = unit_coord_seq[idx][:][0]
+        y = unit_coord_seq[idx][:][1]
 
-    for unit_coord in unit_coords_data:
-        if unit_coord[0] == original_boundary:
-            unit_coords.append(unit_coord[1])
+        if mask[idx] == 0:
+            break
+        elif gt_output[idx] >= 0.5:
+            ax2.plot(x, y, 'r-')
+        else:
+            ax2.plot(x, y, 'black')
+    ax2.set_title('Ground Truth')
+    ax2.grid(True)
 
-    building_exists_index = []
-
-    for idx in range(len(unit_coords)):
-        if building_index_sequences[idx] >= 0.5:
-            building_exists_index.append(idx)
-
-    unit_with_building = []
-
-    for exist_idx in building_exists_index:
-        unit_with_building.append(unit_coords[exist_idx])
-
-
-    lines = [LineString(coords) for coords in unit_with_building]
-    all_lines = [LineString(coords) for coords in unit_coords]
-
-    coords = []
-    for line in all_lines:
-        coords.extend(list(line.coords[:-1]))
-    whole_polygon = Polygon(coords)
-
-    fig, ax = plt.subplots()
-
-    x, y = whole_polygon.exterior.xy
-    ax.plot(x, y, 'black')
-
-    for line in lines:
-        x, y = line.xy
-        ax.plot(x, y, 'r-')
-
-    ax.legend()
-    ax.grid(True)
-
-    fileindex = extract_numbers_from_boundaryfile(original_boundary)
-
-    plt.savefig('./images/' + str(fileindex) + '.png')
+    plt.tight_layout()
+    plt.savefig('./images/' + str(test_idx) + '.png')
     plt.clf()

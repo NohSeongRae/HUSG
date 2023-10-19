@@ -51,7 +51,7 @@ class Trainer:
         self.local_rank = 0
 
         # Set the device for training (either GPU or CPU based on availability)
-        self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
+        self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
         # Initialize the dataset and dataloader
         self.test_dataset = BoundaryDataset(train_ratio=self.train_ratio,
@@ -96,23 +96,28 @@ class Trainer:
         with torch.no_grad():
             for idx, data in enumerate(self.test_dataloader):
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, _ = data
+                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, unit_coord_seq = data
                 gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                 trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
+                unit_coord_seq = unit_coord_seq.to(device=self.device, dtype=torch.long)
 
                 # Get the model's predictions
                 output = self.transformer(src_unit_seq, src_street_seq,
                                           trg_building_seq, trg_street_seq)
-                print(output.shape)
-                print(gt_building_seq.shape)
+
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
 
-                plot(output.squeeze().detach().cpu().numpy(), idx + self.test_dataset.start_index)
+                mask = get_pad_mask(gt_building_seq, pad_idx=self.eos_idx).float()
+                plot(output.squeeze().detach().cpu().numpy(),
+                     gt_building_seq.squeeze().detach().cpu().numpy(),
+                     unit_coord_seq.squeeze().detach().cpu().numpy(),
+                     mask.squeeze().detach().cpu().numpy(),
+                     idx + 1)
 
 if __name__ == '__main__':
     # Set the argparse
