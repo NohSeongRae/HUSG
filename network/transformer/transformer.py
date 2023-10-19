@@ -131,27 +131,18 @@ class Transformer(nn.Module):
         self.eos_idx = eos_idx
         self.building_fc = nn.Linear(d_model, 1, bias=False)
 
-    def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, real_input_seq=None):
+    def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq):
         src_pad_mask = get_pad_mask(trg_building_seq, pad_idx=self.eos_idx).unsqueeze(-2)
         src_street_mask = get_street_mask(trg_street_seq) & src_pad_mask
         src_local_mask = get_local_mask(trg_building_seq) & src_pad_mask
         sub_mask = get_subsequent_mask(trg_building_seq)
+        trg_pad_mask = src_pad_mask & sub_mask
+        trg_street_mask = src_street_mask & trg_pad_mask
+        trg_local_mask = src_local_mask & trg_pad_mask
 
         enc_output = self.encoder(src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask)
+        dec_output = self.decoder(trg_building_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask)
 
-        if self.training:
-            trg_pad_mask = src_pad_mask & sub_mask
-            trg_street_mask = src_street_mask & trg_pad_mask
-            trg_local_mask = src_local_mask & trg_pad_mask
-        else:
-            trg_pad_mask = get_pad_mask(real_input_seq, pad_idx=self.eos_idx).unsqueeze(-2) & sub_mask
-            trg_street_mask = src_street_mask & trg_pad_mask
-            trg_local_mask = src_local_mask & trg_pad_mask
-
-        if self.training:
-            dec_output = self.decoder(trg_building_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask)
-        else:
-            dec_output = self.decoder(real_input_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask)
         output = self.building_fc(dec_output).squeeze(-1)
 
         return output

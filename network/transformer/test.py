@@ -104,14 +104,10 @@ class Trainer:
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
                 unit_coord_seq = unit_coord_seq.to(device=self.device, dtype=torch.float32)
 
-                trg_seq = torch.full_like(trg_building_seq, fill_value=self.eos_idx).to(device=self.device)
-                trg_seq[:, 0] = 0
                 for t in range(0, self.n_boundary - 1):
-                    print(trg_seq)
-                    output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, trg_seq)
+                    output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
                     next_token = (torch.sigmoid(output) > 0.5).long()[:, t]
-                    print(next_token)
-                    trg_seq[:, t + 1] = next_token
+                    trg_building_seq[:, t + 1] = next_token
 
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
