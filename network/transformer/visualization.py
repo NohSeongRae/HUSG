@@ -30,8 +30,11 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
 
     # ax1: 예측 결과 시각화
     for idx in range(len(unit_coord_seq)):
-        x = unit_coord_seq[idx][0][:]
-        y = unit_coord_seq[idx][1][:]
+        x = [unit_coord_seq[idx][0][0], unit_coord_seq[idx][1][0]]
+        y = [unit_coord_seq[idx][0][1], unit_coord_seq[idx][1][1]]
+        print(x, y)
+        print(unit_coord_seq[idx])
+        print('---')
         if mask[idx] == 0:
             break
         elif transformer_output[idx] >= 0.5:
@@ -43,8 +46,8 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
 
     # ax2: Ground Truth 시각화
     for idx in range(len(unit_coord_seq)):
-        x = unit_coord_seq[idx][0][:]
-        y = unit_coord_seq[idx][1][:]
+        x = [unit_coord_seq[idx][0][0], unit_coord_seq[idx][1][0]]
+        y = [unit_coord_seq[idx][0][1], unit_coord_seq[idx][1][1]]
         if mask[idx] == 0:
             break
         elif gt_output[idx] >= 0.5:
