@@ -114,7 +114,7 @@ class Trainer:
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
 
                 mask = get_pad_mask(gt_building_seq, pad_idx=self.eos_idx).float()
-                plot(trg_seq.squeeze().detach().cpu().numpy(),
+                plot(output.squeeze().detach().cpu().numpy(),
                      gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
                      mask.squeeze().detach().cpu().numpy(),
