@@ -28,6 +28,11 @@ def extract_numbers_from_boundaryfile(s):
 def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
+    print(transformer_output)
+    print(gt_output)
+    print(unit_coord_seq)
+    print(mask)
+    print(test_idx)
     # ax1: 예측 결과 시각화
     for idx in range(len(unit_coord_seq)):
         x = unit_coord_seq[idx][:][0]
