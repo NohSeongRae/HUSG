@@ -104,16 +104,20 @@ class Trainer:
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
                 unit_coord_seq = unit_coord_seq.to(device=self.device, dtype=torch.float32)
 
-                # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq,
-                                          trg_building_seq, trg_street_seq)
+                trg_seq = torch.zeros_like(trg_building_seq).to(device=self.device)
+                trg_seq[:, 0] = self.eos_idx
+                for t in range(0, self.n_boundary - 1):
+                    output = self.transformer(src_unit_seq, src_street_seq,
+                                              trg_seq, trg_street_seq)
+                    next_token = (torch.sigmoid(output) > 0.5).long()[:, t]
+                    trg_seq[:, t + 1] = next_token
 
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
 
                 mask = get_pad_mask(gt_building_seq, pad_idx=self.eos_idx).float()
-                plot(torch.sigmoid(output).squeeze().detach().cpu().numpy(),
+                plot(trg_seq.squeeze().detach().cpu().numpy(),
                      gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
                      mask.squeeze().detach().cpu().numpy(),
