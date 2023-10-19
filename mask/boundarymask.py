@@ -7,21 +7,23 @@ import geopandas as gpd
 import rasterio
 from rasterio.features import geometry_mask
 from skimage.morphology import dilation, square
+from shapely.geometry import Polygon
 from tqdm import tqdm
 import numpy as np
 import imageio
+from tqdm import tqdm
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
 sys.path.append(husg_directory_path)
 
 
-def get_square_bounds(geojson_path, padding_percentage=10):
+def get_square_bounds(polygon, padding_percentage=10):
     # building data 전체를 geodataframe형태로 저장
-    gdf = gpd.read_file(geojson_path)
+    # gdf = gpd.read_file(geojson_path)
 
     # 그 전체 data를 감싸는 boundary 찾기
-    bounds = gdf.total_bounds
+    bounds = polygon.bounds
     # data를 감싸는 사각형의 가로 세로
     width = bounds[2] - bounds[0]
     height = bounds[3] - bounds[1]
@@ -50,46 +52,41 @@ def get_square_bounds(geojson_path, padding_percentage=10):
     return left, upper, right, lower
 
 
-def boundarymask(city_name, image_size):
-    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
-    files = os.listdir(dir_path)
-    filenum = len(files)
+def boundarymask(city_name, image_size, unit_coords_datasets, linewidth=5):
+    for idx in tqdm(range(len(unit_coords_datasets))):
+        unit_coords_dataset = unit_coords_datasets[idx][np.any(unit_coords_datasets[idx] != 0, axis=(1, 2))]
 
-    for i in tqdm(range(1, filenum + 1)):
-        boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'filtered_data',
-                                         'Boundaries', f'{city_name}_boundaries{i}.geojson')
+        coordinates = [segment[0] for segment in unit_coords_dataset]
+        coordinates.append(unit_coords_dataset[-1][1])
 
-        building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'filtered_data',
-                                         'Buildings', f'{city_name}_buildings{i}.geojson')
+        boundary_polygon = Polygon(coordinates)
 
-        if os.path.exists(building_filename):
-            gdf = gpd.read_file(boundary_filename)
-            boundaries = gdf.geometry.boundary
+        boundary_line = boundary_polygon.boundary
+        boundaries_list = [boundary_line]
 
-            boundaries_list = list(boundaries)
+        width, height = image_size, image_size
+        # 이미지 경계 설정
+        left, bottom, right, top = get_square_bounds(boundary_polygon)
+        transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
 
-            width, height = image_size, image_size
-            # 이미지 경계 설정
-            left, bottom, right, top = get_square_bounds(boundary_filename)
-            transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
+        boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
 
-            boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
+        # 경계선 굵기 조절
+        thick_boundary_mask = dilation(boundary_mask, square(linewidth))
 
-            # 경계선 굵기 조절
-            thick_boundary_mask = dilation(boundary_mask, square(5))
+        inverted_mask = np.where(thick_boundary_mask, 0, 255).astype(np.uint8)
 
-            inverted_mask = np.where(thick_boundary_mask, 0, 255).astype(np.uint8)
+        inverted_mask = 255 - inverted_mask
 
-            inverted_mask = 255 - inverted_mask
+        inverted_mask = inverted_mask / 255
+        inverted_mask = inverted_mask.astype(np.uint8)
 
-            boundarymask_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '0_others', 'mask_USA_new',
-                                             'boundarymask', f'{city_name}_boundarymask{i}.png')
+        boundarymask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask',
+                                             f'{city_name}', 'boundarymask')
 
-            imageio.imsave(boundarymask_filename, inverted_mask)
+        if not os.path.exists(boundarymask_folderpath):
+            os.makedirs(boundarymask_folderpath)
 
-if __name__=="__main__":
-    city_name_USA = ["atlanta", "boston", "dallas", "dublin", "houston", "lasvegas", "littlerock", "miami", "minneapolis", "philadelphia",
-                     "phoenix", "pittsburgh", "portland", "providence", "richmond", "sanfrancisco", "seattle", "tampa", "washington"]
+        boundarymask_filename = os.path.join(boundarymask_folderpath, f'{city_name}_{idx+1}.png')
 
-    for i in range(len(city_name_USA)):
-        boundarymask(city_name_USA[i], image_size=512)
+        imageio.imsave(boundarymask_filename, inverted_mask)

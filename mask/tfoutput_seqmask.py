@@ -52,7 +52,7 @@ def get_square_bounds(polygon, padding_percentage=10):
     return left, upper, right, lower
 
 
-def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequences, linewidth=5):
+def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth=5):
     width, height = image_size, image_size
 
     for dataset_idx in tqdm(range(len(unit_coords_datasets))):
@@ -81,9 +81,9 @@ def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequenc
 
             thick_boundary_mask = dilation(boundary_mask, square(linewidth))
 
-            # street_index_sequences에서 padding 값을 무시
-            if street_index_sequences[dataset_idx, segment_index] != 0:
-                street_idx = int(street_index_sequences[dataset_idx, segment_index])
+            # building_index_sequences padding 값을 무시
+            if building_index_sequences[dataset_idx, segment_index] != 2:
+                street_idx = int(building_index_sequences[dataset_idx, segment_index])
                 final_mask[thick_boundary_mask] = street_idx * 1
 
             segment_index += 1
@@ -91,11 +91,11 @@ def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequenc
         final_mask = final_mask.astype(np.uint8)
 
         # 마스크 저장
-        streetmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
-                                               'streetmask')
+        tfoutput_seqmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
+                                               'tfoutput_seqmask')
 
-        if not os.path.exists(streetmask_folderpath):
-            os.makedirs(streetmask_folderpath)
+        if not os.path.exists(tfoutput_seqmask_folderpath):
+            os.makedirs(tfoutput_seqmask_folderpath)
 
-        streetmask_filename = os.path.join(streetmask_folderpath, f'{city_name}_{dataset_idx + 1}.png')
-        imageio.imsave(streetmask_filename, final_mask)
+        tfoutput_seqmask_filename = os.path.join(tfoutput_seqmask_folderpath, f'{city_name}_{dataset_idx + 1}.png')
+        imageio.imsave(tfoutput_seqmask_filename, final_mask)

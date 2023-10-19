@@ -108,6 +108,10 @@ for city_name in city_names:
 
             # Get building polygons for the current file and add them to the building_polygon list
             building_polygons = [row['geometry'] for idx, row in building_gdf.iterrows()]
+
+            # if len(building_polygons) == 1:
+            #     continue
+
             boundary_polygon = boundary_gdf.iloc[0]['geometry']
 
             sorted_edges = sorted_boundary_edges(boundary_polygon, unit_length)

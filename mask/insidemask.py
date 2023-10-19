@@ -6,21 +6,23 @@ import sys
 import geopandas as gpd
 import rasterio
 from rasterio.features import geometry_mask
+from shapely.geometry import Polygon
 from tqdm import tqdm
 import numpy as np
 import imageio
+from tqdm import tqdm
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
 sys.path.append(husg_directory_path)
 
 
-def get_square_bounds(geojson_path, padding_percentage=10):
+def get_square_bounds(polygon, padding_percentage=10):
     # building data 전체를 geodataframe형태로 저장
-    gdf = gpd.read_file(geojson_path)
+    # gdf = gpd.read_file(geojson_path)
 
     # 그 전체 data를 감싸는 boundary 찾기
-    bounds = gdf.total_bounds
+    bounds = polygon.bounds
     # data를 감싸는 사각형의 가로 세로
     width = bounds[2] - bounds[0]
     height = bounds[3] - bounds[1]
@@ -50,34 +52,35 @@ def get_square_bounds(geojson_path, padding_percentage=10):
 
 
 
-def insidemask(city_name, image_size):
-    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
-    files = os.listdir(dir_path)
-    filenum = len(files)
+def insidemask(city_name, image_size, unit_coords_datasets):
+    for idx in tqdm(range(len(unit_coords_datasets))):
+        unit_coords_dataset = unit_coords_datasets[idx][np.any(unit_coords_datasets[idx] != 0, axis=(1, 2))]
 
-    for i in tqdm(range(1, filenum + 1)):
-        boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'filtered_data',
-                                         'Boundaries', f'{city_name}_boundaries{i}.geojson')
+        coordinates = [segment[0] for segment in unit_coords_dataset]
+        coordinates.append(unit_coords_dataset[-1][1])
 
-        building_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'filtered_data',
-                                         'Buildings', f'{city_name}_buildings{i}.geojson')
+        boundary_polygon = Polygon(coordinates)
 
-        if os.path.exists(building_filename):
-            gdf = gpd.read_file(boundary_filename)
+        boundary_line = boundary_polygon.boundary
+        boundaries_list = [boundary_line]
 
-            width, height = image_size, image_size
-            # 이미지 경계 설정
-            left, bottom, right, top = get_square_bounds(boundary_filename)
+        width, height = image_size, image_size
+        # 이미지 경계 설정
+        left, bottom, right, top = get_square_bounds(boundary_polygon)
+        transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
 
-            transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
+        mask = geometry_mask([boundary_polygon], transform=transform, invert=True, out_shape=(height, width))
 
-            mask = geometry_mask(gdf.geometry, transform=transform, invert=False, out_shape=(height, width))
+        scaled_mask = (mask * 1).astype(np.uint8)
 
-            scaled_mask = (mask * 255).astype(np.uint8)
+        # scaled_mask = 255 - scaled_mask
 
-            scaled_mask = 255 - scaled_mask
+        insidemask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask',
+                                             f'{city_name}', 'insidemask')
 
-            insidemask_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '0_others', 'mask_USA_new',
-                                             'insidemask', f'{city_name}_insidemask{i}.png')
+        if not os.path.exists(insidemask_folderpath):
+            os.makedirs(insidemask_folderpath)
 
-            imageio.imsave(insidemask_filename, scaled_mask)
+        insidemask_filename = os.path.join(insidemask_folderpath, f'{city_name}_{idx+1}.png')
+
+        imageio.imsave(insidemask_filename, scaled_mask)

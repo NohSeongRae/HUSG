@@ -260,7 +260,6 @@ for city_name in city_names:
             street_position_dataset = np.zeros((n_street, n_street_sample, 2))
             street_unit_position_dataset = np.zeros((n_unit_road, n_street_sample, 2))
 
-
             for building in building_polygons:
                 building_idx = building[0]
                 building_center_position_dataset[building_idx] = np.array([building[2].centroid.x, building[2].centroid.y])

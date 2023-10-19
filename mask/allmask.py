@@ -52,7 +52,7 @@ def get_square_bounds(polygon, padding_percentage=10):
     return left, upper, right, lower
 
 
-def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequences, linewidth=5):
+def allmask(city_name, image_size, unit_coords_datasets, street_index_sequences, building_index_sequences, linewidth=5):
     width, height = image_size, image_size
 
     for dataset_idx in tqdm(range(len(unit_coords_datasets))):
@@ -78,24 +78,36 @@ def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequenc
             transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
 
             boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
+            inside_mask = geometry_mask([boundary_polygon], transform=transform, invert=True, out_shape=(height, width))
 
             thick_boundary_mask = dilation(boundary_mask, square(linewidth))
 
             # street_index_sequences에서 padding 값을 무시
             if street_index_sequences[dataset_idx, segment_index] != 0:
                 street_idx = int(street_index_sequences[dataset_idx, segment_index])
-                final_mask[thick_boundary_mask] = street_idx * 1
+                final_mask[thick_boundary_mask] = street_idx + 1
+
+                final_mask[inside_mask == 1] = 1
+
+            # building_index_sequences padding 값을 무시
+            if building_index_sequences[dataset_idx, segment_index] != 2:
+                tf_output = int(building_index_sequences[dataset_idx, segment_index])
+                if tf_output == 0:
+                    filtered_values = street_index_sequences[dataset_idx][street_index_sequences[dataset_idx] < 49]
+                    final_mask[thick_boundary_mask] = np.max(filtered_values) + 1
+
+            # final_mask = np.clip(final_mask, 0, 255).astype(np.uint8)
 
             segment_index += 1
 
         final_mask = final_mask.astype(np.uint8)
 
         # 마스크 저장
-        streetmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
-                                               'streetmask')
+        allmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
+                                               'allmask')
 
-        if not os.path.exists(streetmask_folderpath):
-            os.makedirs(streetmask_folderpath)
+        if not os.path.exists(allmask_folderpath):
+            os.makedirs(allmask_folderpath)
 
-        streetmask_filename = os.path.join(streetmask_folderpath, f'{city_name}_{dataset_idx + 1}.png')
-        imageio.imsave(streetmask_filename, final_mask)
+        allmask_filename = os.path.join(allmask_folderpath, f'{city_name}_{dataset_idx + 1}.png')
+        imageio.imsave(allmask_filename, final_mask)
