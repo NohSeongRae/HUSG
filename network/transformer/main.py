@@ -205,13 +205,17 @@ class Trainer:
                     if self.use_tensorboard:
                         self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
 
-            print(self.local_rank)
-            if (epoch + 1) % self.save_epoch == 0 and self.local_rank == 0:
-                torch.save({
+            if (epoch + 1) % self.save_epoch == 0:
+                # 체크포인트 데이터 준비
+                checkpoint = {
                     'epoch': epoch,
                     'model_state_dict': self.transformer.module.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
-                }, "./models/transformer_epoch_" + str(epoch + 1) + ".pth")
+                }
+                # 실제 파일 저장은 랭크 0에서만 수행
+                if self.local_rank == 0:
+                    torch.save(checkpoint, "./models/transformer_epoch_" + str(epoch + 1) + ".pth")
+
 
 if __name__ == '__main__':
     # Set the argparse
