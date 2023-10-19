@@ -65,6 +65,8 @@ class Trainer:
         self.use_local_attn = use_local_attn
         self.local_rank = local_rank
 
+        print('local_rank', self.local_rank)
+
         # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
