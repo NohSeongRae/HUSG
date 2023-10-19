@@ -205,6 +205,7 @@ class Trainer:
                     if self.use_tensorboard:
                         self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
 
+            print(self.local_rank)
             if (epoch + 1) % self.save_epoch == 0 and self.local_rank == 0:
                 torch.save({
                     'epoch': epoch,
