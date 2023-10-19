@@ -40,11 +40,11 @@ for city_name in city_names:
 
     building_center_position_datasets = building_npz_data['building_center_position_datasets']
 
-    # boundarymask(city_name, image_size, unit_coords_datasets)
-    # insidemask(city_name, image_size, unit_coords_datasets)
-    # streetmask(city_name, image_size, unit_coords_datasets, street_index_sequences)
-    # tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index_sequences)
-    # inbuildingcpmask(city_name, image_size, building_center_position_datasets, cp_node_size)
-    # inedgemask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, cp_node_size)
-    # allmask(city_name, image_size, unit_coords_datasets, street_index_sequences, building_index_sequences)
+    boundarymask(city_name, image_size, unit_coords_datasets)
+    insidemask(city_name, image_size, unit_coords_datasets)
+    streetmask(city_name, image_size, unit_coords_datasets, street_index_sequences)
+    tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index_sequences)
+    inbuildingcpmask(city_name, image_size, building_center_position_datasets, cp_node_size)
+    inedgemask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, cp_node_size)
+    allmask(city_name, image_size, unit_coords_datasets, street_index_sequences, building_index_sequences)
     tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth, num_grids, unit_length)
