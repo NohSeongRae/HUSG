@@ -212,8 +212,10 @@ class Trainer:
                     'model_state_dict': self.transformer.module.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
                 }
+                print('save 1')
                 # 실제 파일 저장은 랭크 0에서만 수행
                 if self.local_rank == 0:
+                    print('save 2')
                     torch.save(checkpoint, "./models/transformer_epoch_" + str(epoch + 1) + ".pth")
 
 
