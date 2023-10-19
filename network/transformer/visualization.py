@@ -32,9 +32,6 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
     for idx in range(len(unit_coord_seq)):
         x = [unit_coord_seq[idx][0][0], unit_coord_seq[idx][1][0]]
         y = [unit_coord_seq[idx][0][1], unit_coord_seq[idx][1][1]]
-        print(x, y)
-        print(unit_coord_seq[idx])
-        print('---')
         if mask[idx] == 0:
             break
         elif transformer_output[idx] >= 0.5:
