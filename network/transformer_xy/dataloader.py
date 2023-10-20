@@ -19,7 +19,7 @@ class BoundaryDataset(Dataset):
                       "sanfrancisco", "miami", "seattle", "boston", "providence",
                       "neworleans", "denver", "pittsburgh", "tampa", "washington"]
         city_names = ['atlanta']
-        file_name = '/husg_transformer_dataset.npz'
+        file_name = '/husg_transformer_xy_dataset.npz'
 
         if cls.full_dataset is None:
             all_unit_position_datasets = []
