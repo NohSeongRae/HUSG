@@ -207,11 +207,11 @@ class Trainer:
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
-                        print(decoder_input[0], gt_building_seq[0])
                         loss = self.cross_entropy_loss(decoder_input[:, 1:], gt_building_seq[:, 1:])
                         loss_mean += loss.detach().item()
 
                     # Print the average losses for the current epoch
+                    print(decoder_input[0], gt_building_seq[0])
                     loss_mean /= len(self.val_dataloader)
                     print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {loss_mean:.4f}")
 
