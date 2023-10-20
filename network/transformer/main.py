@@ -197,6 +197,8 @@ class Trainer:
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].view(output.shape[0], -1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
+                            print(output.shape, next_token.shape, decoder_input.shape)
+
                             # EOS 토큰이 나오면 중단
                             if next_token[0][0] == self.pad_idx:
                                 break
