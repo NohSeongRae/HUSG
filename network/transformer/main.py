@@ -197,10 +197,8 @@ class Trainer:
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].view(output.shape[0], -1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
-                            print(output.shape, next_token.shape, decoder_input.shape)
-
                         # Compute the losses using the generated sequence
-                        loss = self.cross_entropy_loss(output, gt_building_seq.detach())
+                        loss = self.cross_entropy_loss(decoder_input, gt_building_seq.detach())
                         loss_mean += loss.detach().item()
 
                     # Print the average losses for the current epoch
