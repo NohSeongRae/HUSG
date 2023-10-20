@@ -113,7 +113,7 @@ class Trainer:
         - torch.Tensor: Computed BCE loss.
         """
         loss = F.binary_cross_entropy(torch.sigmoid(pred[:, 1:]), trg[:, 1:], reduction='none')
-        print(torch.sigmoid(pred[:, 1:])[0], trg[0, 1:])
+
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         mask = get_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float()
 
@@ -194,7 +194,7 @@ class Trainer:
                         decoder_input = trg_building_seq[:, :1]  # 시작 토큰만 포함
                         for t in range(self.n_boundary - 1):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
-                            next_token = output[:, t].view(output.shape[0], -1)
+                            next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
