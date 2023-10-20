@@ -16,7 +16,7 @@ from dataloader import BoundaryDataset
 from visualization import plot
 
 class Trainer:
-    def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
+    def __init__(self, batch_size, max_epoch, pad_idx, sos_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, train_ratio, val_ratio, test_ratio, data_type, checkpoint_epoch, save_dir_path):
         """
         Initialize the trainer with the specified parameters.
@@ -34,7 +34,7 @@ class Trainer:
         self.batch_size = batch_size
         self.max_epoch = max_epoch
         self.pad_idx = pad_idx
-        self.eos_idx = 2
+        self.sos_idx = sos_idx
         self.d_model = d_model
         self.d_street = d_street
         self.d_unit = d_unit
@@ -66,7 +66,7 @@ class Trainer:
                                        d_street=self.d_street, d_unit=self.d_unit, d_model=self.d_model,
                                        d_inner=self.d_model * 4, n_layer=self.n_layer, n_head=self.n_head,
                                        d_k=self.d_model//self.n_head, d_v=self.d_model//self.n_head,
-                                       dropout=self.dropout, eos_idx=self.eos_idx).to(device=self.device)
+                                       dropout=self.dropout, sos_idx=self.sos_idx).to(device=self.device)
 
     def cross_entropy_loss(self, pred, trg):
         """
@@ -82,7 +82,7 @@ class Trainer:
         loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        mask = get_pad_mask(trg[:, 1:], pad_idx=self.eos_idx).float()
+        mask = get_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float()
 
         # mask 적용
         masked_loss = loss * mask
@@ -105,22 +105,27 @@ class Trainer:
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
                 unit_coord_seq = unit_coord_seq.to(device=self.device, dtype=torch.float32)
 
-                trg_building_seq = 2 * torch.ones_like(trg_building_seq).long()
-                for t in range(0, self.n_boundary - 1):
-                    output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
-                    next_token = (torch.sigmoid(output) > 0.5).long()[:, t]
-                    trg_building_seq[:, t + 1] = next_token
+                # Greedy Search로 시퀀스 생성
+                decoder_input = trg_building_seq[:, :1]  # 시작 토큰만 포함
+                for t in range(self.n_boundary - 1):  # 임의의 제한값
+                    output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
+                    next_token = output.argmax(dim=-1)[:, -1:]
+                    decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
-                # Compute the losses
+                    # EOS 토큰이 나오면 중단
+                    if next_token[0][0] == self.pad_idx:
+                        break
+
+                # Compute the losses using the generated sequence
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
 
-                mask = get_pad_mask(gt_building_seq, pad_idx=self.eos_idx).float()
+                mask = get_pad_mask(gt_building_seq, pad_idx=self.pad_idx).float()
                 plot(output.squeeze().detach().cpu().numpy(),
                      gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
                      mask.squeeze().detach().cpu().numpy(),
-                     idx + 1,self.save_dir_path)
+                     idx + 1, self.save_dir_path)
 
 if __name__ == '__main__':
     # Set the argparse
@@ -130,6 +135,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
     parser.add_argument("--pad_idx", type=int, default=0, help="Padding index for sequences.")
+    parser.add_argument("--sos_idx", type=int, default=0, help="Padding index for sequences.")
     parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
     parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
     parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
@@ -159,7 +165,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed_all(opt.seed)
 
     # Create a Trainer instance and start the training process
-    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx,
+    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx, sos_idx=opt.sos_idx,
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer,
                       n_head=opt.n_head, n_building=opt.n_building, n_boundary=opt.n_boundary, dropout=opt.dropout,
                       train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
