@@ -95,8 +95,6 @@ class BoundaryDataset(Dataset):
         street_index_sequence = self.street_index_sequences[index]
         unit_coords_dataset = self.unit_coords_datasets[index]
 
-        print(building_index_sequence)
-
         return unit_position_dataset, street_position_dataset, building_index_sequence, street_index_sequence, \
                unit_coords_dataset
 
