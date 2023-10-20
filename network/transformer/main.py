@@ -129,7 +129,7 @@ class Trainer:
         # mask 적용
         masked_loss = loss * mask
         # 손실의 평균 반환
-        return masked_loss.mean()
+        return masked_loss.sum() / mask.sum()
 
     def train(self):
         """Training loop for the transformer model."""
