@@ -116,7 +116,7 @@ class Trainer:
         loss = F.mse_loss(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        mask = get_pad_mask(trg_street_seq[:, 1:], pad_idx=self.pad_idx).float()
+        mask = get_pad_mask(trg_street_seq[:, 1:], pad_idx=self.pad_idx).float().unsqueeze(-1)
 
         # mask 적용
         masked_loss = loss * mask
