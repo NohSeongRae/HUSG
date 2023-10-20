@@ -199,10 +199,6 @@ class Trainer:
 
                             print(output.shape, next_token.shape, decoder_input.shape)
 
-                            # EOS 토큰이 나오면 중단
-                            if next_token[0][0] == self.pad_idx:
-                                break
-
                         # Compute the losses using the generated sequence
                         loss = self.cross_entropy_loss(output, gt_building_seq.detach())
                         loss_mean += loss.detach().item()
