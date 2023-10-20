@@ -32,11 +32,8 @@ class ScaledDotProductAttention(nn.Module):
         - tuple: Tuple containing the output tensor and the attention weights tensor.
         """
         # Compute the attention scores
-        print(q.shape, k.shape, v.shape)
 
         attn = torch.matmul(q / self.temperature, k.transpose(2, 3))
-
-        print(attn.shape, mask.shape)
 
         # Apply the mask if provided
         if mask is not None:
