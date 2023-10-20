@@ -17,7 +17,7 @@ from visualization import plot
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
-                 n_building, n_boundary, dropout, train_ratio, val_ratio, test_ratio, data_type, checkpoint_epoch):
+                 n_building, n_boundary, dropout, train_ratio, val_ratio, test_ratio, data_type, checkpoint_epoch, save_dir_path):
         """
         Initialize the trainer with the specified parameters.
 
@@ -49,6 +49,7 @@ class Trainer:
         self.data_type = data_type
         self.checkpoint_epoch = checkpoint_epoch
         self.local_rank = 0
+        self.save_dir_path = save_dir_path
 
         # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
@@ -118,7 +119,7 @@ class Trainer:
                      gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
                      mask.squeeze().detach().cpu().numpy(),
-                     idx + 1)
+                     idx + 1,self.save_dir_path)
 
 if __name__ == '__main__':
     # Set the argparse
@@ -142,6 +143,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--data_type", type=str, default='train', help="Use checkpoint index.")
     parser.add_argument("--checkpoint_epoch", type=int, default=1000, help="Use checkpoint index.")
+    parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
 
     opt = parser.parse_args()
 
@@ -160,5 +162,5 @@ if __name__ == '__main__':
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer,
                       n_head=opt.n_head, n_building=opt.n_building, n_boundary=opt.n_boundary, dropout=opt.dropout,
                       train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
-                      data_type=opt.data_type, checkpoint_epoch=opt.checkpoint_epoch)
+                      data_type=opt.data_type, checkpoint_epoch=opt.checkpoint_epoch,save_dir_path=opt.save_dir_path)
     trainer.train()

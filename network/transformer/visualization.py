@@ -25,7 +25,7 @@ def extract_number_from_string(s):
 def extract_numbers_from_boundaryfile(s):
     return int(re.search(r'(\d+)', s).group())
 
-def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
+def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx, path):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
     # ax1: 예측 결과 시각화
@@ -55,5 +55,8 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
     ax2.grid(True)
 
     plt.tight_layout()
-    plt.savefig('./images/' + str(test_idx) + '.png')
+    save_path=os.path.join('./images',path)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    plt.savefig(save_path + str(test_idx) + '.png')
     plt.clf()
