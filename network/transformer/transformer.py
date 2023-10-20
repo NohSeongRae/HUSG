@@ -83,8 +83,7 @@ class Decoder(nn.Module):
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
-        self.building_emb = nn.Embedding(3, d_model, padding_idx=eos_idx)
-        self.building_enc = nn.Linear(n_building, 1)
+        self.building_emb = nn.Embedding(4, d_model, padding_idx=pad_idx)
         self.pos_enc = PositionalEncoding(d_model, n_boundary=n_boundary)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
@@ -112,7 +111,7 @@ class Decoder(nn.Module):
         return dec_output
 
 class Transformer(nn.Module):
-    def __init__(self, n_building=100, pad_idx=0, eos_idx=2, d_model=512, d_inner=2048,
+    def __init__(self, n_building=100, pad_idx=2, sos_idx=3, d_model=512, d_inner=2048,
                  n_layer=6, n_head=8, d_k=64, d_v=64, dropout=0.1, n_boundary=200,
                  d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
@@ -128,7 +127,7 @@ class Transformer(nn.Module):
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
                                use_local_attn=use_local_attn)
         self.pad_idx = pad_idx
-        self.eos_idx = eos_idx
+        self.sos_idx = sos_idx
         self.building_fc = nn.Linear(d_model, 1, bias=False)
 
     def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq):

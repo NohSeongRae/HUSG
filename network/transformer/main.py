@@ -19,7 +19,7 @@ from transformer import Transformer
 from dataloader import BoundaryDataset
 
 class Trainer:
-    def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
+    def __init__(self, batch_size, max_epoch, pad_idx, sos_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
                  weight_decay, scheduler_step, scheduler_gamma,
@@ -40,7 +40,7 @@ class Trainer:
         self.batch_size = batch_size
         self.max_epoch = max_epoch
         self.pad_idx = pad_idx
-        self.eos_idx = 2
+        self.sos_idx = sos_idx
         self.d_model = d_model
         self.d_street = d_street
         self.d_unit = d_unit
@@ -88,7 +88,7 @@ class Trainer:
                                        d_street=self.d_street, d_unit=self.d_unit, d_model=self.d_model,
                                        d_inner=self.d_model * 4, n_layer=self.n_layer, n_head=self.n_head,
                                        d_k=self.d_model//self.n_head, d_v=self.d_model//self.n_head,
-                                       dropout=self.dropout, eos_idx=self.eos_idx,
+                                       dropout=self.dropout, sos_idx=sos_idx,
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
                                        use_local_attn=use_local_attn).to(device=self.device)
@@ -115,7 +115,7 @@ class Trainer:
         loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        mask = get_pad_mask(trg[:, 1:], pad_idx=self.eos_idx).float()
+        mask = get_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float()
 
         # mask 적용
         masked_loss = loss * mask
@@ -136,6 +136,7 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in range(epoch_start, self.max_epoch):
+            self.transformer.train()
             loss_mean = 0
 
             # Iterate over batches
@@ -221,6 +222,7 @@ class Trainer:
                         os.makedirs(save_path)
                     torch.save(checkpoint, os.path.join(save_path, "transformer_epoch_" + str(epoch + 1) + ".pth"))
 
+        self.writer.close()
 
 if __name__ == '__main__':
     # Set the argparse
@@ -229,7 +231,8 @@ if __name__ == '__main__':
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
-    parser.add_argument("--pad_idx", type=int, default=0, help="Padding index for sequences.")
+    parser.add_argument("--pad_idx", type=int, default=2, help="Padding index for sequences.")
+    parser.add_argument("--sos_idx", type=int, default=3, help="Padding index for sequences.")
     parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
     parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
     parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
@@ -247,7 +250,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
-    parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
+    parser.add_argument("--weight_decay", type=float, default=0.01, help="Use checkpoint index.")
     parser.add_argument("--scheduler_step", type=int, default=200, help="Use checkpoint index.")
     parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
@@ -274,7 +277,7 @@ if __name__ == '__main__':
     dist.init_process_group(backend='nccl')
 
     # Create a Trainer instance and start the training process
-    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx,
+    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx, sos_idx=opt.sos_idx,
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
