@@ -113,7 +113,7 @@ class Trainer:
         - torch.Tensor: Computed BCE loss.
         """
         loss = F.binary_cross_entropy(torch.sigmoid(pred[:, 1:]), trg[:, 1:], reduction='none')
-
+        print(torch.sigmoid(pred[:, 1:])[0], trg[0, 1:])
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         mask = get_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float()
 
@@ -198,8 +198,6 @@ class Trainer:
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
-                        print(decoder_input[0])
-                        print(gt_building_seq[0])
                         loss = self.cross_entropy_loss(decoder_input, gt_building_seq.detach())
                         loss_mean += loss.detach().item()
 
