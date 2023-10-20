@@ -90,7 +90,7 @@ class Trainer:
         return masked_loss.mean()
 
     def train(self):
-        checkpoint = torch.load("./models/model_default/transformer_epoch_" + str(self.checkpoint_epoch) + ".pt")
+        checkpoint = torch.load("./models/model_default/transformer_epoch_" + str(self.checkpoint_epoch) + ".pth")
         self.transformer.load_state_dict(checkpoint['model_state_dict'])
 
         self.transformer.eval()
