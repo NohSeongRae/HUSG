@@ -121,10 +121,10 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed BCE loss.
         """
-        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, 1:]), trg[:, 1:], reduction='none')
+        loss = F.binary_cross_entropy(torch.sigmoid(pred), trg, reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        mask = get_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float()
+        mask = get_pad_mask(trg, pad_idx=self.pad_idx).float()
 
         # mask 적용
         masked_loss = loss * mask
@@ -166,7 +166,7 @@ class Trainer:
                                           trg_building_seq, trg_street_seq)
 
                 # Compute the losses
-                loss = self.cross_entropy_loss(output, gt_building_seq)
+                loss = self.cross_entropy_loss(output[:, :-1], gt_building_seq[:, 1:])
                 loss_total = loss
 
                 # Accumulate the losses for reporting
@@ -208,7 +208,7 @@ class Trainer:
 
                         # Compute the losses using the generated sequence
                         print(decoder_input[0], gt_building_seq[0])
-                        loss = self.cross_entropy_loss(decoder_input, gt_building_seq)
+                        loss = self.cross_entropy_loss(decoder_input[:, 1:], gt_building_seq[:, 1:])
                         loss_mean += loss.detach().item()
 
                     # Print the average losses for the current epoch
