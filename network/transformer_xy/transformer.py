@@ -79,7 +79,7 @@ class Encoder(nn.Module):
         return enc_output
 
 class Decoder(nn.Module):
-    def __init__(self, n_building, n_layer, n_head, d_k, d_v, d_model, d_inner, pad_idx, eos_idx, dropout=0.1, n_boundary=200,
+    def __init__(self, n_layer, n_head, d_k, d_v, d_model, d_inner, dropout=0.1, n_boundary=200,
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
@@ -121,9 +121,9 @@ class TransformerXY(nn.Module):
                                d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
                                use_local_attn=use_local_attn)
-        self.decoder = Decoder(n_building=n_building, n_boundary=n_boundary, eos_idx=eos_idx,
+        self.decoder = Decoder(n_boundary=n_boundary,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
-                               d_k=d_k, d_v=d_v, pad_idx=pad_idx, dropout=dropout,
+                               d_k=d_k, d_v=d_v, dropout=dropout,
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
                                use_local_attn=use_local_attn)
         self.pad_idx = pad_idx
