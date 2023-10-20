@@ -210,8 +210,10 @@ class Trainer:
                         loss = self.cross_entropy_loss(decoder_input[:, 1:], gt_building_seq[:, 1:])
                         loss_mean += loss.detach().item()
 
+                    if self.local_rank == 0:
+                        print(decoder_input[0], gt_building_seq[0])
+
                     # Print the average losses for the current epoch
-                    print(decoder_input[0], gt_building_seq[0])
                     loss_mean /= len(self.val_dataloader)
                     print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {loss_mean:.4f}")
 
