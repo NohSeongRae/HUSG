@@ -198,6 +198,8 @@ class Trainer:
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
+                        print(decoder_input[0])
+                        print(gt_building_seq[0])
                         loss = self.cross_entropy_loss(decoder_input, gt_building_seq.detach())
                         loss_mean += loss.detach().item()
 
