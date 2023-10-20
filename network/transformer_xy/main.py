@@ -117,7 +117,9 @@ class Trainer:
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         mask = get_pad_mask(trg_street_seq[:, 1:], pad_idx=self.pad_idx).float().unsqueeze(-1)
-        print(mask)
+        for m in mask[0]:
+            print(m)
+        print('---')
 
         # mask 적용
         masked_loss = loss * mask
