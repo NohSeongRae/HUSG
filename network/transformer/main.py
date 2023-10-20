@@ -92,6 +92,7 @@ class Trainer:
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
                                        use_local_attn=use_local_attn).to(device=self.device)
+        self.transformer.apply(self.weights_init)
         self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank], find_unused_parameters=True)
 
         # Set the optimizer for the training process
@@ -100,6 +101,14 @@ class Trainer:
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
+
+    def weights_init(self, m):
+        if isinstance(m, nn.Linear):  # Linear layer weights 초기화
+            nn.init.xavier_uniform_(m.weight)
+            if m.bias is not None:  # bias가 있는 경우 0으로 초기화
+                nn.init.constant_(m.bias, 0.0)
+        elif isinstance(m, nn.Embedding):  # Embedding layer weights 초기화
+            nn.init.xavier_uniform_(m.weight)
 
     def cross_entropy_loss(self, pred, trg):
         """
@@ -157,7 +166,7 @@ class Trainer:
                                           trg_building_seq, trg_street_seq)
 
                 # Compute the losses
-                loss = self.cross_entropy_loss(output, gt_building_seq.detach())
+                loss = self.cross_entropy_loss(output, gt_building_seq)
                 loss_total = loss
 
                 # Accumulate the losses for reporting
@@ -198,7 +207,7 @@ class Trainer:
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
-                        loss = self.cross_entropy_loss(decoder_input, gt_building_seq.detach())
+                        loss = self.cross_entropy_loss(decoder_input, gt_building_seq)
                         loss_mean += loss.detach().item()
 
                     # Print the average losses for the current epoch
