@@ -204,8 +204,14 @@ class Trainer:
 
                         # Greedy Search로 시퀀스 생성
                         decoder_input = trg_building_seq[:, :1]  # 시작 토큰만 포함
+
+                        # output 값을 저장할 텐서를 미리 할당합니다.
+                        output_storage = torch.zeros(
+                            (src_unit_seq.size(0), self.n_boundary - 1, self.transformer.d_model), device=self.device)
+
                         for t in range(self.n_boundary - 1):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
+                            output_storage[:, t] = output[:, t].detach()  # 텐서에 output 값을 저장합니다.
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
@@ -214,7 +220,9 @@ class Trainer:
                         loss_mean += loss.detach().item()
 
                     if self.local_rank == 0:
-                        print(decoder_input[0], gt_building_seq[0])
+                        print("Raw Outputs:", output_storage[0])  # 첫 번째 output 값을 출력합니다.
+                        print("Ground Truth:", gt_building_seq[0][1:])
+                        print(output_storage[0].shape, gt_building_seq[0][1:].shape)
 
                     # Print the average losses for the current epoch
                     loss_mean /= len(self.val_dataloader)
