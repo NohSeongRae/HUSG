@@ -75,7 +75,7 @@ class BoundaryDataset(Dataset):
         self.street_index_sequences = np.where(self.street_index_sequences == 49, 0, self.street_index_sequences)
         shifted_array = np.empty_like(self.street_index_sequences)
         shifted_array[:, 1:] = self.street_index_sequences[:, :-1]
-        shifted_array[:, 0] = 1
+        shifted_array[:, 0] = 49
         self.street_index_sequences = shifted_array
 
         print(data_type)
