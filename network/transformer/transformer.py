@@ -113,8 +113,11 @@ class Decoder(nn.Module):
 class Transformer(nn.Module):
     def __init__(self, n_building=100, pad_idx=2, sos_idx=3, d_model=512, d_inner=2048,
                  n_layer=6, n_head=8, d_k=64, d_v=64, dropout=0.1, n_boundary=200,
-                 d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True):
+                 d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True,
+                 local_rank=0):
         super().__init__()
+
+        self.local_rank = local_rank
 
         self.encoder = Encoder(n_boundary=n_boundary,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
@@ -131,7 +134,6 @@ class Transformer(nn.Module):
         self.building_fc = nn.Linear(d_model, 1, bias=False)
 
     def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq):
-        print(trg_building_seq[0])
         src_pad_mask = get_pad_mask(trg_street_seq, pad_idx=0).unsqueeze(-2)
         src_street_mask = get_street_mask(trg_street_seq) & src_pad_mask
         src_local_mask = get_local_mask(trg_street_seq) & src_pad_mask
@@ -146,6 +148,17 @@ class Transformer(nn.Module):
         trg_pad_mask = trg_pad_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
         trg_street_mask = trg_street_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
         trg_local_mask = trg_local_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
+
+        if self.local_rank == 0:
+            print(trg_building_seq[0])
+            print(trg_street_seq[0])
+            print(src_pad_mask[0])
+            print(src_street_mask[0])
+            print(src_local_mask[0])
+            print(trg_pad_mask[0])
+            print(trg_street_mask[0])
+            print(trg_local_mask[0])
+            print(enc_pad_mask[0])
 
         enc_output = self.encoder(src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask)
         dec_output = self.decoder(trg_building_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask, enc_pad_mask)
