@@ -72,6 +72,8 @@ class BoundaryDataset(Dataset):
         shifted_array[:, 0] = 3
         self.building_index_sequences = shifted_array
 
+        self.street_index_sequences = np.where(self.street_index_sequences == 49, 0, self.street_index_sequences)
+
         print(data_type)
         print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
         print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
