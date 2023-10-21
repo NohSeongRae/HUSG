@@ -97,7 +97,7 @@ class Trainer:
 
         # Set the optimizer for the training process
         self.optimizer = torch.optim.Adam(self.transformer.parameters(),
-                                          lr=5e-4,
+                                          lr=0.001,
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
