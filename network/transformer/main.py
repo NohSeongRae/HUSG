@@ -211,7 +211,6 @@ class Trainer:
 
                         for t in range(self.n_boundary - 1):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
-                            print(output[0], t)
                             output_storage[:, t] = output[:, t].detach()  # 텐서에 output 값을 저장합니다.
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
