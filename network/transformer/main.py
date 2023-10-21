@@ -92,7 +92,7 @@ class Trainer:
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
                                        use_local_attn=use_local_attn).to(device=self.device)
-        self.transformer.apply(self.weights_init)
+        # self.transformer.apply(self.weights_init)
         self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank], find_unused_parameters=True)
 
         # Set the optimizer for the training process
@@ -162,8 +162,7 @@ class Trainer:
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq,
-                                          trg_building_seq, trg_street_seq)
+                output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
 
                 # Compute the losses
                 loss = self.cross_entropy_loss(output[:, :-1], gt_building_seq[:, 1:])
