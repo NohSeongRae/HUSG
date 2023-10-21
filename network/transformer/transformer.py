@@ -139,7 +139,7 @@ class Transformer(nn.Module):
         src_local_mask = get_local_mask(trg_street_seq) & src_pad_mask
 
         sub_mask = get_subsequent_mask(trg_street_seq)
-        enc_pad_mask = src_pad_mask & sub_mask
+        enc_pad_mask = src_pad_mask
         trg_pad_mask = src_pad_mask & sub_mask
         trg_street_mask = src_street_mask & trg_pad_mask
         trg_local_mask = src_local_mask & trg_pad_mask
