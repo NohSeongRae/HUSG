@@ -144,7 +144,7 @@ class Transformer(nn.Module):
         trg_street_mask = src_street_mask & trg_pad_mask
         trg_local_mask = src_local_mask & trg_pad_mask
 
-        enc_pad_mask = enc_pad_mask[:, :trg_building_seq.shape[1], :]
+        enc_pad_mask = enc_pad_mask[:, :, :trg_building_seq.shape[1]]
         trg_pad_mask = trg_pad_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
         trg_street_mask = trg_street_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
         trg_local_mask = trg_local_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
