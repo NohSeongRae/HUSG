@@ -139,12 +139,10 @@ class Transformer(nn.Module):
         src_local_mask = get_local_mask(trg_street_seq) & src_pad_mask
 
         sub_mask = get_subsequent_mask(trg_street_seq)
-        enc_pad_mask = src_pad_mask
         trg_pad_mask = src_pad_mask & sub_mask
         trg_street_mask = src_street_mask & trg_pad_mask
         trg_local_mask = src_local_mask & trg_pad_mask
-        print(enc_pad_mask.shape)
-        enc_pad_mask = enc_pad_mask[:, :trg_building_seq.shape[1], :]
+
         trg_pad_mask = trg_pad_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
         trg_street_mask = trg_street_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
         trg_local_mask = trg_local_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
@@ -161,7 +159,7 @@ class Transformer(nn.Module):
         #     print(enc_pad_mask[0])
 
         enc_output = self.encoder(src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask)
-        dec_output = self.decoder(trg_building_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask, enc_pad_mask)
+        dec_output = self.decoder(trg_building_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask, src_pad_mask)
 
         output = self.building_fc(dec_output).squeeze(-1)
 
