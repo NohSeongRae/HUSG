@@ -220,7 +220,7 @@ class Trainer:
                         loss_mean += loss.detach().item()
 
                     if self.local_rank == 0:
-                        print("Raw Outputs:", output_storage[0])  # 첫 번째 output 값을 출력합니다.
+                        print("Raw Outputs:", torch.sigmoid(output_storage[0]))  # 첫 번째 output 값을 출력합니다.
                         print("Ground Truth:", gt_building_seq[0][1:])
                         print(output_storage[0].shape, gt_building_seq[0][1:].shape)
 
@@ -273,7 +273,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
-    parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
+    parser.add_argument("--weight_decay", type=float, default=0.01, help="Use checkpoint index.")
     parser.add_argument("--scheduler_step", type=int, default=20, help="Use checkpoint index.")
     parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
