@@ -88,7 +88,7 @@ class Trainer:
                                        d_street=self.d_street, d_unit=self.d_unit, d_model=self.d_model,
                                        d_inner=self.d_model * 4, n_layer=self.n_layer, n_head=self.n_head,
                                        d_k=self.d_model//self.n_head, d_v=self.d_model//self.n_head,
-                                       dropout=self.dropout, sos_idx=sos_idx,
+                                       dropout=self.dropout, sos_idx=sos_idx, local_rank=local_rank,
                                        use_global_attn=use_global_attn,
                                        use_street_attn=use_street_attn,
                                        use_local_attn=use_local_attn).to(device=self.device)
