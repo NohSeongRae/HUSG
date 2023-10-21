@@ -145,7 +145,7 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in range(epoch_start, self.max_epoch):
-            self.transformer.train()
+            self.transformer.module.train()
             loss_mean = 0
 
             # Iterate over batches
@@ -188,7 +188,7 @@ class Trainer:
                 self.writer.add_scalar("Train/loss-bce", loss_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
-                self.transformer.eval()
+                self.transformer.module.eval()
                 loss_mean = 0
 
                 with torch.no_grad():
