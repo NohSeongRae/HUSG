@@ -145,6 +145,7 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in range(epoch_start, self.max_epoch):
+            self.transformer.train()
             loss_mean = 0
 
             # Iterate over batches
