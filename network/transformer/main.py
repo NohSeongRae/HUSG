@@ -177,6 +177,8 @@ class Trainer:
 
             self.scheduler.step()
 
+            if self.local_rank == 0:
+                print(torch.sigmoid(output[0, :-1]), gt_building_seq[0, 1:])
             # Print the average losses for the current epoch
             loss_mean /= len(self.train_dataloader)
             print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
