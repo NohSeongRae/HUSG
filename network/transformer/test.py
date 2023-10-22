@@ -107,14 +107,12 @@ class Trainer:
 
                 # Greedy Search로 시퀀스 생성
                 decoder_input = trg_building_seq[:, :1]  # 시작 토큰만 포함
+
+                # Greedy Search로 시퀀스 생성
                 for t in range(self.n_boundary - 1):  # 임의의 제한값
                     output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
-                    next_token = output.argmax(dim=-1)[:, -1:]
+                    next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                     decoder_input = torch.cat([decoder_input, next_token], dim=1)
-
-                    # EOS 토큰이 나오면 중단
-                    if next_token[0][0] == self.pad_idx:
-                        break
 
                 # Compute the losses using the generated sequence
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
