@@ -128,7 +128,7 @@ if __name__ == '__main__':
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
-    parser.add_argument("--pad_idx", type=int, default=0, help="Padding index for sequences.")
+    parser.add_argument("--pad_idx", type=int, default=2, help="Padding index for sequences.")
     parser.add_argument("--sos_idx", type=int, default=0, help="Padding index for sequences.")
     parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
     parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
