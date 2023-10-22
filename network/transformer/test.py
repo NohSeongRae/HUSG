@@ -105,6 +105,12 @@ class Trainer:
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
                 unit_coord_seq = unit_coord_seq.to(device=self.device, dtype=torch.float32)
 
+                trg_building_seq = 2 * torch.ones_like(trg_building_seq).long()
+                for t in range(0, self.n_boundary - 1):
+                    output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
+                    next_token = (torch.sigmoid(output) > 0.5).long()[:, t]
+                    trg_building_seq[:, t + 1] = next_token
+
                 # Greedy Search로 시퀀스 생성
                 decoder_input = trg_building_seq[:, :1]  # 시작 토큰만 포함
 
@@ -115,7 +121,7 @@ class Trainer:
                     decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                 mask = get_pad_mask(gt_building_seq[:, 1:], pad_idx=self.pad_idx).float()
-                plot(decoder_input.squeeze().detach().cpu().numpy(),
+                plot(trg_building_seq.squeeze().detach().cpu().numpy(),
                      gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
                      mask.squeeze().detach().cpu().numpy(),
