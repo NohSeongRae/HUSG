@@ -156,7 +156,12 @@ def tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_inde
         left, bottom, right, top = get_square_bounds(boundary_polygon)
         transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
 
-        building_mask = geometry_mask(building_polygons, transform=transform, invert=True, out_shape=(height, width))
+        try:
+            building_mask = geometry_mask(building_polygons, transform=transform, invert=True, out_shape=(height, width))
+        except Exception as e:
+            print(f"Error processing image {idx + 1}: {e}")
+            continue
+
         rectangle_mask = geometry_mask(rectangle_polygons, transform=transform, invert=False, out_shape=(height, width))
         combined_mask = np.where(rectangle_mask == 0, 0, building_mask)
         scaled_mask = (combined_mask * 1).astype(np.uint8)

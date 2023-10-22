@@ -17,7 +17,9 @@ from allmask import allmask
 # "sanfrancisco", "miami", "seattle", "boston", "providence",
 # "neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
-city_names = ["dallas", "houston", "lasvegas", "littlerock"]
+# city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
+
+city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
 
 image_size = 120
 linewidth = 5

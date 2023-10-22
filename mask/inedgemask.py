@@ -90,6 +90,15 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
         # Filter out (0,0) coordinates
         valid_coords = dataset[~np.all(dataset == 0, axis=1)]
 
+        # 1. Use the get_square_bounds function to get the bounding coordinates
+        left, upper, right, lower = get_square_bounds(boundary_polygon)
+
+        # 2. Set the transform using these coordinates
+        width, height = image_size, image_size
+        transform = rasterio.transform.from_bounds(left, upper, right, lower, width, height)
+
+        line_mask = np.zeros((image_size, image_size), dtype=np.uint8)
+
         for i, coord in enumerate(valid_coords):
             lines = []  # Initialize the lines list at the beginning of each loop iteration
 
@@ -104,23 +113,24 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                 lines.append(connection_line)
 
             # 3. Generate the mask using rasterio for lines
-            transform = rasterio.transform.from_bounds(0, 0, 1, 1, image_size, image_size)
-            line_mask = geometry_mask(lines, transform=transform, invert=True, out_shape=(image_size, image_size))
+            current_edge_mask = geometry_mask(lines, transform=transform, invert=True,
+                                              out_shape=(image_size, image_size))
+            current_edge_mask = dilation(current_edge_mask, square(5))
 
-            # Adjust the thickness of the lines using dilation
-            line_mask = dilation(line_mask, square(5))
+            # Update the current edge to have a value of 2 in line_mask
+            line_mask[current_edge_mask == 1] = 2
 
             polygons = []
-            for coord in valid_coords[:i+1]:
+            for coord in valid_coords[:i + 1]:
                 # Create a small box around the coordinate (3x3 pixels)
-                minx = coord[0] - (node_size/2) / image_size
-                miny = coord[1] - (node_size/2) / image_size
-                maxx = coord[0] + (node_size/2) / image_size
-                maxy = coord[1] + (node_size/2) / image_size
+                minx = coord[0] - (node_size / 2) / image_size
+                miny = coord[1] - (node_size / 2) / image_size
+                maxx = coord[0] + (node_size / 2) / image_size
+                maxy = coord[1] + (node_size / 2) / image_size
                 polygons.append(box(minx, miny, maxx, maxy))
 
-            transform = rasterio.transform.from_bounds(0, 0, 1, 1, image_size, image_size)
-            building_mask = geometry_mask(polygons, transform=transform, invert=True, out_shape=(image_size, image_size))
+            building_mask = geometry_mask(polygons, transform=transform, invert=True,
+                                          out_shape=(image_size, image_size))
 
             line_mask[building_mask == 1] = 0
 
@@ -128,3 +138,35 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
             mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
             combined_mask = (line_mask * 1).astype(np.uint8)  # Convert to values between 0 and 255
             imageio.imsave(mask_path, combined_mask)
+
+            line_mask[line_mask == 2] = 1
+
+
+if __name__=="__main__":
+    city_names = ["neworleans"]
+
+    image_size = 120
+    linewidth = 5
+    num_grids = 60
+    unit_length = 0.04
+    cp_node_size = 5
+
+    for city_name in city_names:
+        print("city name", city_name)
+        city_npz_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer',
+                                     'train_dataset', f'{city_name}', 'husg_transformer_dataset.npz')
+        building_center_npz_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer',
+                                                'train_dataset', f'{city_name}', 'husg_building_center_position.npz')
+
+        city_npz_data = np.load(city_npz_path)
+        building_npz_data = np.load(building_center_npz_path)
+
+        building_index_sequences = city_npz_data['building_index_sequences']
+        street_index_sequences = city_npz_data['street_index_sequences']
+        # unit_position_datasets = city_npz_data['unit_position_datasets']
+        # street_unit_position_datasets = city_npz_data['street_unit_position_datasets']
+        unit_coords_datasets = city_npz_data['unit_coords_datasets']
+
+        building_center_position_datasets = building_npz_data['building_center_position_datasets']
+
+        inedgemask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, cp_node_size)

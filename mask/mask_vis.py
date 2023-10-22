@@ -15,10 +15,10 @@ available mask type
 8. inedgemask
 """
 
-masktype = "tfoutput_plotmask"
+masktype = "boundarymask"
 # inmasktype = "inedgemask"
 
-city_name = "atlanta"
+city_name = "neworleans"
 dataset_idx = 1
 # 마스크 저장
 
