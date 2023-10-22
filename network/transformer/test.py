@@ -114,7 +114,7 @@ class Trainer:
                     next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                     decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
-                mask = get_pad_mask(gt_building_seq, pad_idx=self.pad_idx).float()
+                mask = get_pad_mask(gt_building_seq[:, 1:], pad_idx=self.pad_idx).float()
                 plot(decoder_input.squeeze().detach().cpu().numpy(),
                      gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
