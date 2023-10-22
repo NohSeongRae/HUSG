@@ -114,10 +114,6 @@ class Trainer:
                     next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                     decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
-                # Compute the losses using the generated sequence
-                loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
-                print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
-
                 mask = get_pad_mask(gt_building_seq, pad_idx=self.pad_idx).float()
                 plot(decoder_input.squeeze().detach().cpu().numpy(),
                      gt_building_seq[:, 1:].squeeze().detach().cpu().numpy(),
