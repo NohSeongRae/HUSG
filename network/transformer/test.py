@@ -116,7 +116,7 @@ class Trainer:
 
                 mask = get_pad_mask(gt_building_seq, pad_idx=self.pad_idx).float()
                 plot(decoder_input.squeeze().detach().cpu().numpy(),
-                     gt_building_seq[:, 1:].squeeze().detach().cpu().numpy(),
+                     gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
                      mask.squeeze().detach().cpu().numpy(),
                      idx + 1, self.save_dir_path)

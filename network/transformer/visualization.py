@@ -26,7 +26,7 @@ def extract_numbers_from_boundaryfile(s):
     return int(re.search(r'(\d+)', s).group())
 
 def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx, path):
-    transformer_output = transformer_output[1:]
+    transformer_output = transformer_output[:-1]
     gt_output = gt_output[1:]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
