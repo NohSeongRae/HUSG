@@ -210,12 +210,12 @@ class Trainer:
 
                         for t in range(self.n_boundary - 1):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
-                            output_storage[:, t] = output[:, t].detach()  # 텐서에 output 값을 저장합니다.
+                            output_storage[:, t] = output[:, t].detach().unsqueeze(-1)
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
-                        loss = self.cross_entropy_loss(decoder_input[:, 1:], gt_building_seq[:, 1:])
+                        loss = self.cross_entropy_loss(output_storage[:, :-1], gt_building_seq[:, 1:])
                         loss_mean += loss.detach().item()
 
                     if self.local_rank == 0:
