@@ -201,7 +201,7 @@ class Trainer:
                             output_storage[:, t] = output[:, t].detach()
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
-
+                        print(decoder_input[0])
                         # Compute the losses using the generated sequence
                         loss = self.cross_entropy_loss(output_storage, gt_building_seq[:, 1:])
                         loss_mean += loss.detach().item()
