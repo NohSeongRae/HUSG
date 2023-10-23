@@ -95,7 +95,7 @@ class Decoder(nn.Module):
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
-        self.building_emb = nn.Embedding(4, d_model, padding_idx=pad_idx)
+        self.building_emb = nn.Embedding(3, d_model, padding_idx=pad_idx)
         self.pos_enc = PositionalEncoding(d_model, n_boundary=n_boundary)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
