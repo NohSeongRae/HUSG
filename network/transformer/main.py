@@ -215,7 +215,7 @@ class Trainer:
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
-                        loss = self.cross_entropy_loss(output_storage[:, :-1], gt_building_seq[:, 1:])
+                        loss = self.cross_entropy_loss(output_storage, gt_building_seq[:, 1:])
                         loss_mean += loss.detach().item()
 
                     if self.local_rank == 0:
