@@ -146,12 +146,9 @@ class Transformer(nn.Module):
         self.building_fc = nn.Linear(d_model, 1, bias=False)
 
     def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq):
-        shifted_tensor = torch.zeros_like(trg_street_seq)
-        shifted_tensor[:, :-1] = trg_street_seq[:, 1:]
-
-        src_pad_mask = get_pad_mask(shifted_tensor, pad_idx=0).unsqueeze(-2)
-        src_street_mask = get_street_mask(shifted_tensor) & src_pad_mask
-        src_local_mask = get_local_mask(shifted_tensor) & src_pad_mask
+        src_pad_mask = get_pad_mask(trg_street_seq, pad_idx=0).unsqueeze(-2)
+        src_street_mask = get_street_mask(trg_street_seq) & src_pad_mask
+        src_local_mask = get_local_mask(trg_street_seq) & src_pad_mask
 
         sub_mask = get_subsequent_mask(trg_street_seq)
         trg_pad_mask = get_pad_mask(trg_street_seq, pad_idx=0).unsqueeze(-2) & sub_mask
