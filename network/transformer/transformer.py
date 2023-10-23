@@ -28,6 +28,8 @@ def get_local_mask(seq):
     local_mask[range(sz_b), last_non_zero_idx, :2] = True
     local_mask[range(sz_b), last_non_zero_idx - 1, 0] = True
 
+    print(local_mask[0])
+
     return local_mask
 
 def get_pad_mask(seq, pad_idx):
