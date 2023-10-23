@@ -86,7 +86,7 @@ class Encoder(nn.Module):
         enc_output = self.layer_norm(enc_output)
 
         for enc_layer in self.layer_stack:
-            enc_output = enc_layer(enc_output, mask,src_street_mask,src_local_mask)
+            enc_output = enc_layer(enc_output, mask, src_street_mask, src_local_mask)
 
         return enc_output
 
@@ -118,7 +118,7 @@ class Decoder(nn.Module):
         dec_output = self.layer_norm(dec_output)
 
         for dec_layer in self.layer_stack:
-            dec_output = dec_layer(dec_output, enc_output, trg_global_mask, trg_local_mask, trg_street_mask, enc_mask)
+            dec_output = dec_layer(dec_output, enc_output, trg_global_mask, trg_street_mask, trg_local_mask, enc_mask)
 
         return dec_output
 
