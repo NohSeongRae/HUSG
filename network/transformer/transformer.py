@@ -108,14 +108,14 @@ class Decoder(nn.Module):
     # trg_pad_mask: 우리는 단어가 아닌, 집합이기 때문에, 집합의 크기를 맞추기 위해 사용된 pad idx 를 제외하고 aggregate 하기 위한 mask
     # trg_street_mask: 자기가 속한 street 과 동일한 street index 가진 token 에 대해서만 학습에 들어가도록 만들어주는 mask
     # trg_local_mask: 자기 포함 자기 뒤 5개를 보도록 만들었던 걸로 기억함. 만약 앞에 거 보고 싶으면, 상삼각행렬로 만들든 gpt 랑 잘 놀아보면 됨
-    def forward(self, seq, enc_output, mask, trg_street_mask, trg_local_mask):
+    def forward(self, seq, enc_output, mask, trg_street_mask, trg_local_mask, enc_mask):
         dec_output = self.building_emb(seq)
         dec_output = self.pos_enc(dec_output)
         dec_output = self.dropout(dec_output)
         dec_output = self.layer_norm(dec_output)
 
         for dec_layer in self.layer_stack:
-            dec_output = dec_layer(dec_output, enc_output, mask, trg_local_mask,trg_street_mask)
+            dec_output = dec_layer(dec_output, enc_output, mask, trg_local_mask,trg_street_mask, enc_mask)
 
         return dec_output
 
@@ -140,16 +140,21 @@ class Transformer(nn.Module):
         self.building_fc = nn.Linear(d_model, 1, bias=False)
 
     def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq):
-        src_pad_mask = get_pad_mask(trg_street_seq, pad_idx=self.pad_idx).unsqueeze(-2)
+        src_pad_mask = get_pad_mask(trg_street_seq, pad_idx=0).unsqueeze(-2)
         src_street_mask = get_street_mask(trg_street_seq) & src_pad_mask
         src_local_mask = get_local_mask(trg_street_seq) & src_pad_mask
+
         sub_mask = get_subsequent_mask(trg_street_seq)
-        trg_pad_mask = src_pad_mask & sub_mask
-        trg_street_mask = src_street_mask & trg_pad_mask
-        trg_local_mask = src_local_mask & trg_pad_mask
+        trg_pad_mask = get_pad_mask(trg_street_seq, pad_idx=0).unsqueeze(-2) & sub_mask
+        trg_street_mask = get_street_mask(trg_street_seq) & trg_pad_mask
+        trg_local_mask = get_local_mask(trg_street_seq) & trg_pad_mask
+
+        trg_pad_mask = trg_pad_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
+        trg_street_mask = trg_street_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
+        trg_local_mask = trg_local_mask[:, :trg_building_seq.shape[1], :trg_building_seq.shape[1]]
 
         enc_output = self.encoder(src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask)
-        dec_output = self.decoder(trg_building_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask)
+        dec_output = self.decoder(trg_building_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask, src_pad_mask)
 
         output = self.building_fc(dec_output).squeeze(-1)
 
