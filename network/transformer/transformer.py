@@ -12,9 +12,20 @@ def get_street_mask(seq):
 
 def get_local_mask(seq):
     sz_b, len_s = seq.size()
-    tril_mask1 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=0)
-    tril_mask2 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-5)
+    tril_mask1 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=2)
+    tril_mask2 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-3)
     local_mask = (tril_mask1 - tril_mask2).bool()
+
+    # 순환 구조를 고려한 마스크 업데이트
+    last_non_zero_idx = (seq != 0).sum(dim=1) - 1  # 0이 아닌 마지막 인덱스 찾기
+    for b in range(sz_b):
+        # 첫 번째 포지션에 대해 마지막에서 두 번째, 세 번째 포지션과의 attention 허용
+        local_mask[b, 0, last_non_zero_idx[b] - 1:last_non_zero_idx[b] + 1] = True
+        local_mask[b, 1, last_non_zero_idx[b]] = True
+
+        # 마지막 0이 아닌 포지션에 대해 첫 번째, 두 번째 포지션과의 attention 허용
+        local_mask[b, last_non_zero_idx[b], 0:2] = True
+        local_mask[b, last_non_zero_idx[b] - 1, 0] = True
 
     return local_mask
 
@@ -134,7 +145,7 @@ class Transformer(nn.Module):
         self.building_fc = nn.Linear(d_model, 1, bias=False)
 
     def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq):
-        shifted_tensor = torch.empty_like(trg_street_seq)
+        shifted_tensor = torch.zeros_like(trg_street_seq)
         shifted_tensor[:, :-1] = trg_street_seq[:, 1:]
 
         src_pad_mask = get_pad_mask(shifted_tensor, pad_idx=0).unsqueeze(-2)
