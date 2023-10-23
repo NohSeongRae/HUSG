@@ -28,7 +28,8 @@ def get_local_mask(seq):
     local_mask[range(sz_b), last_non_zero_idx, :2] = True
     local_mask[range(sz_b), last_non_zero_idx - 1, 0] = True
 
-    print(local_mask[0])
+    for m in local_mask[0]:
+        print(m)
 
     return local_mask
 
