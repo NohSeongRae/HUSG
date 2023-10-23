@@ -272,7 +272,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
-    parser.add_argument("--weight_decay", type=float, default=2, help="Use checkpoint index.")
+    parser.add_argument("--weight_decay", type=float, default=0.01, help="Use checkpoint index.")
     parser.add_argument("--scheduler_step", type=int, default=20, help="Use checkpoint index.")
     parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
