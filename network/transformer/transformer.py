@@ -12,8 +12,8 @@ def get_street_mask(seq):
 
 def get_local_mask(seq):
     sz_b, len_s = seq.size()
-    tril_mask1 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=2)
-    tril_mask2 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-3)
+    tril_mask1 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=2)
+    tril_mask2 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=-3)
     local_mask = (tril_mask1 - tril_mask2).bool()
 
     # 순환 구조를 고려한 마스크 업데이트
