@@ -14,8 +14,8 @@ def get_local_mask(seq):
     sz_b, len_s = seq.size()
 
     # Create local mask using the modified diagonals with correct batch size
-    tril_mask1 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=2)
-    tril_mask2 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=-3)
+    tril_mask1 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=4)
+    tril_mask2 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=-5)
     local_mask = (tril_mask1 - tril_mask2).bool()
 
     # Find the index of the last non-zero value for each sequence in the batch
