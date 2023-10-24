@@ -1,0 +1,92 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    python_version: 3.9.0
+    cli_version: 0.15.12
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1698129399.859803
+    t:
+      1:
+      - 1
+      - 41
+      - 55
+      2:
+      - 1
+      - 41
+      - 55
+      3:
+      - 13
+      - 23
+      4: 3.9.0
+      5: 0.15.12
+      8:
+      - 3
+      - 5
+      13: windows-amd64
+exp:
+  desc: null
+  value: box_coco_instances
+log_dir:
+  desc: null
+  value: ./logs
+data_dir:
+  desc: null
+  value: null
+threshold:
+  desc: null
+  value: 16
+train_json:
+  desc: null
+  value: Z:/iiixr-drive/Projects/2023_City_Team/1_evaluation/layoutvae/annotation/train_data.json
+val_json:
+  desc: null
+  value: Z:/iiixr-drive/Projects/2023_City_Team/1_evaluation/layoutvae/annotation/val_data.json
+max_length:
+  desc: null
+  value: 128
+precision:
+  desc: null
+  value: 8
+element_order:
+  desc: null
+  value: raster
+attribute_order:
+  desc: null
+  value: cxywh
+seed:
+  desc: null
+  value: 42
+epochs:
+  desc: null
+  value: 10
+batch_size:
+  desc: null
+  value: 64
+lr:
+  desc: null
+  value: 4.5e-06
+n_layer:
+  desc: null
+  value: 6
+n_embd:
+  desc: null
+  value: 512
+n_head:
+  desc: null
+  value: 8
+lr_decay:
+  desc: null
+  value: false
+warmup_iters:
+  desc: null
+  value: 0
+final_iters:
+  desc: null
+  value: 0
+sample_every:
+  desc: null
+  value: 1

@@ -1,0 +1,27 @@
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_setup.py:_flush():76] Current SDK version is 0.15.12
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_setup.py:_flush():76] Configure stats pid to 11680
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_setup.py:_flush():76] Loading settings from C:\Users\rlaqhdrb\.config\wandb\settings
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_setup.py:_flush():76] Loading settings from C:\Users\rlaqhdrb\Desktop\layoutransformer\HUSG\layout_transformer\wandb\settings
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'layout_transformer\\main.py', 'program_abspath': 'C:\\Users\\rlaqhdrb\\Desktop\\layoutransformer\\HUSG\\layout_transformer\\main.py', 'program': 'C:\\Users\\rlaqhdrb\\Desktop\\layoutransformer\\HUSG\\layout_transformer\\main.py'}
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_init.py:_log_setup():528] Logging user logs to C:\Users\rlaqhdrb\Desktop\layoutransformer\HUSG\layout_transformer\wandb\run-20231024_160654-ke9ft35j\logs\debug.log
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_init.py:_log_setup():529] Logging internal logs to C:\Users\rlaqhdrb\Desktop\layoutransformer\HUSG\layout_transformer\wandb\run-20231024_160654-ke9ft35j\logs\debug-internal.log
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_init.py:init():568] calling init triggers
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_init.py:init():575] wandb.init called with sweep_config: {}
+config: {}
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_init.py:init():618] starting backend
+2023-10-24 16:06:54,391 INFO    MainThread:11680 [wandb_init.py:init():622] setting up manager
+2023-10-24 16:06:54,393 INFO    MainThread:11680 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn, using: spawn
+2023-10-24 16:06:54,395 INFO    MainThread:11680 [wandb_init.py:init():628] backend started and connected
+2023-10-24 16:06:54,398 INFO    MainThread:11680 [wandb_init.py:init():720] updated telemetry
+2023-10-24 16:06:54,426 INFO    MainThread:11680 [wandb_init.py:init():753] communicating run to backend with 90.0 second timeout
+2023-10-24 16:06:58,737 INFO    MainThread:11680 [wandb_run.py:_on_init():2220] communicating current version
+2023-10-24 16:06:58,775 INFO    MainThread:11680 [wandb_run.py:_on_init():2229] got version response 
+2023-10-24 16:06:58,775 INFO    MainThread:11680 [wandb_init.py:init():804] starting run threads in backend
+2023-10-24 16:07:01,077 INFO    MainThread:11680 [wandb_run.py:_console_start():2199] atexit reg
+2023-10-24 16:07:01,077 INFO    MainThread:11680 [wandb_run.py:_redirect():2054] redirect: wrap_raw
+2023-10-24 16:07:01,077 INFO    MainThread:11680 [wandb_run.py:_redirect():2119] Wrapping output streams.
+2023-10-24 16:07:01,077 INFO    MainThread:11680 [wandb_run.py:_redirect():2144] Redirects installed.
+2023-10-24 16:07:01,078 INFO    MainThread:11680 [wandb_init.py:init():845] run started, returning control to user process
+2023-10-24 16:07:01,078 INFO    MainThread:11680 [wandb_run.py:_config_callback():1324] config_cb None None {'exp': 'box_coco_instances', 'log_dir': './logs', 'data_dir': None, 'threshold': 16, 'train_json': 'Z:/iiixr-drive/Projects/2023_City_Team/1_evaluation/layoutvae/annotation/train_data.json', 'val_json': 'Z:/iiixr-drive/Projects/2023_City_Team/1_evaluation/layoutvae/annotation/val_data.json', 'max_length': 128, 'precision': 8, 'element_order': 'raster', 'attribute_order': 'cxywh', 'seed': 42, 'epochs': 10, 'batch_size': 64, 'lr': 4.5e-06, 'n_layer': 6, 'n_embd': 512, 'n_head': 8, 'lr_decay': False, 'warmup_iters': 0, 'final_iters': 0, 'sample_every': 1}

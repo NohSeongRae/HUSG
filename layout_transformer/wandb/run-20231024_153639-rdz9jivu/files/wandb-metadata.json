@@ -1,0 +1,60 @@
+{
+    "os": "Windows-10-10.0.19041-SP0",
+    "python": "3.9.0",
+    "heartbeatAt": "2023-10-24T06:36:40.528845",
+    "startedAt": "2023-10-24T06:36:39.852802",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--exp",
+        "box_coco_instances",
+        "--train_json",
+        "Z:/iiixr-drive/Projects/2023_City_Team/1_evaluation/layoutvae/annotation/train_data.json",
+        "--val_json",
+        "Z:/iiixr-drive/Projects/2023_City_Team/1_evaluation/layoutvae/annotation/val_data.json"
+    ],
+    "state": "running",
+    "program": "C:\\Users\\rlaqhdrb\\Desktop\\eval\\DeepLayout\\layout_transformer\\main.py",
+    "codePathLocal": "main.py",
+    "codePath": "layout_transformer\\main.py",
+    "git": {
+        "remote": "https://github.com/kampta/DeepLayout.git",
+        "commit": "60ebaca7f29a14d92c455f83e681c0bd8e2962fe"
+    },
+    "email": "misong023@khu.ac.kr",
+    "root": "C:/Users/rlaqhdrb/Desktop/eval/DeepLayout",
+    "host": "DESKTOP-HEMRCIL",
+    "username": "rlaqhdrb",
+    "executable": "C:\\Users\\rlaqhdrb\\anaconda3\\envs\\eval_layoutVAE\\python.exe",
+    "cpu_count": 12,
+    "cpu_count_logical": 20,
+    "cpu_freq": {
+        "current": 2100.0,
+        "min": 0.0,
+        "max": 2100.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2100.0,
+            "min": 0.0,
+            "max": 2100.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 930.8774375915527,
+            "used": 721.5525817871094
+        }
+    },
+    "gpu": "NVIDIA GeForce RTX 3080",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 3080",
+            "memory_total": 10737418240
+        }
+    ],
+    "memory": {
+        "total": 31.81780242919922
+    }
+}
