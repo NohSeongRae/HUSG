@@ -22,11 +22,9 @@ def get_local_mask(seq):
     last_non_zero_idx = (seq != 0).sum(dim=1) - 2
 
     # Update the mask for cyclic attention
-    local_mask[range(sz_b), 0, last_non_zero_idx] = True
-    local_mask[range(sz_b), 1, last_non_zero_idx] = True
-    local_mask[range(sz_b), 0, last_non_zero_idx - 1] = True
-    local_mask[range(sz_b), last_non_zero_idx, :2] = True
-    local_mask[range(sz_b), last_non_zero_idx - 1, 0] = True
+    for i in range(5):
+        local_mask[range(sz_b), i, last_non_zero_idx - (4 - i)] = True
+        local_mask[range(sz_b), last_non_zero_idx - (4 - i), i] = True
 
     return local_mask
 
