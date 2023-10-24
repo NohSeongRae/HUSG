@@ -135,8 +135,8 @@ class Transformer(nn.Module):
         self.decoder = Decoder(n_building=n_building, n_boundary=n_boundary, eos_idx=eos_idx,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
                                d_k=d_k, d_v=d_v, pad_idx=pad_idx, dropout=dropout,
-                               use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                               use_local_attn=use_local_attn)
+                               use_global_attn=use_global_attn, use_street_attn=False,
+                               use_local_attn=False)
         self.pad_idx = pad_idx
         self.eos_idx = eos_idx
         self.building_fc = nn.Linear(d_model, 1, bias=False)
