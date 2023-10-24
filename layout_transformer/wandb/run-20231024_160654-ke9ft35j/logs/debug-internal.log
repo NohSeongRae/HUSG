@@ -146,3 +146,23 @@
 2023-10-24 16:09:58,897 DEBUG   SenderThread:15856 [sender.py:send():380] send: stats
 2023-10-24 16:09:59,909 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
 2023-10-24 16:10:04,955 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
+2023-10-24 16:10:09,196 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: stop_status
+2023-10-24 16:10:09,196 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: internal_messages
+2023-10-24 16:10:09,196 DEBUG   SenderThread:15856 [sender.py:send_request():407] send_request: stop_status
+2023-10-24 16:10:10,432 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
+2023-10-24 16:10:15,475 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
+2023-10-24 16:10:15,567 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: partial_history
+2023-10-24 16:10:15,567 DEBUG   SenderThread:15856 [sender.py:send():380] send: history
+2023-10-24 16:10:15,567 DEBUG   SenderThread:15856 [sender.py:send_request():407] send_request: summary_record
+2023-10-24 16:10:15,569 INFO    SenderThread:15856 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-10-24 16:10:16,015 INFO    Thread-16 :15856 [dir_watcher.py:_on_file_modified():288] file/dir modified: C:\Users\rlaqhdrb\Desktop\layoutransformer\HUSG\layout_transformer\wandb\run-20231024_160654-ke9ft35j\files\output.log
+2023-10-24 16:10:16,016 INFO    Thread-16 :15856 [dir_watcher.py:_on_file_modified():288] file/dir modified: C:\Users\rlaqhdrb\Desktop\layoutransformer\HUSG\layout_transformer\wandb\run-20231024_160654-ke9ft35j\files\wandb-summary.json
+2023-10-24 16:10:20,592 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
+2023-10-24 16:10:25,617 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
+2023-10-24 16:10:28,905 DEBUG   SenderThread:15856 [sender.py:send():380] send: stats
+2023-10-24 16:10:30,919 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
+2023-10-24 16:10:34,685 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: internal_messages
+2023-10-24 16:10:34,685 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: stop_status
+2023-10-24 16:10:34,686 DEBUG   SenderThread:15856 [sender.py:send_request():407] send_request: stop_status
+2023-10-24 16:10:35,944 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
+2023-10-24 16:10:40,996 DEBUG   HandlerThread:15856 [handler.py:handle_request():146] handle_request: status_report
