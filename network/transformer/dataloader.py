@@ -60,7 +60,7 @@ class BoundaryDataset(Dataset):
                      street_index_sequences=self.full_dataset['street_index_sequences'],
                      unit_coords_datasets=self.full_dataset['unit_coords_datasets'])
         else:
-            load_path = './network/transformer_graph/datasets'
+            load_path = './network/transformer_graph/datasets.npz'
             self.full_dataset = np.load(load_path)
 
         total_size = len(self.full_dataset['unit_position_datasets'])
