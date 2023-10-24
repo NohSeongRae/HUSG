@@ -18,7 +18,7 @@ available mask type
 masktype = "boundarymask"
 # inmasktype = "inedgemask"
 
-city_name = "neworleans"
+city_name = "philadelphia"
 dataset_idx = 1
 # 마스크 저장
 
