@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 import numpy as np
 import pickle
 from tqdm import tqdm
+import os
 
 class BoundaryDataset(Dataset):
     """
@@ -49,6 +50,18 @@ class BoundaryDataset(Dataset):
     def __init__(self, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train', load=True):
         if load:
             self.load_full_dataset()
+            save_path = './network/transformer/datasets'
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+            np.savez(save_path,
+                     unit_position_datasets=self.full_dataset['unit_position_datasets'],
+                     street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
+                     building_index_sequences=self.full_dataset['building_index_sequences'],
+                     street_index_sequences=self.full_dataset['street_index_sequences'],
+                     unit_coords_datasets=self.full_dataset['unit_coords_datasets'])
+        else:
+            load_path = './network/transformer_graph/datasets'
+            self.full_dataset = np.load(load_path)
 
         total_size = len(self.full_dataset['unit_position_datasets'])
         if data_type == 'train':
