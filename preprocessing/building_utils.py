@@ -11,6 +11,27 @@ from general_utils import compute_distance
 #     find_polygon_with_farthest_edge, normalize_geometry, create_combined_edge, create_rectangle
 # from preprocessing.general_utils import compute_distance
 
+def get_closest_buildings(building, building_polygons, n, n_street):
+    distances = []
+
+    idx1 = n_street + building[0]
+    for other_building in building_polygons:
+        idx2 = n_street + other_building[0]
+
+        if idx1 != idx2:
+            b1_bbox = building[2].minimum_rotated_rectangle
+            b2_bbox = other_building[2].minimum_rotated_rectangle
+
+            th = 0.05
+            distance = b1_bbox.distance(b2_bbox)
+            if distance <= th:
+                distances.append((distance, idx2))
+
+    # 거리에 따라 정렬하고 가장 가까운 n개의 건물을 선택
+    sorted_distances = sorted(distances, key=lambda x: x[0])
+
+    return [idx for _, idx in sorted_distances[:n]]
+
 def sort_polygons_clockwise_using_boundary_centroid_corrected(polygons, boundary_polygon):
     """Sort polygons clockwise based on the angle from the boundary polygon's centroid."""
     # Find the centroid of the boundary polygon

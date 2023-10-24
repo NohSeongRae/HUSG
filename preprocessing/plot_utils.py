@@ -18,7 +18,7 @@ def get_random_color(seed, palette='pastel', n_colors=30):
 def extract_before_underscore(s):
     return s.split('_')[0]
 
-def plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_building, street_position_dataset, file_name):
+def plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_street, street_position_dataset, file_name):
     for unit_road_idx, unit_road in enumerate(unit_roads):
         x, y = [unit_road[1][0][0], unit_road[1][1][0]], [unit_road[1][0][1], unit_road[1][1][1]]
         plt.plot(x, y, color=get_random_color(unit_road[0]))
@@ -41,28 +41,29 @@ def plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons,
                  str(building_polygon_idx) + ', ' + str(building_polygon[1]),
                  fontsize=7, ha='center', va='center', color='black')
 
-    # for i in range(len(adj_matrix)):
-    #     for j in range(len(adj_matrix)):
-    #         if adj_matrix[i][j] == 1:
-    #             if i < n_building:
-    #                 node_i = Point(building_polygons[i][2].centroid)
-    #             else:
-    #                 node_i = Point(np.mean(street_position_dataset[i - n_building + 1], axis=0))
-    #             if j < n_building:
-    #                 node_j = Point(building_polygons[j][2].centroid)
-    #             else:
-    #                 node_j = Point(np.mean(street_position_dataset[j - n_building + 1], axis=0))
-    #
-    #             plt.plot([node_i.x, node_j.x], [node_i.y, node_j.y])
+    for i in range(len(adj_matrix)):
+        for j in range(len(adj_matrix)):
+            if adj_matrix[i][j] == 1 and adj_matrix[j][i] == 1:
+                if i < n_street:
+                    node_i = Point(np.mean(street_position_dataset[i + 1], axis=0))
+                else:
+                    node_i = Point(building_polygons[i - n_street][2].centroid)
+                if j < n_street:
+                    node_j = Point(np.mean(street_position_dataset[j + 1], axis=0))
+                else:
+                    node_j = Point(building_polygons[j - n_street][2].centroid)
 
-    city_name = extract_before_underscore(file_name)
-    folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'preprocessed_image')
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
+                plt.plot([node_i.x, node_j.x], [node_i.y, node_j.y])
 
-    image_filename = os.path.join(folder_path, f'{file_name}.png')
+    if file_name is not None:
+        city_name = extract_before_underscore(file_name)
+        folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'preprocessed_image')
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
 
-    # plt.savefig(image_filename)
-    # plt.clf()
+        image_filename = os.path.join(folder_path, f'{file_name}.png')
+
+        plt.savefig(image_filename)
+        plt.clf()
 
     plt.show()

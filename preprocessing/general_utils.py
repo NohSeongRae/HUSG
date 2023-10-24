@@ -61,12 +61,12 @@ def random_sample_points_on_multiple_lines(lines, m):
     m: 샘플링할 점의 개수
     """
     sampled_points = [lines[0][0]]
-
     for _ in range(m - 2):
         # n개의 직선 중 하나를 랜덤하게 선택
         A, B = lines[np.random.randint(len(lines))]
         # 선택된 직선에서 점을 랜덤 샘플링
-        point = random_sample_points_on_line(A, B, 1)[0]
+        point = random_sample_points_on_line(A, B, 64)
+        point = point[np.random.randint(len(point))]
         sampled_points.append(point)
 
     sampled_points.append(lines[-1][1])

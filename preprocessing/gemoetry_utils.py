@@ -4,6 +4,28 @@ from math import sqrt
 from shapely.geometry import Polygon, LineString, Point
 from shapely.ops import unary_union
 
+def get_bbox_details(rotated_rectangle):
+    # 사각형의 꼭짓점들을 얻음
+    coords = list(rotated_rectangle.exterior.coords[:-1])
+
+    # 두 개의 인접한 꼭짓점 간의 거리를 계산하여 길이와 너비를 얻음
+    side_1 = np.linalg.norm(np.array(coords[0]) - np.array(coords[1]))
+    side_2 = np.linalg.norm(np.array(coords[1]) - np.array(coords[2]))
+
+    w, h = sorted([side_1, side_2])
+
+    # 좌하단 꼭짓점을 x, y로 선택
+    x, y = rotated_rectangle.centroid.x, rotated_rectangle.centroid.y
+
+    return x, y, w, h
+
+def is_building_between(b1, b2, buildings):
+    line = LineString([b1.centroid, b2.centroid])
+    for building in buildings:
+        if building[2].intersects(line) and building[2] != b1 and building[2] != b2:
+            return True
+    return False
+
 def find_maximum_distance_from_polygon_to_linestring(polygon, linestring):
     max_distance = 0
     for coord in polygon.exterior.coords:
