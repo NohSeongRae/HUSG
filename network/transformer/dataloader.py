@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 from tqdm import tqdm
 import os
+import time
 
 class BoundaryDataset(Dataset):
     """
@@ -48,20 +49,25 @@ class BoundaryDataset(Dataset):
             }
 
     def __init__(self, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train', load=True):
-        if load:
-            self.load_full_dataset()
-            save_path = './network/transformer/datasets'
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
-            np.savez(save_path,
-                     unit_position_datasets=self.full_dataset['unit_position_datasets'],
-                     street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
-                     building_index_sequences=self.full_dataset['building_index_sequences'],
-                     street_index_sequences=self.full_dataset['street_index_sequences'],
-                     unit_coords_datasets=self.full_dataset['unit_coords_datasets'])
-        else:
-            load_path = './network/transformer/datasets.npz'
-            self.full_dataset = np.load(load_path)
+        if self.full_dataset is None:
+            if load:
+                self.load_full_dataset()
+                save_path = './network/transformer/datasets'
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                np.savez(save_path,
+                         unit_position_datasets=self.full_dataset['unit_position_datasets'],
+                         street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
+                         building_index_sequences=self.full_dataset['building_index_sequences'],
+                         street_index_sequences=self.full_dataset['street_index_sequences'],
+                         unit_coords_datasets=self.full_dataset['unit_coords_datasets'])
+            else:
+                load_path = './network/transformer/datasets.npz'
+                start_time = time.time()  # 데이터 로드 전 시간 측정
+                self.full_dataset = np.load(load_path)
+                end_time = time.time()  # 데이터 로드 후 시간 측정
+                load_duration = end_time - start_time
+                print(f"Data loading took {load_duration:.2f} seconds.")
 
         total_size = len(self.full_dataset['unit_position_datasets'])
         if data_type == 'train':
