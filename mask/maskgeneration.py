@@ -19,7 +19,7 @@ from allmask import allmask
 
 # city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
 
-city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
+city_names = ["houston", "lasvegas", "littlerock"]
 
 image_size = 120
 linewidth = 5
@@ -50,4 +50,4 @@ for city_name in city_names:
     inbuildingcpmask(city_name, image_size, building_center_position_datasets, cp_node_size) # 갯수 / 매칭 확인
     inedgemask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, cp_node_size)
     allmask(city_name, image_size, unit_coords_datasets, street_index_sequences, building_index_sequences)
-    tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth, num_grids, unit_length)
+    # tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth, num_grids, unit_length)
