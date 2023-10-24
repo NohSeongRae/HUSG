@@ -12,9 +12,22 @@ def get_street_mask(seq):
 
 def get_local_mask(seq):
     sz_b, len_s = seq.size()
-    tril_mask1 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-1)
-    tril_mask2 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-6)
+
+    # Create local mask using the modified diagonals with correct batch size
+    tril_mask1 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=2)
+    tril_mask2 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=-3)
     local_mask = (tril_mask1 - tril_mask2).bool()
+
+    # Find the index of the last non-zero value for each sequence in the batch
+    last_non_zero_idx = (seq != 0).sum(dim=1) - 2
+
+    # Update the mask for cyclic attention
+    local_mask[range(sz_b), 0, last_non_zero_idx] = True
+    local_mask[range(sz_b), 1, last_non_zero_idx] = True
+    local_mask[range(sz_b), 0, last_non_zero_idx - 1] = True
+    local_mask[range(sz_b), last_non_zero_idx, :2] = True
+    local_mask[range(sz_b), last_non_zero_idx - 1, 0] = True
+
     return local_mask
 
 def get_pad_mask(seq, pad_idx):
