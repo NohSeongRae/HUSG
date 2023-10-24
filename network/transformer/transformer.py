@@ -19,7 +19,7 @@ def get_local_mask(seq):
     local_mask = (tril_mask1 - tril_mask2).bool()
 
     # Find the index of the last non-zero value for each sequence in the batch
-    last_non_zero_idx = (seq != 0).sum(dim=1) - 1
+    last_non_zero_idx = (seq != 0).sum(dim=1) - 2
 
     # Update the mask for cyclic attention
     local_mask[range(sz_b), 0, last_non_zero_idx] = True
