@@ -116,7 +116,7 @@ class Trainer:
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         self.pad_idx = torch.zeros_like(trg[0, 0, :])
         mask = get_trg_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float()
-        mask = mask.unsqueeze(-1).repeat(loss.shape[2])
+        mask = mask.unsqueeze(-1).repeat(1, 1, loss.shape[2])
 
         # mask 적용
         masked_loss = loss * mask
