@@ -18,8 +18,8 @@ class GraphDataset(Dataset):
                       "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
                       "sanfrancisco", "miami", "seattle", "boston", "providence",
                       "neworleans", "denver", "pittsburgh", "tampa", "washington"]
-        # city_names = ['atlanta']
-        file_name = '/husg_transformer_dataset.npz'
+        city_names = ['atlanta']
+        file_name = '/husg_transformer_graph_dataset.npz'
 
         if cls.full_dataset is None:
             all_unit_position_datasets = []
@@ -44,18 +44,19 @@ class GraphDataset(Dataset):
             }
 
     def __init__(self, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train', load=True):
-        if load:
-            self.load_full_dataset()
-            save_path = './network/transformer_graph/datasets'
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
-            np.savez(save_path,
-                     unit_position_datasets=self.full_dataset['unit_position_datasets'],
-                     street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
-                     street_index_sequences=self.full_dataset['street_index_sequences'],
-                     adj_matrix_sequences=self.full_dataset['adj_matrix_sequences'])
+        if self.full_dataset is None:
+            if load:
+                self.load_full_dataset()
+                save_path = './network/transformer_graph/datasets'
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                np.savez(save_path,
+                         unit_position_datasets=self.full_dataset['unit_position_datasets'],
+                         street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
+                         street_index_sequences=self.full_dataset['street_index_sequences'],
+                         adj_matrix_sequences=self.full_dataset['adj_matrix_sequences'])
         else:
-            load_path = './network/transformer_graph/datasets'
+            load_path = './network/transformer_graph/datasets.npz'
             self.full_dataset = np.load(load_path)
 
         total_size = len(self.full_dataset['unit_position_datasets'])
