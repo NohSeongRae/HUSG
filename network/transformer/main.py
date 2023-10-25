@@ -190,13 +190,21 @@ class Trainer:
                         trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
                         trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
 
-                        for t in range(0, self.n_boundary - 1):
-                            output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
-                            next_token = (torch.sigmoid(output) > 0.5).long()[:, t]
-                            trg_building_seq[:, t + 1] = next_token
+                        # Greedy Search로 시퀀스 생성
+                        decoder_input = trg_building_seq[:, :1]  # 시작 토큰만 포함
+
+                        # output 값을 저장할 텐서를 미리 할당합니다.
+                        output_storage = torch.zeros(
+                            (src_unit_seq.size(0), self.n_boundary - 1), device=self.device)
+
+                        for t in range(self.n_boundary - 1):  # 임의의 제한값
+                            output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
+                            output_storage[:, t] = output[:, t].detach()
+                            next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
+                            decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses
-                        loss = self.cross_entropy_loss(output, gt_building_seq.detach())
+                        loss = self.cross_entropy_loss(output_storage, gt_building_seq.detach())
 
                         # Accumulate the losses for reporting
                         loss_mean += loss.detach().item()
