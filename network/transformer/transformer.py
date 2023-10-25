@@ -12,19 +12,9 @@ def get_street_mask(seq):
 
 def get_local_mask(seq):
     sz_b, len_s = seq.size()
-
-    # Create local mask using the modified diagonals with correct batch size
-    tril_mask1 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=4)
-    tril_mask2 = torch.tril(torch.ones((sz_b, len_s, len_s), device=seq.device), diagonal=-5)
+    tril_mask1 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=0)
+    tril_mask2 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-5)
     local_mask = (tril_mask1 - tril_mask2).bool()
-
-    # Find the index of the last non-zero value for each sequence in the batch
-    last_non_zero_idx = (seq != 0).sum(dim=1) - 2
-
-    # Update the mask for cyclic attention
-    for i in range(5):
-        local_mask[range(sz_b), i, last_non_zero_idx - (4 - i)] = True
-        local_mask[range(sz_b), last_non_zero_idx - (4 - i), i] = True
 
     return local_mask
 
@@ -135,8 +125,8 @@ class Transformer(nn.Module):
         self.decoder = Decoder(n_building=n_building, n_boundary=n_boundary, eos_idx=eos_idx,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
                                d_k=d_k, d_v=d_v, pad_idx=pad_idx, dropout=dropout,
-                               use_global_attn=use_global_attn, use_street_attn=False,
-                               use_local_attn=False)
+                               use_global_attn=use_global_attn, use_street_attn=use_street_attn,
+                               use_local_attn=use_local_attn)
         self.pad_idx = pad_idx
         self.eos_idx = eos_idx
         self.building_fc = nn.Linear(d_model, 1, bias=False)
