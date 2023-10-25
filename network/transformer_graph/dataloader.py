@@ -13,7 +13,7 @@ class GraphDataset(Dataset):
 
     @classmethod
     def load_full_dataset(cls):
-        dataset_path = '../../../../mnt/2_transformer/train_dataset/'
+        dataset_path = '../../datasets/HUSG/'
         city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
                       "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
                       "sanfrancisco", "miami", "seattle", "boston", "providence",
