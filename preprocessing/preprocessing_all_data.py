@@ -100,7 +100,7 @@ for city_name in city_names:
                                      'density20_building120_Normalized', 'Boundaries')
 
     # Iterate over all .geojson files in the directory
-    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)[:10]):
+    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)):
         boundary_filepath = building_filepath.replace('buildings', 'boundaries')
 
         # Construct the full paths
