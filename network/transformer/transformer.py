@@ -12,8 +12,8 @@ def get_street_mask(seq):
 
 def get_local_mask(seq):
     sz_b, len_s = seq.size()
-    tril_mask1 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=0)
-    tril_mask2 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-5)
+    tril_mask1 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-1)
+    tril_mask2 = torch.tril(torch.ones((1, len_s, len_s), device=seq.device), diagonal=-6)
     local_mask = (tril_mask1 - tril_mask2).bool()
 
     return local_mask
