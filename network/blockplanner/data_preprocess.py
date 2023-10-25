@@ -42,6 +42,17 @@ def create_graph_from_df(df):
     for i in range(len(sorted_points)):
         G.add_edge(i, (i + 1) % len(sorted_points))
 
+    # Print node features
+    print("Node features:")
+    for node, attributes in G.nodes(data=True):
+        print(f"Node {node}: {attributes}")
+
+    # Print adjacency matrix
+    adj_matrix = nx.adjacency_matrix(G)
+    print("\nAdjacency matrix:")
+    print(adj_matrix.toarray())
+
+
     return G
 
 
