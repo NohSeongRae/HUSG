@@ -95,9 +95,9 @@ for city_name in city_names:
     city_counts[city_name] = 0
 
     building_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                     'density20_building120_Normalized', 'Buildings')
+                                     'density20_building120_rotate_normalized', 'Buildings')
     boundary_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                     'density20_building120_Normalized', 'Boundaries')
+                                     'density20_building120_rotate_normalized', 'Boundaries')
 
     # Iterate over all .geojson files in the directory
     for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)):
@@ -123,6 +123,7 @@ for city_name in city_names:
             sorted_edges = sorted_boundary_edges(boundary_polygon, unit_length)
 
             groups, _ = group_by_boundary_edge(building_polygons, boundary_polygon, sorted_edges)
+
             if not groups:
                 continue
 
@@ -189,8 +190,11 @@ for city_name in city_names:
 
             # polygons = extend_polygon(unit_roads, box_heights, farthest_points)
             # plot_polygons(polygons)
-
             building_polygons = get_building_polygon(building_polygons, bounding_boxs, boundary_polygon)
+            for idx in range(len(building_polygons)):
+                if len(building_polygons[idx][1]) == 0:
+                    near_street_idx = get_near_street_idx(building_polygons[idx][2], boundary_lines)
+                    building_polygons[idx][1].append(near_street_idx)
 
             cur_n_street = len(boundary_lines)
             cur_n_building = len(building_polygons)
@@ -265,7 +269,6 @@ for city_name in city_names:
                 node_feature[cur_n_street + building1[0] - 1] = np.array([1, x, y, w, h, theta])
 
                 x, y = building1[2].minimum_rotated_rectangle.exterior.xy
-                plt.fill(x, y, alpha=0.8)
 
                 for building2 in building_polygons:
                     idx1 = cur_n_street + building1[0] - 1
@@ -324,7 +327,7 @@ for city_name in city_names:
             building_filenames.append(building_filepath)
             boundary_filenames.append(boundary_filepath)
 
-            # plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, cur_n_street, street_position_dataset, None)
+            # plot_groups_with_rectangles_v7(boundary_gdf, building_gdf, unit_roads, bounding_boxs, building_polygons, adj_matrix, cur_n_street, street_position_dataset, None)
 
     folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', city_name)
     if not os.path.exists(folder_path):

@@ -18,26 +18,30 @@ def get_random_color(seed, palette='pastel', n_colors=30):
 def extract_before_underscore(s):
     return s.split('_')[0]
 
-def plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_street, street_position_dataset, file_name):
+def plot_groups_with_rectangles_v7(block_gdf, buildings_gdf, unit_roads, bounding_boxs, building_polygons, adj_matrix, n_street, street_position_dataset, file_name):
+    fig2, ax2 = plt.subplots(figsize=(8, 8))
+    block_gdf.boundary.plot(ax=ax2, color='blue', label='Rotated Block Boundary')
+    buildings_gdf.plot(ax=ax2, color='red', label='Rotated Buildings')
+
     for unit_road_idx, unit_road in enumerate(unit_roads):
         x, y = [unit_road[1][0][0], unit_road[1][1][0]], [unit_road[1][0][1], unit_road[1][1][1]]
-        plt.plot(x, y, color=get_random_color(unit_road[0]))
-        plt.text((unit_road[1][0][0] + unit_road[1][1][0]) / 2,
+        ax2.plot(x, y, color=get_random_color(unit_road[0]))
+        ax2.text((unit_road[1][0][0] + unit_road[1][1][0]) / 2,
                  (unit_road[1][0][1] + unit_road[1][1][1]) / 2,
                  unit_road_idx, fontsize=7, ha='center', va='center', color='black')
 
     for bounding_box_idx, bounding_box in enumerate(bounding_boxs):
         x, y = bounding_box[1].exterior.xy
-        plt.plot(x, y, color=get_random_color(bounding_box[0]))
+        ax2.plot(x, y, color=get_random_color(bounding_box[0]))
         centroid = bounding_box[1].centroid
-        plt.text(centroid.x, centroid.y,
+        ax2.text(centroid.x, centroid.y,
                  bounding_box[0], fontsize=7, ha='center', va='center', color='black')
 
     for building_polygon_idx, building_polygon in enumerate(building_polygons):
         x, y = building_polygon[2].exterior.xy
-        plt.fill(x, y, color=get_random_color(building_polygon[0]), alpha=0.8)
+        ax2.fill(x, y, color=get_random_color(building_polygon[0]), alpha=0.8)
         centroid = building_polygon[2].centroid
-        plt.text(centroid.x, centroid.y,
+        ax2.text(centroid.x, centroid.y,
                  str(building_polygon_idx) + ', ' + str(building_polygon[1]),
                  fontsize=7, ha='center', va='center', color='black')
 
@@ -53,7 +57,7 @@ def plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons,
                 else:
                     node_j = Point(building_polygons[j - n_street][2].centroid)
 
-                plt.plot([node_i.x, node_j.x], [node_i.y, node_j.y])
+                ax2.plot([node_i.x, node_j.x], [node_i.y, node_j.y])
 
     if file_name is not None:
         city_name = extract_before_underscore(file_name)
@@ -63,7 +67,7 @@ def plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons,
 
         image_filename = os.path.join(folder_path, f'{file_name}.png')
 
-        plt.savefig(image_filename)
-        plt.clf()
+        ax2.savefig(image_filename)
+        ax2.clf()
 
     plt.show()

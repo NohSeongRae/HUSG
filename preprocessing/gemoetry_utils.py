@@ -5,6 +5,27 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, LineString, Point
 from shapely.ops import unary_union
 
+def get_near_street_idx(building_polygon, boundary_lines):
+    """
+    Returns the index of the nearest boundary_line to the given building_polygon.
+    """
+    min_distance = float('inf')
+    nearest_street_idx = -1
+
+    for boundary_line in boundary_lines:
+        # Iterate over each segment in the boundary line
+        for segment in boundary_line[1]:
+            # Convert the segment's coordinates to a shapely LineString
+            line = LineString(segment)
+            # Calculate the distance between the building_polygon and the line segment
+            distance = building_polygon.distance(line)
+            if distance < min_distance:
+                min_distance = distance
+                nearest_street_idx = boundary_line[0]
+
+    return nearest_street_idx
+
+
 def get_angle_with_x_axis(bbox):
     # 꼭짓점 좌표를 얻음
     coords = list(bbox.exterior.coords[:-1])
@@ -20,8 +41,8 @@ def get_angle_with_x_axis(bbox):
     # 두 점을 사용하여 방향 벡터를 계산
     direction_vector = np.array(closest_point) - np.array(prev_point)
     x_axis_vector = np.array([1, 0])
-    plt.plot([prev_point[0], prev_point[0] + direction_vector[0]],
-             [prev_point[1], prev_point[1] + direction_vector[1]], 'r-', label='Vector')
+    # plt.plot([prev_point[0], prev_point[0] + direction_vector[0]],
+    #          [prev_point[1], prev_point[1] + direction_vector[1]], 'r-', label='Vector')
 
     # 방향 벡터와 x축 벡터 사이의 각도를 계산
     dot_product = np.dot(direction_vector, x_axis_vector)
