@@ -7,6 +7,7 @@ class MultiHeadAttention(nn.Module):
         super(MultiHeadAttention, self).__init__()
 
         self.n_head = n_head
+        self.d_model = d_model
 
         self.w_q = nn.Linear(d_model, d_model, bias=False)
         self.w_k = nn.Linear(d_model, d_model, bias=False)
