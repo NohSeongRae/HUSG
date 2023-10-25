@@ -13,7 +13,7 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from model import get_pad_mask
+from model import get_trg_pad_mask
 from model import GraphTransformer
 from dataloader import GraphDataset
 
@@ -114,7 +114,8 @@ class Trainer:
         loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        mask = get_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float() & get_pad_mask(trg[:, 1:], pad_idx=self.eos_idx).float()
+        self.pad_idx = torch.zeros_like(trg[0, 0, :])
+        mask = get_trg_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float() & get_trg_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float()
 
         # mask 적용
         masked_loss = loss * mask
