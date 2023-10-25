@@ -132,7 +132,7 @@ def compute_mean_without_outliers(data):
     filtered_data = [x for x in sorted_data if lower_bound <= x <= upper_bound]
     mean1 = np.mean(sorted_data)
     mean2 = np.mean(filtered_data)
-    print(f"mean1: {mean1}, mean2:{mean2}")
+    # print(f"mean1: {mean1}, mean2:{mean2}")
     # Step 6: Compute the mean of the filtered data
     return np.mean(filtered_data)
 
@@ -147,10 +147,10 @@ def align_block_to_axis(block, buildings):
     #     print(counter, building)
     #     counter+=1
     angles = [get_obb_rotation_angle(building) for building in buildings.geometry]
-    avg_angle = np.mean(angles)
-    print(f"avg_angle{avg_angle}")
+    # avg_angle = np.mean(angles)
+    # print(f"avg_angle{avg_angle}")
     avg_angle_no_outlier = compute_mean_without_outliers(angles)
-    print(f"avg_angle no outlier{avg_angle_no_outlier}")
+    # print(f"avg_angle no outlier{avg_angle_no_outlier}")
     # Rotate the entire block and buildings by the negative average angle
     center_point = compute_center_point(buildings.geometry)
     rotated_block = block.rotate(-avg_angle_no_outlier, origin=center_point)
@@ -160,7 +160,7 @@ def align_block_to_axis(block, buildings):
 
 
 counter = 0
-city_names = ["neworleans"]
+city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock"]
 
 for city_name in city_names:
     print("city : ", city_name)
@@ -183,26 +183,13 @@ for city_name in city_names:
 
             boundary_gdf = gpd.read_file(boundary_filename)
             building_gdf = gpd.read_file(building_filename)
-            boundary_gdf2 = copy.deepcopy(boundary_gdf)
-            building_gdf2 = copy.deepcopy(building_gdf)
-            boundary_polygon = boundary_gdf.iloc[0]['geometry']
-            building_polygon = [row['geometry'] for idx, row in building_gdf.iterrows()]
-            building_polygons = []
-            building_polygons.extend(building_polygon)
-            plot_boundary_building(building_polygons, boundary_polygon)
 
-            building_polygons.clear()
 
-            rotated_block_gdf, rotated_buildings_gdf = align_block_to_axis(boundary_gdf2, building_gdf2)
+            rotated_block_gdf, rotated_buildings_gdf = align_block_to_axis(boundary_gdf, building_gdf)
 
-            fig, ax = plt.subplots(figsize=(8, 8))
-            rotated_block_gdf.boundary.plot(ax=ax, color='blue', label='Rotated Block Boundary')
-            rotated_buildings_gdf.plot(ax=ax, color='red', label='Rotated Buildings')
-            ax.set_title("Aligned Building Block with Buildings")
-            ax.legend()
-            plt.show()
 
-            print(type(rotated_block_gdf), type(rotated_buildings_gdf))
+
+            # print(type(rotated_block_gdf), type(rotated_buildings_gdf))
             min_x = min(rotated_buildings_gdf.bounds.minx.min(), rotated_block_gdf.bounds.minx.min())
             min_y = min(rotated_buildings_gdf.bounds.miny.min(), rotated_block_gdf.bounds.miny.min())
             max_x = max(rotated_buildings_gdf.bounds.maxx.max(), rotated_block_gdf.bounds.maxx.max())
@@ -215,12 +202,21 @@ for city_name in city_names:
                                                                 args=(min_x, min_y, scale_factor))
             rotated_block_gdf = rotated_block_gdf.apply(normalize_coordinates, args=(min_x, min_y, scale_factor))
 
-            fig2, ax2 = plt.subplots(figsize=(8, 8))
-            rotated_block_gdf.boundary.plot(ax=ax2, color='blue', label='Rotated Block Boundary')
-            rotated_buildings_gdf.plot(ax=ax2, color='red', label='Rotated Buildings')
-            ax2.set_title("Aligned Building Block with Buildings")
-            ax2.legend()
-            plt.show()
-            counter += 1
-            if counter > 10:
-                break
+
+            #saving code
+            building_new_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
+                                                 f'{city_name}_dataset',
+                                                 'density20_building120_rotate_normalized', 'Buildings')
+            boundary_new_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
+                                                 f'{city_name}_dataset',
+                                                 'density20_building120_rotate_normalized', 'Boundaries')
+            os.makedirs(building_new_dir_path, exist_ok=True)
+            os.makedirs(boundary_new_dir_path, exist_ok=True)
+
+            building_gdf.to_file(os.path.join(building_new_dir_path, f'{city_name}_buildings{num}.geojson'),
+                                 driver='GeoJSON')
+            boundary_gdf.to_file(os.path.join(boundary_new_dir_path, f'{city_name}_boundaries{num}.geojson'),
+                                 driver='GeoJSON')
+            # counter += 1
+            # if counter > 10:
+            #     break
