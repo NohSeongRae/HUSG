@@ -207,7 +207,8 @@ class Trainer:
 
                         # Compute the losses
                         loss = self.cross_entropy_loss(output_storage, gt_building_seq.detach())
-                        wd = wasserstein_distance(output_storage.detach().cpu().numpy(), gt_building_seq.detach().cpu().numpy())
+                        wd = wasserstein_distance(output_storage.view(-1).detach().cpu().numpy(),
+                                                  gt_building_seq.view(-1).detach().cpu().numpy())
 
                         # Accumulate the losses for reporting
                         loss_mean += loss.detach().item()
