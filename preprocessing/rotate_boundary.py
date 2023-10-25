@@ -13,6 +13,22 @@ matplotlib.use('TkAgg')
 # "sanfrancisco", "miami", "seattle", "boston", "providence",
 # "neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
+
+def normalize_coordinates(geometry, min_x, min_y, max_x, max_y):
+    def normalize_point(point):
+        return ((point[0] - min_x) / (max_x - min_x),
+                (point[1] - min_y) / (max_y - min_y))
+
+    if isinstance(geometry, Polygon):
+        exterior = [normalize_point(point) for point in list(geometry.exterior.coords)]
+        interiors = []
+        for interior in geometry.interiors:
+            interiors.append([normalize_point(point) for point in list(interior.coords)])
+        return Polygon(exterior, interiors)
+
+    # Add additional handling for other geometry types (Point, LineString, etc.) if needed
+
+    return geometry
 def plot_boundary_building(building_polygons, boundary_polygon):
     plt.figure(figsize=(8, 8))
     for poly in building_polygons:
@@ -63,7 +79,22 @@ def get_obb_rotation_angle(polygon):
     #     angle_deg-=45
     return angle_deg
 
+def compute_center_point(polygons):
+    """
+    Compute the center point of a set of polygons.
+    """
+    total_x, total_y = 0, 0
+    num_polygons = len(polygons)
 
+    for polygon in polygons:
+        centroid = polygon.centroid
+        total_x += centroid.x
+        total_y += centroid.y
+
+    avg_x = total_x / num_polygons
+    avg_y = total_y / num_polygons
+
+    return (avg_x, avg_y)
 def compute_mean_without_outliers(data):
     """
     Compute the mean of the data without considering outliers using the IQR method.
@@ -107,8 +138,9 @@ def align_block_to_axis(block, buildings):
     avg_angle_no_outlier = compute_mean_without_outliers(angles)
     print(f"avg_angle no outlier{avg_angle_no_outlier}")
     # Rotate the entire block and buildings by the negative average angle
-    rotated_block = block.rotate(-avg_angle_no_outlier)
-    rotated_buildings = buildings.rotate(-avg_angle_no_outlier, origin=(0.5, 0.5))
+    center_point = compute_center_point(buildings.geometry)
+    rotated_block = block.rotate(-avg_angle_no_outlier, origin=center_point)
+    rotated_buildings = buildings.rotate(-avg_angle_no_outlier, origin=center_point)
 
     return rotated_block, rotated_buildings
 
@@ -119,9 +151,9 @@ city_names = ["neworleans"]
 for city_name in city_names:
     print("city : ", city_name)
     building_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                     'density20_building120_Normalized', 'Buildings')
+                                     'density20_building120_filtered_data', 'Buildings')
     boundary_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
-                                     'density20_building120_Normalized', 'Boundaries')
+                                     'density20_building120_filtered_data', 'Boundaries')
 
     # Iterate over all .geojson files in the directory
     for building_filepath in tqdm(
@@ -155,6 +187,16 @@ for city_name in city_names:
             ax.set_title("Aligned Building Block with Buildings")
             ax.legend()
             plt.show()
+
+            min_x = min(rotated_buildings_gdf.geometry.bounds.minx.min(), rotated_block_gdf.geometry.bounds.minx.min())
+            min_y = min(rotated_buildings_gdf.geometry.bounds.miny.min(), rotated_block_gdf.geometry.bounds.miny.min())
+            max_x = max(rotated_buildings_gdf.geometry.bounds.maxx.max(), rotated_block_gdf.geometry.bounds.maxx.max())
+            max_y = max(rotated_buildings_gdf.geometry.bounds.maxy.max(), rotated_block_gdf.geometry.bounds.maxy.max())
+
+            building_gdf['geometry'] = building_gdf['geometry'].apply(normalize_coordinates,
+                                                                      args=(min_x, min_y, max_x, max_y))
+            boundary_gdf['geometry'] = boundary_gdf['geometry'].apply(normalize_coordinates,
+                                                                      args=(min_x, min_y, max_x, max_y))
             counter += 1
-            if counter > 30:
+            if counter > 10:
                 break
