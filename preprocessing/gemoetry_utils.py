@@ -1,8 +1,43 @@
 import numpy as np
 import math
 from math import sqrt
+import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, LineString, Point
 from shapely.ops import unary_union
+
+def get_angle_with_x_axis(bbox):
+    # 꼭짓점 좌표를 얻음
+    coords = list(bbox.exterior.coords[:-1])
+
+    # x 좌표가 가장 0에 가까운 꼭짓점을 찾음
+    closest_point = min(coords, key=lambda coord: abs(coord[0]))
+    idx = coords.index(closest_point)
+
+    # 이전 꼭짓점을 찾음
+    prev_idx = (idx + 1) % len(coords)
+    prev_point = coords[prev_idx]
+
+    # 두 점을 사용하여 방향 벡터를 계산
+    direction_vector = np.array(closest_point) - np.array(prev_point)
+    x_axis_vector = np.array([1, 0])
+    plt.plot([prev_point[0], prev_point[0] + direction_vector[0]],
+             [prev_point[1], prev_point[1] + direction_vector[1]], 'r-', label='Vector')
+
+    # 방향 벡터와 x축 벡터 사이의 각도를 계산
+    dot_product = np.dot(direction_vector, x_axis_vector)
+    magnitude_a = np.linalg.norm(direction_vector)
+    magnitude_b = np.linalg.norm(x_axis_vector)
+    cosine_theta = dot_product / (magnitude_a * magnitude_b)
+
+    # 아크코사인을 사용하여 각도를 라디안으로 얻음
+    angle_rad = np.arccos(np.clip(cosine_theta, -1.0, 1.0))
+    # 라디안을 도로 변환
+    angle_deg = np.degrees(angle_rad)
+
+    if angle_deg > 90:
+        angle_deg = 180 - angle_deg
+
+    return angle_deg / 90
 
 def get_bbox_details(rotated_rectangle):
     # 사각형의 꼭짓점들을 얻음
@@ -17,7 +52,9 @@ def get_bbox_details(rotated_rectangle):
     # 좌하단 꼭짓점을 x, y로 선택
     x, y = rotated_rectangle.centroid.x, rotated_rectangle.centroid.y
 
-    return x, y, w, h
+    theta = get_angle_with_x_axis(rotated_rectangle)
+
+    return x, y, w, h, theta
 
 def is_building_between(b1, b2, buildings):
     line = LineString([b1.centroid, b2.centroid])

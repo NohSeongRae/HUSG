@@ -70,7 +70,7 @@ n_unit_sample = 8
 #               "neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
 # city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
-city_names = ["neworleans", "denver", "pittsburgh", "tampa", "washington"]
+city_names = ["atlanta"]
 
 
 city_counts = {}
@@ -88,6 +88,8 @@ for city_name in city_names:
     unit_position_datasets = []
     street_unit_position_datasets = []
     unit_coords_datasets = []
+    building_filenames = []
+    boundary_filenames = []
 
     print("city_name : ", city_name)
     city_counts[city_name] = 0
@@ -98,7 +100,7 @@ for city_name in city_names:
                                      'density20_building120_Normalized', 'Boundaries')
 
     # Iterate over all .geojson files in the directory
-    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)):
+    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)[:10]):
         boundary_filepath = building_filepath.replace('buildings', 'boundaries')
 
         # Construct the full paths
@@ -190,8 +192,10 @@ for city_name in city_names:
 
             building_polygons = get_building_polygon(building_polygons, bounding_boxs, boundary_polygon)
 
-            adj_matrix = np.zeros((n_street + n_building, n_street + n_building))
-            node_feature = np.zeros((n_street + n_building, 5))     # is_building, x, y, w, h
+            cur_n_street = len(boundary_lines)
+            cur_n_building = len(building_polygons)
+            adj_matrix = np.eye(cur_n_street + cur_n_building)
+            node_feature = np.zeros((cur_n_street + cur_n_building, 6))     # is_building, x, y, w, h, theta
             building_exist_sequence = []
             street_index_sequence = []
 
@@ -227,19 +231,14 @@ for city_name in city_names:
                 else:
                     building_exist_sequence.append(0)
 
-            building_exist_sequence = np.array(building_exist_sequence)
-            pad_sequence = np.zeros(n_unit_road - building_exist_sequence.shape[0])
-            pad_sequence[:] = 2     # eos_token
-            building_exist_sequence = np.concatenate((building_exist_sequence, pad_sequence), axis=0)
-
             for unit_road_idx, unit_road in enumerate(unit_roads):
                 street_index_sequence.append(unit_road[0] + 1)  # unit index, street index
 
                 for building in building_polygons:
                     # rule 1
                     for street_idx in building[1]:
-                        adj_matrix[street_idx][n_street + building[0] - 1] = 1
-                        adj_matrix[n_street + building[0] - 1][street_idx] = 1
+                        adj_matrix[street_idx][cur_n_street + building[0] - 1] = 1
+                        adj_matrix[cur_n_street + building[0] - 1][street_idx] = 1
 
                     # rule 2
                     p1 = np.array(unit_road[1])[0]
@@ -256,30 +255,26 @@ for city_name in city_names:
                                 is_intersect = True
 
                     if is_intersect:
-                        adj_matrix[unit_road[0]][n_street + building[0] - 1] = 1
-                        adj_matrix[n_street + building[0] - 1][unit_road[0]] = 1
+                        adj_matrix[unit_road[0]][cur_n_street + building[0] - 1] = 1
+                        adj_matrix[cur_n_street + building[0] - 1][unit_road[0]] = 1
 
 
             for building1 in building_polygons:
-                minx, miny, maxx, maxy = building1[2].bounds
-                aabb = box(minx, miny, maxx, maxy)
-                x, y, w, h = get_bbox_details(aabb)
-                node_feature[n_street + building1[0]] = [1, x, y, w, h]
+                x, y, w, h, theta = get_bbox_details(building1[2].minimum_rotated_rectangle)
 
-                x, y = aabb.exterior.xy
+                node_feature[cur_n_street + building1[0] - 1] = np.array([1, x, y, w, h, theta])
+
+                x, y = building1[2].minimum_rotated_rectangle.exterior.xy
                 plt.fill(x, y, alpha=0.8)
 
                 for building2 in building_polygons:
-                    idx1 = n_street + building1[0] - 1
-                    idx2 = n_street + building2[0] - 1
+                    idx1 = cur_n_street + building1[0] - 1
+                    idx2 = cur_n_street + building2[0] - 1
 
                     if adj_matrix[idx1][idx2] == 0:
                         th = 0.05
-                        minx, miny, maxx, maxy = building1[2].bounds
-                        aabb1 = box(minx, miny, maxx, maxy)
-
-                        minx, miny, maxx, maxy = building2[2].bounds
-                        aabb2 = box(minx, miny, maxx, maxy)
+                        aabb1 = building1[2].minimum_rotated_rectangle
+                        aabb2 = building2[2].minimum_rotated_rectangle
 
                         b1_bbox = aabb1
                         b2_bbox = aabb2
@@ -293,9 +288,7 @@ for city_name in city_names:
             street_indices = []
             for idx in range(len(boundary_lines)):
                 street_index = boundary_lines[idx][0]
-                street_pos = random_sample_points_on_multiple_lines(boundary_lines[idx][1], 64)
-                street_pos = np.mean(street_pos, axis=0)
-                node_feature[street_index] = [0, 0, 0, 0, 0]
+                node_feature[street_index] = np.array([0, 0, 0, 0, 0, 0])
 
                 if street_index < len(boundary_lines) - 1:
                     adj_matrix[street_index][street_index+1] = 1
@@ -304,38 +297,22 @@ for city_name in city_names:
                     adj_matrix[street_index][0] = 1
                     adj_matrix[0][street_index] = 1
 
-            street_index_sequence = np.array(street_index_sequence)
-            pad_sequence = np.zeros((n_unit_road - street_index_sequence.shape[0]))
-            pad_sequence[0] = street_eos_idx
-            pad_sequence[1:] = pad_idx
-            street_index_sequence = np.concatenate((street_index_sequence, pad_sequence), axis=0)
-
-            unit_position_dataset = np.zeros((n_unit_road, n_unit_sample, 2))
-            street_position_dataset = np.zeros((n_street, n_street_sample, 2))
-            street_unit_position_dataset = np.zeros((n_unit_road, n_street_sample, 2))
-            unit_coords_dataset = np.zeros((n_unit_road, 2, 2))
-
-            street_index_bool = False
+            unit_position_dataset = np.zeros((len(unit_roads), n_unit_sample, 2))
+            street_position_dataset = np.zeros((cur_n_street, n_street_sample, 2))
+            street_unit_position_dataset = np.zeros((len(unit_roads), n_street_sample, 2))
+            unit_coords_dataset = np.zeros((len(unit_roads), 2, 2))
 
             for idx, street in enumerate(boundary_lines):
-                if idx + 1 >= len(street_position_dataset):
-                    street_index_bool = True
-                    continue
-                street_position_dataset[idx + 1] = random_sample_points_on_multiple_lines(street[1], 64)
-
-            if street_index_bool == True:
-                continue
+                street_position_dataset[idx] = random_sample_points_on_multiple_lines(street[1], 64)
 
             for idx, unit_road in enumerate(unit_roads):
                 p1 = np.array(unit_road[1])[0]
                 p2 = np.array(unit_road[1])[1]
                 unit_position_dataset[idx] = random_sample_points_on_line(p1, p2, 8)
-                street_unit_position_dataset[idx] = street_position_dataset[unit_road[0] + 1]
+                street_unit_position_dataset[idx] = street_position_dataset[unit_road[0]]
 
                 file_name = boundary_filename.split('\\')[-1]
                 unit_coords_dataset[idx] = [[unit_road[1][0][0], unit_road[1][0][1]], [unit_road[1][1][0], unit_road[1][1][1]]]
-
-            print(node_feature)
 
             building_exist_sequences.append(building_exist_sequence)
             street_index_sequences.append(street_index_sequence)
@@ -344,32 +321,30 @@ for city_name in city_names:
             unit_coords_datasets.append(unit_coords_dataset)
             node_features.append(node_feature)
             adj_matrices.append(adj_matrix)
+            building_filenames.append(building_filepath)
+            boundary_filenames.append(boundary_filepath)
 
-            plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, n_street, street_position_dataset, None)
-
-
-    building_exist_sequences = np.array(building_exist_sequences)
-    street_index_sequences = np.array(street_index_sequences)
-    unit_position_datasets = np.array(unit_position_datasets)
-    street_unit_position_datasets = np.array(street_unit_position_datasets)
-    unit_coords_datasets = np.array(unit_coords_datasets)
-    node_features = np.array(node_features)
-    adj_matrices = np.array(adj_matrices)
+            # plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons, adj_matrix, cur_n_street, street_position_dataset, None)
 
     folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', city_name)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
-    transformer_path = os.path.join(folder_path, 'husg_transformer_dataset')
-
-    np.savez(transformer_path,
-             building_exist_sequences=building_exist_sequences,
-             street_index_sequences=street_index_sequences,
-             unit_position_datasets=unit_position_datasets,
-             street_unit_position_datasets=street_unit_position_datasets,
-             unit_coords_datasets=unit_coords_datasets,
-             node_features=node_features,
-             adj_matrices=adj_matrices)
+    datasets = [
+        ('building_exist_sequences', building_exist_sequences),
+        ('street_index_sequences', street_index_sequences),
+        ('unit_position_datasets', unit_position_datasets),
+        ('street_unit_position_datasets', street_unit_position_datasets),
+        ('unit_coords_datasets', unit_coords_datasets),
+        ('node_features', node_features),
+        ('adj_matrices', adj_matrices),
+        ('building_filenames', building_filenames),
+        ('boundary_filenames', boundary_filenames)
+    ]
+    for name, dataset in datasets:
+        filepath = os.path.join(folder_path, name + 'pkl')
+        with open(filepath, 'wb') as f:
+            pickle.dump(dataset, f)
 
     for city, count in city_counts.items():
         print(f"{city} : {count}")

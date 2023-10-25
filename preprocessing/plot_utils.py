@@ -45,11 +45,11 @@ def plot_groups_with_rectangles_v7(unit_roads, bounding_boxs, building_polygons,
         for j in range(len(adj_matrix)):
             if adj_matrix[i][j] == 1 and adj_matrix[j][i] == 1:
                 if i < n_street:
-                    node_i = Point(np.mean(street_position_dataset[i + 1], axis=0))
+                    node_i = Point(np.mean(street_position_dataset[i], axis=0))
                 else:
                     node_i = Point(building_polygons[i - n_street][2].centroid)
                 if j < n_street:
-                    node_j = Point(np.mean(street_position_dataset[j + 1], axis=0))
+                    node_j = Point(np.mean(street_position_dataset[j], axis=0))
                 else:
                     node_j = Point(building_polygons[j - n_street][2].centroid)
 
