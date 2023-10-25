@@ -185,7 +185,7 @@ class Trainer:
                         src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                         src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                         street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
-                        trg_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.long)
+                        trg_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
 
                         # Greedy Search로 시퀀스 생성
                         decoder_input = trg_adj_seq[:, :1]  # 시작 토큰만 포함
