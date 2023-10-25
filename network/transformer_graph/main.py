@@ -148,7 +148,7 @@ class Trainer:
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                 street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
-                trg_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.long)
+                trg_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
 
                 # Get the model's predictions
                 output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq)
