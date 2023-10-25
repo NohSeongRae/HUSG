@@ -40,7 +40,7 @@ class MultiHeadAttention(nn.Module):
         q += residual
         q = self.layer_norm(q)
 
-        return q, attn
+        return q
 
 class PositionwiseFeedForward(nn.Module):
     """
