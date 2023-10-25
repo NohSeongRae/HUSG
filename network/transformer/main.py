@@ -222,6 +222,7 @@ class Trainer:
 
                     if self.use_tensorboard:
                         self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
+                        self.writer.add_scalar("Val/wasserstein_distance", wd, epoch + 1)
 
             if (epoch + 1) % self.save_epoch == 0:
                 # 체크포인트 데이터 준비
