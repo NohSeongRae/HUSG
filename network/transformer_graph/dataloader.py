@@ -33,7 +33,7 @@ class GraphDataset(Dataset):
                 all_unit_position_datasets.append(data['unit_position_datasets'])
                 all_street_unit_position_datasets.append(data['street_unit_position_datasets'])
                 all_street_index_sequences.append(data['street_index_sequences'])
-                all_adj_matrix_sequences.append(data['adj_matrix_sequences'])
+                all_adj_matrix_sequences.append(data['adj_matrices'])
 
             # Concatenate data from all cities for each key
             cls.full_dataset = {
