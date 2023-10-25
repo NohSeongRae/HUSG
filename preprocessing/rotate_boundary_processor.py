@@ -214,9 +214,9 @@ for city_name in city_names:
             os.makedirs(building_new_dir_path, exist_ok=True)
             os.makedirs(boundary_new_dir_path, exist_ok=True)
 
-            building_gdf.to_file(os.path.join(building_new_dir_path, f'{city_name}_buildings{num}.geojson'),
+            rotated_buildings_gdf.to_file(os.path.join(building_new_dir_path, f'{city_name}_buildings{num}.geojson'),
                                  driver='GeoJSON')
-            boundary_gdf.to_file(os.path.join(boundary_new_dir_path, f'{city_name}_boundaries{num}.geojson'),
+            rotated_block_gdf.to_file(os.path.join(boundary_new_dir_path, f'{city_name}_boundaries{num}.geojson'),
                                  driver='GeoJSON')
             # counter += 1
             # if counter > 10:
