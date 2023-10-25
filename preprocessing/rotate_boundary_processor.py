@@ -8,6 +8,8 @@ from shapely.geometry import Polygon, LineString, Point
 import copy
 
 matplotlib.use('TkAgg')
+
+
 # city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
 # "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
 # "sanfrancisco", "miami", "seattle", "boston", "providence",
@@ -42,6 +44,7 @@ def normalize_coordinates(geometry, min_x, min_y, scale_factor):
             interiors.append([normalize_point(point) for point in list(interior.coords)])
         return Polygon(exterior, interiors)
     return geometry
+
 
 def plot_boundary_building(building_polygons, boundary_polygon):
     plt.figure(figsize=(8, 8))
@@ -93,6 +96,7 @@ def get_obb_rotation_angle(polygon):
     #     angle_deg-=45
     return angle_deg
 
+
 def compute_center_point(polygons):
     """
     Compute the center point of a set of polygons.
@@ -109,6 +113,8 @@ def compute_center_point(polygons):
     avg_y = total_y / num_polygons
 
     return (avg_x, avg_y)
+
+
 def compute_mean_without_outliers(data):
     """
     Compute the mean of the data without considering outliers using the IQR method.
@@ -160,7 +166,7 @@ def align_block_to_axis(block, buildings):
 
 
 counter = 0
-city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock"]
+city_names = ["littlerock"]
 
 for city_name in city_names:
     print("city : ", city_name)
@@ -180,14 +186,10 @@ for city_name in city_names:
         boundary_filename = os.path.join(boundary_dir_path, boundary_filepath)
 
         if os.path.exists(building_filename):
-
             boundary_gdf = gpd.read_file(boundary_filename)
             building_gdf = gpd.read_file(building_filename)
 
-
             rotated_block_gdf, rotated_buildings_gdf = align_block_to_axis(boundary_gdf, building_gdf)
-
-
 
             # print(type(rotated_block_gdf), type(rotated_buildings_gdf))
             min_x = min(rotated_buildings_gdf.bounds.minx.min(), rotated_block_gdf.bounds.minx.min())
@@ -202,8 +204,7 @@ for city_name in city_names:
                                                                 args=(min_x, min_y, scale_factor))
             rotated_block_gdf = rotated_block_gdf.apply(normalize_coordinates, args=(min_x, min_y, scale_factor))
 
-
-            #saving code
+            # saving code
             building_new_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
                                                  f'{city_name}_dataset',
                                                  'density20_building120_rotate_normalized', 'Buildings')
