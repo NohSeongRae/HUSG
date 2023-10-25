@@ -10,6 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel
 
+from scipy.stats import wasserstein_distance
 import numpy as np
 import random
 from tqdm import tqdm
@@ -178,6 +179,7 @@ class Trainer:
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.eval()
                 loss_mean = 0
+                wd_mean = 0
 
                 with torch.no_grad():
                     # Iterate over batches
@@ -195,9 +197,9 @@ class Trainer:
 
                         # output 값을 저장할 텐서를 미리 할당합니다.
                         output_storage = torch.zeros(
-                            (src_unit_seq.size(0), self.n_boundary - 1), device=self.device)
+                            (src_unit_seq.size(0), self.n_boundary), device=self.device)
 
-                        for t in range(self.n_boundary - 1):  # 임의의 제한값
+                        for t in range(self.n_boundary):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
                             output_storage[:, t] = output[:, t].detach()
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
@@ -205,13 +207,17 @@ class Trainer:
 
                         # Compute the losses
                         loss = self.cross_entropy_loss(output_storage, gt_building_seq.detach())
+                        wd = wasserstein_distance(output_storage.detach().cpu().numpy(), gt_building_seq.detach().cpu().numpy())
 
                         # Accumulate the losses for reporting
                         loss_mean += loss.detach().item()
+                        wd_mean += wd
 
                     # Print the average losses for the current epoch
                     loss_mean /= len(self.val_dataloader)
+                    wd_mean /= len(self.val_dataloader)
                     print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {loss_mean:.4f}")
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Wasserstein Distance: {wd_mean:.4f}")
 
                     if self.use_tensorboard:
                         self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
