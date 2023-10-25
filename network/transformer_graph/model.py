@@ -106,12 +106,12 @@ class BoundaryEncoder(nn.Module):
         return enc_output
 
 class GraphDecoder(nn.Module):
-    def __init__(self, n_layer=6, n_head=8, n_building=120, d_model=512, d_inner=2048, dropout=0.1,
+    def __init__(self, n_layer=6, n_head=8, n_building=120, n_street=50, d_model=512, d_inner=2048, dropout=0.1,
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super(GraphDecoder, self).__init__()
 
-        self.node_enc = nn.Linear(n_building, d_model)
-        self.pos_enc = PositionalEncoding(d_model, n_building=n_building)
+        self.node_enc = nn.Linear(n_building + n_street, d_model)
+        self.pos_enc = PositionalEncoding(d_model, n_building=n_building + n_street)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
            DecoderLayer(d_model, d_inner, n_head, dropout,
@@ -133,7 +133,7 @@ class GraphDecoder(nn.Module):
         return dec_output
 
 class GraphTransformer(nn.Module):
-    def __init__(self, n_building=120, d_model=512, d_inner=2048, sos_idx=2, eos_idx=3, pad_idx=4,
+    def __init__(self, n_building=120, n_street=50, d_model=512, d_inner=2048, sos_idx=2, eos_idx=3, pad_idx=4,
                  n_layer=6, n_head=8, dropout=0.1, d_unit=8, d_street=64,
                  use_global_attn=True, use_street_attn=True, use_local_attn=True, local_rank=0):
         super(GraphTransformer, self).__init__()
@@ -152,7 +152,7 @@ class GraphTransformer(nn.Module):
                                     use_local_attn=use_local_attn)
 
         self.dropout = nn.Dropout(dropout)
-        self.adj_fc = nn.Linear(d_model, n_building)
+        self.adj_fc = nn.Linear(d_model, n_building + n_street)
 
     def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq):
         src_global_mask = get_src_pad_mask(street_index_seq, pad_idx=0).unsqueeze(-2)
