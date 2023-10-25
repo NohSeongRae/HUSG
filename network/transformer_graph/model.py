@@ -25,7 +25,7 @@ def get_trg_street_mask(adj_matrix, n_street_node):
 
     # Expand dimensions to use broadcasting
     n_street_node = n_street_node.view(batch_size, 1, 1).expand(-1, n_node, -1)
-    indices = torch.arange(n_node).view(1, 1, n_node).expand(batch_size, -1, -1)
+    indices = torch.arange(n_node, device=n_street_node.device).view(1, 1, n_node).expand(batch_size, -1, -1)
 
     # Create a boolean mask for core nodes
     street_mask = indices < n_street_node
