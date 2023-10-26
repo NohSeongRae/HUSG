@@ -21,7 +21,7 @@ class GraphDataset(Dataset):
         #               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
         #               "sanfrancisco", "miami", "seattle", "boston", "providence",
         #               "neworleans", "denver", "pittsburgh", "tampa", "washington"]
-        city_names = ['atlanta']
+        city_names = ['atlanta', 'dallas']
 
         dataset_names = [
             'street_index_sequences',
