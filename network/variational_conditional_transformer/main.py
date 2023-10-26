@@ -268,12 +268,7 @@ if __name__ == '__main__':
     # ddp
     rank = opt.local_rank
     torch.cuda.set_device(rank)
-    if not dist.is_initialized():
-        if torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu') == "cuda:0":
-            dist.init_process_group("gloo")
-
-        else:
-            dist.init_process_group("nccl")
+    dist.init_process_group("nccl")
 
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, sos_idx=opt.sos_idx, eos_idx=opt.eos_idx, pad_idx=opt.pad_idx,
