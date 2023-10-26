@@ -111,7 +111,8 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
             print(f"Loss CE: {loss:.4f}")
             plot(decoder_input.squeeze().detach().cpu().numpy(),
                  gt_adj_seq.squeeze().detach().cpu().numpy(),
-                 idx + 1)
+                 idx + 1,
+                 cur_n_street.detach().cpu().numpy()[0])
 
 if __name__ == '__main__':
     # Set the argparse

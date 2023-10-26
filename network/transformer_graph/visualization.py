@@ -6,7 +6,7 @@ import os
 def get_all_one_rows(matrix):
     return [i for i, row in enumerate(matrix) if np.sum(row) >= len(row)]
 
-def plot(pred, gt, idx):
+def plot(pred, gt, idx, cur_n_street):
     one_indices = get_all_one_rows(gt)
     i1 = one_indices[0] + 1
     i2 = one_indices[1]
@@ -21,16 +21,18 @@ def plot(pred, gt, idx):
     union_graph = nx.compose(G_pred, G_gt)  # create a union of both graphs to ensure all nodes are considered
     pos = nx.spring_layout(union_graph)
 
+    # Assign colors based on the threshold
+    node_colors_pred = ['lightblue' if i < cur_n_street else 'lightgreen' for i in G_pred.nodes()]
+    node_colors_gt = ['lightblue' if i < cur_n_street else 'lightgreen' for i in G_gt.nodes()]
+
     plt.figure(figsize=(12, 5))
 
-    # Prediction Graph
     plt.subplot(1, 2, 1)
-    nx.draw(G_pred, pos, with_labels=True, node_color='lightblue', edge_color='gray')
+    nx.draw(G_pred, pos, with_labels=True, node_color=node_colors_pred, edge_color='gray')
     plt.title("Prediction Graph")
 
-    # Ground Truth Graph
     plt.subplot(1, 2, 2)
-    nx.draw(G_gt, pos, with_labels=True, node_color='lightgreen', edge_color='gray')
+    nx.draw(G_gt, pos, with_labels=True, node_color=node_colors_gt, edge_color='gray')
     plt.title("Ground Truth Graph")
 
     plt.tight_layout()
