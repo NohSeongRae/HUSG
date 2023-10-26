@@ -13,7 +13,7 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from model import get_pad_mask, get_subsequent_mask
+from model import get_pad_mask, get_subsequent_mask, get_cliped_adj_matrix
 from model import GraphTransformer
 from dataloader import GraphDataset
 
@@ -111,7 +111,7 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed BCE loss.
         """
-        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
+        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), get_cliped_adj_matrix(trg[:, 1:]), reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         pad_mask = get_pad_mask(trg[:, 1:, 0], pad_idx=self.pad_idx)
