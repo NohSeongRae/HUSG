@@ -198,9 +198,8 @@ class Trainer:
 
                         for t in range(self.n_boundary - 1):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input, cur_n_street)
-                            print(output.shape)
                             output_storage[:, t] = output[:, t].detach()
-                            next_token = (torch.sigmoid(output) > 0.5).long()[:, t]
+                            next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-2)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
