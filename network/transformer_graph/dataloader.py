@@ -111,12 +111,9 @@ class GraphDataset(Dataset):
                          street_index_sequences=self.full_dataset['street_index_sequences'],
                          adj_matrix_sequences=self.full_dataset['adj_matrix_sequences'],
                          cur_n_streets=self.full_dataset['cur_n_streets'])
-        else:
-            load_path = './network/transformer_graph/datasets.npz'
-            self.full_dataset = np.load(load_path)
-            for k in self.full_dataset:
-                print(k)
-                print(self.full_dataset[k])
+            else:
+                load_path = './network/transformer_graph/datasets.npz'
+                self.full_dataset = np.load(load_path)
 
         total_size = len(self.full_dataset['unit_position_datasets'])
         if data_type == 'train':
