@@ -111,16 +111,12 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed BCE loss.
         """
-        print(torch.sigmoid(pred[:, :-1]).shape)
-        print(trg[:, 1:].shape)
         loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         mask = get_pad_mask(trg[:, 1:, 0], pad_idx=self.pad_idx).float()
         mask = mask.unsqueeze(-1).expand(-1, -1, loss.shape[2])
         # mask 적용
-        print(loss)
-        print(mask)
         masked_loss = loss * mask
         # 손실의 평균 반환
         return masked_loss.mean()

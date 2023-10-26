@@ -82,10 +82,10 @@ class GraphDataset(Dataset):
 
                         elif dataset_name == 'adj_matrices':
                             zeros = np.zeros((n_street + n_building, n_street + n_building))
-                            zeros[0] = 2
+                            zeros[0] = 1
                             zeros[1:len(data) + 1, :len(data)] = data
-                            zeros[len(data) + 1] = 3
-                            zeros[len(data) + 2:] = 4
+                            zeros[len(data) + 1] = 1
+                            zeros[len(data) + 2:] = 0
                             data = zeros
                             all_adj_matrix_sequences.append(data)
 
