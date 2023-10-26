@@ -67,7 +67,7 @@ class Encoder(nn.Module):
         self.d_model = d_model
 
     def forward(self, src_unit_seq, src_street_seq, trg_street_seq):
-        enc_output = self.encodings(src_unit_seq, src_street_seq, trg_street_seq)
+        enc_output = self.encoding(src_unit_seq, src_street_seq, trg_street_seq)
 
         return enc_output
 
