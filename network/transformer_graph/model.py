@@ -31,6 +31,7 @@ def get_trg_street_mask(adj_matrix, n_street_node):
     street_mask = (indices < n_street_node + 1) & (1 < indices)
 
     # Calculate the mask using matrix multiplication and broadcasting
+    print(adj_matrix.shape, street_mask.shape)
     street_mask = torch.bmm(adj_matrix * street_mask.float(), adj_matrix[:, :n_node, :])
 
     # Clip values greater than 1
