@@ -93,7 +93,7 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
             cur_n_street = cur_n_street.to(device=device, dtype=torch.long)
 
             # Greedy Search로 시퀀스 생성
-            decoder_input = trg_adj_seq[:, :cur_n_street[0]]  # 시작 토큰만 포함
+            decoder_input = trg_adj_seq[:, :cur_n_street[0] + 1]  # 시작 토큰만 포함
 
             # output 값을 저장할 텐서를 미리 할당합니다.
             output_storage = torch.zeros_like(trg_adj_seq, device=device)
