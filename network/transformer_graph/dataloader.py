@@ -113,8 +113,10 @@ class GraphDataset(Dataset):
                          cur_n_streets=self.full_dataset['cur_n_streets'])
         else:
             load_path = './network/transformer_graph/datasets.npz'
-            loaded_data = np.load(load_path)
-            self.full_dataset = {key: loaded_data[key] for key in loaded_data.files}
+            self.full_dataset = np.load(load_path)
+            for k in self.full_dataset:
+                print(k)
+                print(self.full_dataset[k])
 
         total_size = len(self.full_dataset['unit_position_datasets'])
         if data_type == 'train':
