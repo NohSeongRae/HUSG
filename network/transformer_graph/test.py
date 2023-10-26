@@ -26,17 +26,7 @@ def make_upper_follow_lower_torch_padded(matrix, device):
         lower_triangular = torch.tril(matrix[i, :num_nodes, :num_nodes])
 
         # 패딩되지 않은 부분의 상삼각행렬을 하삼각행렬의 전치로 설정합니다.
-        matrix[i, :num_nodes, :num_nodes][torch.triu_indices(num_nodes, num_nodes, offset=1)] = lower_triangular.T[torch.triu_indices(num_nodes, num_nodes, offset=1)]
-
-    return matrix
-
-def make_upper_follow_lower_torch(matrix, device):
-    # 하삼각행렬을 얻습니다.
-    lower_triangular = torch.tril(matrix)
-
-    # 상삼각행렬을 하삼각행렬의 전치로 설정합니다.
-    for i in range(matrix.size(0)):  # 배치 차원에 대해 반복
-        matrix[i][torch.triu_indices(matrix.size(1), matrix.size(2), offset=1, device=device)] = lower_triangular[i].T[torch.triu_indices(matrix.size(1), matrix.size(2), offset=1, device=device)]
+        matrix[i, :num_nodes, :num_nodes][torch.triu_indices(num_nodes, num_nodes, offset=1, device=device)] = lower_triangular.T[torch.triu_indices(num_nodes, num_nodes, offset=1, device=device)]
 
     return matrix
 
