@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import os
 
 def get_all_one_rows(matrix):
-    # 모든 값이 1인 행을 찾아 해당 행의 인덱스 리스트를 반환
     return [i for i, row in enumerate(matrix) if np.sum(row) >= len(row)]
 
 def plot(pred, gt, idx):
     one_indices = get_all_one_rows(gt)
+    print(gt, one_indices)
     i1 = one_indices[0] + 1
     i2 = one_indices[1]
 
