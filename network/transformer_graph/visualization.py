@@ -3,6 +3,15 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import os
 
+def make_upper_follow_lower(matrix):
+    # 하삼각행렬을 얻습니다.
+    lower_triangular = np.tril(matrix)
+
+    # 상삼각행렬을 하삼각행렬의 전치로 설정합니다.
+    matrix[np.triu_indices_from(matrix, k=1)] = lower_triangular.T[np.triu_indices_from(matrix, k=1)]
+
+    return matrix
+
 def get_all_one_rows(matrix):
     return [i for i, row in enumerate(matrix) if np.sum(row) >= len(row)]
 
@@ -12,8 +21,11 @@ def plot(pred, gt, idx):
     i2 = one_indices[1]
 
     # 그래프 객체 생성
-    G_pred = nx.DiGraph(pred[i1:i2, i1:i2])
-    G_gt = nx.DiGraph(gt[i1:i2, i1:i2])
+    pred = make_upper_follow_lower(pred[i1:i2, i1:i2])
+    gt = gt[i1:i2, i1:i2]
+
+    G_pred = nx.DiGraph(pred)
+    G_gt = nx.DiGraph(gt)
 
     # 그래프 시각화
     plt.figure(figsize=(12, 5))
