@@ -21,18 +21,17 @@ def get_cliped_adj_matrix(adj_matrix):
 
 def get_trg_street_mask(adj_matrix, n_street_node):
     adj_matrix = get_cliped_adj_matrix(adj_matrix)
-    batch_size, n_node1, n_node2 = adj_matrix.size()
+    batch_size, n_node1, _ = adj_matrix.size()
 
     # Expand dimensions to use broadcasting
-    n_street_node = n_street_node.view(batch_size, 1, 1).expand(-1, -1, n_node2)
+    n_street_node = n_street_node.view(batch_size, 1, 1).expand(-1, -1, n_node1)
     indices = torch.arange(n_node1, device=n_street_node.device).view(1, n_node1, 1).expand(batch_size, -1, -1)
 
     # Create a boolean mask for core nodes
     street_mask = (indices < n_street_node + 1) & (1 < indices)
 
     # Calculate the mask using matrix multiplication and broadcasting
-    print(adj_matrix.shape, street_mask.shape, n_node1, n_node2)
-    street_mask = torch.bmm(adj_matrix * street_mask.float(), adj_matrix[:, :n_node1, :])
+    street_mask = torch.bmm(adj_matrix * street_mask.float(), adj_matrix[:, :n_node1, :n_node1])
 
     # Clip values greater than 1
     street_mask = torch.clamp(street_mask, max=1)
