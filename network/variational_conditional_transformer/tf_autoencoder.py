@@ -94,7 +94,9 @@ class Decoder(nn.Module):
         self.fc1 = nn.Linear(d_model, d_model // 2)
         self.fc2 = nn.Linear(d_model // 2, d_model // 4)
         self.fc3 = nn.Linear(d_model // 4, d_model // 8)
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
+        self.layer_norm1 = nn.LayerNorm(d_model // 2, eps=1e-6)
+        self.layer_norm2 = nn.LayerNorm(d_model // 4, eps=1e-6)
+        self.layer_norm3 = nn.LayerNorm(d_model // 8, eps=1e-6)
         self.d_model = d_model
 
     # mask: 일반적인 transformer 의 deocder 에서 사용되는 mask, pad mask 랑 subsequent mask 의 합
@@ -104,15 +106,15 @@ class Decoder(nn.Module):
     def forward(self, enc_output):
         dec_output = self.fc1(enc_output)
         dec_output = F.relu(dec_output)
-        dec_output = self.layer_norm(dec_output)
+        dec_output = self.layer_norm1(dec_output)
 
         dec_output = self.fc2(dec_output)
         dec_output = F.relu(dec_output)
-        dec_output = self.layer_norm(dec_output)
+        dec_output = self.layer_norm2(dec_output)
 
         dec_output = self.fc3(dec_output)
         dec_output = F.relu(dec_output)
-        dec_output = self.layer_norm(dec_output)
+        dec_output = self.layer_norm3(dec_output)
 
         return dec_output
 
