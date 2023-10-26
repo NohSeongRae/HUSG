@@ -118,6 +118,7 @@ class Trainer:
         mask = mask.unsqueeze(-1).expand(-1, -1, loss.shape[2])
         # mask 적용
         masked_loss = loss * mask
+        print(masked_loss)
         # 손실의 평균 반환
         return masked_loss.mean()
 
