@@ -18,7 +18,7 @@ def get_src_local_mask(seq):
 
 def get_clipped_adj_matrix(adj_matrix):
     # 입력 행렬의 복사본 생성
-    clipped_matrix = adj_matrix.copy()
+    clipped_matrix = adj_matrix.clone()
 
     # 복사본에 대한 변경 수행
     clipped_matrix[clipped_matrix >= 2] = 0
