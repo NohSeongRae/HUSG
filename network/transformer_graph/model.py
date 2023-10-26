@@ -43,12 +43,8 @@ def get_trg_local_mask(adj_matrix):
     adj_matrix = get_cliped_adj_matrix(adj_matrix)
     return adj_matrix.bool()
 
-def get_src_pad_mask(seq, pad_idx):
+def get_pad_mask(seq, pad_idx):
     mask = (seq != pad_idx)
-    return mask
-
-def get_trg_pad_mask(seq, pad_idx):
-    mask = (seq != pad_idx).all(dim=-1)
     return mask
 
 def get_subsequent_mask(seq):
@@ -156,7 +152,7 @@ class GraphTransformer(nn.Module):
         self.adj_fc = nn.Linear(d_model, n_building + n_street)
 
     def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, n_street_node):
-        src_global_mask = get_src_pad_mask(street_index_seq, pad_idx=0).unsqueeze(-2)
+        src_global_mask = get_pad_mask(street_index_seq, pad_idx=0).unsqueeze(-2)
         src_street_mask = get_src_street_mask(street_index_seq) & src_global_mask
         src_local_mask = get_src_local_mask(street_index_seq) & src_global_mask
 
@@ -165,7 +161,9 @@ class GraphTransformer(nn.Module):
         self.pad_idx = torch.zeros_like(trg_adj_seq[0, 0, :])
 
         trg_sub_mask = get_subsequent_mask(trg_adj_seq[:, :, 0])
-        trg_global_mask = get_trg_pad_mask(trg_adj_seq[:, :, 0], pad_idx=self.pad_idx).unsqueeze(-2) & trg_sub_mask
+        print(trg_sub_mask.shape)
+        print()
+        trg_global_mask = get_pad_mask(trg_adj_seq[:, :, 0], pad_idx=self.pad_idx).unsqueeze(-2) & trg_sub_mask
         trg_street_mask = get_trg_street_mask(trg_adj_seq, n_street_node) & trg_global_mask
         trg_local_mask = get_trg_local_mask(trg_adj_seq) & trg_global_mask
 
