@@ -18,6 +18,28 @@ from model import GraphTransformer
 from dataloader import GraphDataset
 from visualization import plot
 
+def make_upper_follow_lower_torch_padded(matrix):
+    batch_size, num_nodes, _ = matrix.size()
+
+    for i in range(batch_size):
+        # 패딩되지 않은 부분의 하삼각행렬을 얻습니다.
+        lower_triangular = torch.tril(matrix[i, :num_nodes, :num_nodes])
+
+        # 패딩되지 않은 부분의 상삼각행렬을 하삼각행렬의 전치로 설정합니다.
+        matrix[i, :num_nodes, :num_nodes][torch.triu_indices(num_nodes, num_nodes, offset=1)] = lower_triangular.T[torch.triu_indices(num_nodes, num_nodes, offset=1)]
+
+    return matrix
+
+def make_upper_follow_lower_torch(matrix, device):
+    # 하삼각행렬을 얻습니다.
+    lower_triangular = torch.tril(matrix)
+
+    # 상삼각행렬을 하삼각행렬의 전치로 설정합니다.
+    for i in range(matrix.size(0)):  # 배치 차원에 대해 반복
+        matrix[i][torch.triu_indices(matrix.size(1), matrix.size(2), offset=1, device=device)] = lower_triangular[i].T[torch.triu_indices(matrix.size(1), matrix.size(2), offset=1, device=device)]
+
+    return matrix
+
 def cross_entropy_loss(pred, trg, pad_idx):
     """
     Compute the binary cross-entropy loss between predictions and targets.
@@ -87,6 +109,7 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                 output_storage[:, t] = output[:, t].detach()
                 next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-2)
                 decoder_input = torch.cat([decoder_input, next_token], dim=1)
+                decoder_input = make_upper_follow_lower_torch_padded(decoder_input, device)
 
             # Compute the losses using the generated sequence
             loss = cross_entropy_loss(output_storage, gt_adj_seq, pad_idx).detach().item()
