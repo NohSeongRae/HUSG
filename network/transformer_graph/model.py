@@ -151,6 +151,7 @@ class GraphTransformer(nn.Module):
         self.adj_fc = nn.Linear(d_model, n_building + n_street)
 
     def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, n_street_node):
+        print(n_street_node)
         src_global_mask = get_pad_mask(street_index_seq, pad_idx=0).unsqueeze(-2)
         src_street_mask = get_src_street_mask(street_index_seq) & src_global_mask
         src_local_mask = get_src_local_mask(street_index_seq) & src_global_mask
@@ -166,5 +167,5 @@ class GraphTransformer(nn.Module):
 
         output = self.dropout(dec_output)
         output = self.adj_fc(output)
-        print(output)
+
         return output
