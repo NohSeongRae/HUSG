@@ -28,7 +28,7 @@ def get_trg_street_mask(adj_matrix, n_street_node):
     indices = torch.arange(n_node, device=n_street_node.device).view(1, 1, n_node).expand(batch_size, -1, -1)
 
     # Create a boolean mask for core nodes
-    street_mask = indices < n_street_node + 1 & 1 < indices
+    street_mask = (indices < n_street_node + 1) & (1 < indices)
 
     # Calculate the mask using matrix multiplication and broadcasting
     street_mask = torch.bmm(adj_matrix * street_mask.float(), adj_matrix[:, :n_node, :])
@@ -154,7 +154,6 @@ class GraphTransformer(nn.Module):
         self.adj_fc = nn.Linear(d_model, n_building + n_street)
 
     def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, n_street_node):
-        print(n_street_node)
         src_global_mask = get_pad_mask(street_index_seq, pad_idx=0).unsqueeze(-2)
         src_street_mask = get_src_street_mask(street_index_seq) & src_global_mask
         src_local_mask = get_src_local_mask(street_index_seq) & src_global_mask
