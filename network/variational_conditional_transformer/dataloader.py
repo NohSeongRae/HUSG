@@ -14,8 +14,7 @@ class BoundaryDataset(Dataset):
 
     @classmethod
     def load_full_dataset(cls):
-        dataset_path = '../../datasets/HUSG/'
-        # dataset_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset')
+        dataset_path = '../../../../mnt/2_transformer/train_dataset/'
 
         # city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
         #               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
