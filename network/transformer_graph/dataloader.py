@@ -70,7 +70,6 @@ class GraphDataset(Dataset):
                             zeros[len(data) + 2:] = 4
                             data = zeros
                             all_unit_position_datasets.append(data)
-                            print(data, len(data))
 
                         elif dataset_name == 'street_unit_position_datasets':
                             zeros = np.zeros((n_boundary, d_street, 2))
@@ -89,6 +88,7 @@ class GraphDataset(Dataset):
                             zeros[len(data) + 2:] = 4
                             data = zeros
                             all_adj_matrix_sequences.append(data)
+                            print(data, len(data))
 
         # Concatenate data from all cities for each key
         cls.full_dataset = {
