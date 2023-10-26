@@ -42,7 +42,7 @@ def cross_entropy_loss(pred, trg, pad_idx):
     return masked_loss.mean()
 
 def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
-         n_building, n_boundary, dropout, checkpoint_epoch, train_ratio, val_ratio, test_ratio, val_epoch,
+         n_building, n_boundary, dropout, checkpoint_epoch, train_ratio, val_ratio, test_ratio,
          use_global_attn, use_street_attn, use_local_attn, save_dir_path):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -138,5 +138,5 @@ if __name__ == '__main__':
          d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
          n_building=opt.n_building, n_boundary=opt.n_boundary, dropout=opt.dropout, checkpoint_epoch=opt.checkpoint_epoch,
          train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
-         val_epoch=opt.val_epoch, use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
+         use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
          save_dir_path=opt.save_dir_path)
