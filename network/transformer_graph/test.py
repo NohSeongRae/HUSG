@@ -34,7 +34,7 @@ def cross_entropy_loss(pred, trg, pad_idx):
     # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
     pad_mask = get_pad_mask(trg[:, 1:, 0], pad_idx=pad_idx)
     sub_mask = get_subsequent_mask(trg[:, :, 0])[:, 1:, :]
-    mask = pad_mask.unsqueeze(-1).expand(-1, -1, loss.shape[2]) & sub_mask[:, :sub_mask.shape[1] - 1, :]
+    mask = pad_mask.unsqueeze(-1).expand(-1, -1, loss.shape[2]) & sub_mask
 
     # mask 적용
     masked_loss = loss * mask.float()
