@@ -163,7 +163,9 @@ class GraphTransformer(nn.Module):
         trg_street_mask = get_trg_street_mask(trg_adj_seq, n_street_node) & trg_global_mask
         trg_local_mask = get_trg_local_mask(trg_adj_seq) & trg_global_mask
 
-        trg_adj_seq = trg_adj_seq * trg_sub_mask.expand(trg_adj_seq.shape[0], -1, -1)
+        pad_size = 170 - trg_sub_mask.size(2)
+        padded_mask = torch.nn.functional.pad(trg_sub_mask.expand(trg_adj_seq.shape[0], -1, -1).float(), (0, pad_size))
+        trg_adj_seq = trg_adj_seq * padded_mask
 
         print(src_global_mask.shape, src_street_mask.shape, src_local_mask.shape)
         print(trg_sub_mask.shape, trg_global_mask.shape, trg_street_mask.shape, trg_local_mask.shape)
