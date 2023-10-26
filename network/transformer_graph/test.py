@@ -18,14 +18,14 @@ from model import GraphTransformer
 from dataloader import GraphDataset
 from visualization import plot
 
-def make_upper_follow_lower_torch_padded(matrix, device):
+def make_upper_follow_lower_torch_padded(matrix):
     _, n_node, _ = matrix.size()
 
     # (1, n_node, n_node) 형태의 하삼각행렬을 추출
-    lower_triangular = torch.tril(matrix[:, :n_node, :n_node], device=device)
+    lower_triangular = torch.tril(matrix[:, :n_node, :n_node])
 
     # 상삼각행렬을 하삼각행렬의 전치로 설정
-    upper_triangular = torch.triu(lower_triangular.transpose(-1, -2), diagonal=1, device=device)
+    upper_triangular = torch.triu(lower_triangular.transpose(-1, -2), diagonal=1)
 
     # 기존 adj matrix에 넣어줍니다.
     matrix[:, :n_node, :n_node] = lower_triangular + upper_triangular
@@ -103,7 +103,8 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                 output_storage[:, t] = output[:, t].detach()
                 next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-2)
                 decoder_input = torch.cat([decoder_input, next_token], dim=1)
-                decoder_input = make_upper_follow_lower_torch_padded(decoder_input, device)
+                decoder_input = make_upper_follow_lower_torch_padded(decoder_input)
+                decoder_input[:, :1] = trg_adj_seq[:, :1]
 
             # Compute the losses using the generated sequence
             loss = cross_entropy_loss(output_storage, gt_adj_seq, pad_idx).detach().item()
