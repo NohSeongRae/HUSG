@@ -18,7 +18,7 @@ from model import GraphTransformer
 from dataloader import GraphDataset
 from visualization import plot
 
-def make_upper_follow_lower_torch_padded(matrix):
+def make_upper_follow_lower_torch_padded(matrix, device):
     batch_size, num_nodes, _ = matrix.size()
 
     for i in range(batch_size):
