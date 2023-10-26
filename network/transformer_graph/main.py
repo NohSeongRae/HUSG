@@ -117,7 +117,7 @@ class Trainer:
         pad_mask = get_pad_mask(trg[:, 1:, 0], pad_idx=self.pad_idx)
         sub_mask = get_subsequent_mask(trg[:, :, 0])
         mask = pad_mask.unsqueeze(-1).expand(-1, -1, loss.shape[2]) & sub_mask[:, :sub_mask.shape[1] - 1, :]
-        print(mask[0][:15][:15])
+
         # mask 적용
         masked_loss = loss * mask.float()
         # 손실의 평균 반환
