@@ -10,10 +10,10 @@ def plot(pred, gt, idx):
     one_indices = get_all_one_rows(gt)
     i1 = one_indices[0] + 1
     i2 = one_indices[1]
-    print(i1, i2)
+
     # 그래프 객체 생성
-    G_pred = nx.from_numpy_matrix(pred[i1:i2][i1:i2])
-    G_gt = nx.from_numpy_matrix(gt[i1:i2][i1:i2])
+    G_pred = nx.from_numpy_matrix(pred[i1:i2, i1:i2])
+    G_gt = nx.from_numpy_matrix(gt[i1:i2, i1:i2])
 
     # 그래프 시각화
     plt.figure(figsize=(12, 5))
