@@ -151,9 +151,10 @@ class Trainer:
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                 street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
                 trg_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
+                cur_n_street = cur_n_street.to(device=self.device, dtype=torch.lnog)
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq)
+                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street)
 
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_adj_seq.detach())
@@ -182,12 +183,13 @@ class Trainer:
                     # Iterate over batches
                     for data in tqdm(self.val_dataloader):
                         # Get the source and target sequences from the batch
-                        src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq = data
+                        src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street = data
                         gt_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
                         src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                         src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                         street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
                         trg_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
+                        cur_n_street = cur_n_street.to(device=self.device, dtype=torch.lnog)
 
                         # Greedy Search로 시퀀스 생성
                         decoder_input = trg_adj_seq[:, :1]  # 시작 토큰만 포함
@@ -196,10 +198,11 @@ class Trainer:
                         output_storage = torch.zeros_like(trg_adj_seq, device=self.device)
 
                         for t in range(self.n_boundary - 1):  # 임의의 제한값
-                            output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input)
+                            output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input, cur_n_street)
                             output_storage[:, t] = output[:, t].detach()
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
+
                         # Compute the losses using the generated sequence
                         loss = self.cross_entropy_loss(output_storage, gt_adj_seq[:, 1:])
                         loss_mean += loss.detach().item()

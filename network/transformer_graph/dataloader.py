@@ -40,6 +40,7 @@ class GraphDataset(Dataset):
         all_street_unit_position_datasets = []
         all_street_index_sequences = []
         all_adj_matrix_sequences = []
+        all_cur_n_street = []
 
         for city_name in tqdm(city_names):
             loaded_data = {}
@@ -51,6 +52,9 @@ class GraphDataset(Dataset):
                     for idx in range(len(loaded_data[dataset_name])):
                         data = loaded_data[dataset_name][idx]
                         if dataset_name == 'street_index_sequences':
+                            cur_n_street = np.max(data, axis=0)
+                            all_cur_n_street.append(cur_n_street)
+
                             zeros = np.zeros(n_boundary)
                             zeros[0] = n_street + 1
                             zeros[1:len(data) + 1] = data
@@ -91,7 +95,8 @@ class GraphDataset(Dataset):
             'unit_position_datasets': np.array(all_unit_position_datasets),
             'street_unit_position_datasets': np.array(all_street_unit_position_datasets),
             'street_index_sequences': np.array(all_street_index_sequences),
-            'adj_matrix_sequences': np.array(all_adj_matrix_sequences)
+            'adj_matrix_sequences': np.array(all_adj_matrix_sequences),
+            'cur_n_streets': np.array(all_cur_n_street)
         }
 
     def __init__(self, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train', load=True):
@@ -105,7 +110,8 @@ class GraphDataset(Dataset):
                          unit_position_datasets=self.full_dataset['unit_position_datasets'],
                          street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
                          street_index_sequences=self.full_dataset['street_index_sequences'],
-                         adj_matrix_sequences=self.full_dataset['adj_matrix_sequences'])
+                         adj_matrix_sequences=self.full_dataset['adj_matrix_sequences'],
+                         cur_n_streets=self.full_dataset['cur_n_streets'])
         else:
             load_path = './network/transformer_graph/datasets.npz'
             self.full_dataset = np.load(load_path)
@@ -125,11 +131,13 @@ class GraphDataset(Dataset):
         self.street_unit_position_datasets = self.full_dataset['street_unit_position_datasets'][self.start_index:self.end_index]
         self.street_index_sequences = self.full_dataset['street_index_sequences'][self.start_index:self.end_index]
         self.adj_matrix_sequences = self.full_dataset['adj_matrix_sequences'][self.start_index:self.end_index]
+        self.cur_n_streets = self.full_dataset['cur_n_streets'][self.start_index:self.end_index]
 
         print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
         print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
         print('street_index_sequences shape: ', self.street_index_sequences.shape)
         print('adj_matrix_sequences shape: ', self.adj_matrix_sequences.shape)
+        print('cur_n_streets shape: ', self.cur_n_streets.shape)
 
     def __getitem__(self, index):
         """
@@ -145,8 +153,9 @@ class GraphDataset(Dataset):
         street_position_dataset = self.street_unit_position_datasets[index]
         street_index_sequence = self.street_index_sequences[index]
         adj_matrix_sequence = self.adj_matrix_sequences[index]
+        cur_n_street = self.cur_n_streets[index]
 
-        return unit_position_dataset, street_position_dataset, street_index_sequence, adj_matrix_sequence
+        return unit_position_dataset, street_position_dataset, street_index_sequence, adj_matrix_sequence, cur_n_street
 
     def __len__(self):
         """
