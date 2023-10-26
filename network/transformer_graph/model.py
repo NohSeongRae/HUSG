@@ -36,9 +36,6 @@ def get_trg_street_mask(adj_matrix, n_street_node):
     # Clip values greater than 1
     street_mask = torch.clamp(street_mask, max=1)
 
-    for m in street_mask[0][:50]:
-        print(m[:50])
-
     return street_mask.bool()
 
 def get_trg_local_mask(adj_matrix):
