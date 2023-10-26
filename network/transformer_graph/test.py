@@ -75,7 +75,6 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
             street_index_seq = street_index_seq.to(device=device, dtype=torch.long)
             trg_adj_seq = trg_adj_seq.to(device=device, dtype=torch.float32)
             cur_n_street = cur_n_street.to(device=device, dtype=torch.long)
-            print(gt_adj_seq)
 
             # Greedy Search로 시퀀스 생성
             decoder_input = trg_adj_seq[:, :1]  # 시작 토큰만 포함
@@ -92,7 +91,6 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
             # Compute the losses using the generated sequence
             loss = cross_entropy_loss(output_storage, gt_adj_seq, pad_idx).detach().item()
             print(f"Loss CE: {loss:.4f}")
-            print(gt_adj_seq)
             plot(decoder_input.squeeze().detach().cpu().numpy(),
                  gt_adj_seq.squeeze().detach().cpu().numpy(),
                  idx + 1)
