@@ -19,14 +19,18 @@ from dataloader import GraphDataset
 from visualization import plot
 
 def make_upper_follow_lower_torch_padded(matrix, device):
-    batch_size, num_nodes, _ = matrix.size()
+    _, n_node, _ = matrix.size()
 
-    for i in range(batch_size):
-        # 패딩되지 않은 부분의 하삼각행렬을 얻습니다.
-        lower_triangular = torch.tril(matrix[i, :num_nodes, :num_nodes])
+    # (1, n_node, n_node) 형태의 하삼각행렬을 추출
+    lower_triangular = torch.tril(matrix[:, :n_node, :n_node], device=device)
 
-        # 패딩되지 않은 부분의 상삼각행렬을 하삼각행렬의 전치로 설정합니다.
-        matrix[i, :num_nodes, :num_nodes][torch.triu_indices(num_nodes, num_nodes, offset=1, device=device)] = lower_triangular.T[torch.triu_indices(num_nodes, num_nodes, offset=1, device=device)]
+    # 상삼각행렬을 하삼각행렬의 전치로 설정
+    upper_triangular = torch.triu(lower_triangular.transpose(-1, -2), diagonal=1, device=device)
+
+    # 기존 adj matrix에 넣어줍니다.
+    matrix[:, :n_node, :n_node] = lower_triangular + upper_triangular
+    for i in range(n_node):
+        matrix[:, i, i] = 1  # identity matrix를 따로 대입
 
     return matrix
 
