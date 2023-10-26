@@ -29,7 +29,8 @@ def cross_entropy_loss(pred, trg, pad_idx):
     Returns:
     - torch.Tensor: Computed BCE loss.
     """
-    loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), get_cliped_adj_matrix(trg[:, 1:]), reduction='none')
+    cliped_gt = get_cliped_adj_matrix(trg[:, 1:])
+    loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), cliped_gt, reduction='none')
 
     # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
     pad_mask = get_pad_mask(trg[:, 1:, 0], pad_idx=pad_idx)
@@ -90,8 +91,8 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                 decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
             # Compute the losses using the generated sequence
-            # loss = cross_entropy_loss(output_storage, gt_adj_seq, pad_idx).detach().item()
-            # print(f"Loss CE: {loss:.4f}")
+            loss = cross_entropy_loss(output_storage, gt_adj_seq, pad_idx).detach().item()
+            print(f"Loss CE: {loss:.4f}")
             print(gt_adj_seq)
             plot(decoder_input.squeeze().detach().cpu().numpy(),
                  gt_adj_seq.squeeze().detach().cpu().numpy(),
