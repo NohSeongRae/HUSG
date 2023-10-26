@@ -18,18 +18,18 @@ def plot(pred, gt, idx):
     G_pred = nx.DiGraph(pred)
     G_gt = nx.DiGraph(gt)
 
-    # 그래프 시각화
+    union_graph = nx.compose(G_pred, G_gt)  # create a union of both graphs to ensure all nodes are considered
+    pos = nx.spring_layout(union_graph)
+
     plt.figure(figsize=(12, 5))
 
     # Prediction Graph
     plt.subplot(1, 2, 1)
-    pos = nx.spring_layout(G_pred)
     nx.draw(G_pred, pos, with_labels=True, node_color='lightblue', edge_color='gray')
     plt.title("Prediction Graph")
 
     # Ground Truth Graph
     plt.subplot(1, 2, 2)
-    pos = nx.spring_layout(G_gt)
     nx.draw(G_gt, pos, with_labels=True, node_color='lightgreen', edge_color='gray')
     plt.title("Ground Truth Graph")
 
