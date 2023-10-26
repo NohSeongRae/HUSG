@@ -167,9 +167,6 @@ class GraphTransformer(nn.Module):
         padded_mask = torch.nn.functional.pad(trg_sub_mask.expand(trg_adj_seq.shape[0], -1, -1).float(), (0, pad_size))
         trg_adj_seq = trg_adj_seq * padded_mask
 
-        print(src_global_mask.shape, src_street_mask.shape, src_local_mask.shape)
-        print(trg_sub_mask.shape, trg_global_mask.shape, trg_street_mask.shape, trg_local_mask.shape)
-
         dec_output = self.decoder(trg_adj_seq, enc_output, trg_global_mask, trg_street_mask, trg_local_mask, src_global_mask)
 
         output = self.dropout(dec_output)
