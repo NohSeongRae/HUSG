@@ -98,6 +98,11 @@ class GraphDataset(Dataset):
             'cur_n_streets': np.array(all_cur_n_street)
         }
 
+        # Shuffle the dataset
+        permuted_indices = np.random.permutation(len(cls.full_dataset['unit_position_datasets']))
+        for key in cls.full_dataset:
+            cls.full_dataset[key] = cls.full_dataset[key][permuted_indices]
+
     def __init__(self, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1, data_type='train', load=True):
         if self.full_dataset is None:
             if load:
