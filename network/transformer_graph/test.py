@@ -13,7 +13,7 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from model import get_pad_mask, get_subsequent_mask, get_cliped_adj_matrix
+from model import get_pad_mask, get_subsequent_mask, get_clipped_adj_matrix
 from model import GraphTransformer
 from dataloader import GraphDataset
 from visualization import plot
