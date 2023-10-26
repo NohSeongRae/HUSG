@@ -15,9 +15,16 @@ def get_src_local_mask(seq):
     local_mask = (tril_mask1 - tril_mask2).bool()
     return local_mask
 
-def get_cliped_adj_matrix(adj_matrix):
-    adj_matrix[adj_matrix >= 2] = 0
-    return adj_matrix
+
+def get_clipped_adj_matrix(adj_matrix):
+    # 입력 행렬의 복사본 생성
+    clipped_matrix = adj_matrix.copy()
+
+    # 복사본에 대한 변경 수행
+    clipped_matrix[clipped_matrix >= 2] = 0
+
+    return clipped_matrix
+
 
 def get_trg_street_mask(adj_matrix, n_street_node):
     adj_matrix = get_cliped_adj_matrix(adj_matrix)
