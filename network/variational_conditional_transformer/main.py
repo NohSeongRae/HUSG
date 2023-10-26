@@ -215,7 +215,7 @@ class Trainer:
                     save_path = os.path.join("./models", self.save_dir_path)
                     if not os.path.exists(save_path):
                         os.makedirs(save_path)
-                    torch.save(checkpoint, os.path.join(save_path, "transformer_epoch_" + str(epoch + 1) + ".pth"))
+                    torch.save(checkpoint, os.path.join(save_path, "epoch_" + str(epoch + 1) + ".pth"))
 
 
 if __name__ == '__main__':
@@ -252,7 +252,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--local_rank", type=int)
-    parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
+    parser.add_argument("--save_dir_path", type=str, default="boundary_transformer", help="save dir path")
 
     opt = parser.parse_args()
 
