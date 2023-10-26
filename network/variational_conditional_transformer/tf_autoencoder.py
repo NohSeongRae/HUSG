@@ -138,5 +138,6 @@ class BoundaryTransformer(nn.Module):
         dec_output = self.decoder(enc_output)
 
         output = self.building_fc(dec_output).squeeze(-1)
+        output = torch.sigmoid(output)
 
         return output
