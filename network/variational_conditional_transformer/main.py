@@ -100,7 +100,7 @@ class Trainer:
                                           weight_decay=self.weight_decay)
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
 
-    def recun_loss(self, pred, trg):
+    def recun_loss(self, pred, trg, street_indices):
         """
         Compute the binary cross-entropy loss between predictions and targets.
 
@@ -109,12 +109,12 @@ class Trainer:
         - trg (torch.Tensor): Ground truth labels.
 
         Returns:
-        - torch.Tensor: Computed BCE loss.
+        - torch.Tensor: Computed Recun loss.
         """
         loss = F.mse_loss(pred, trg, reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        pad_mask = get_pad_mask(trg[:, :, 0], pad_idx=self.pad_idx)
+        pad_mask = get_pad_mask(street_indices, pad_idx=0).unsqueeze(-2)
         mask = pad_mask.unsqueeze(-1).expand(-1, -1, 4)
 
         # mask 적용
@@ -154,7 +154,7 @@ class Trainer:
                 output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
 
                 # Compute the losses
-                loss = self.recun_loss(output, gt_unit_seq.detach())
+                loss = self.recun_loss(output, gt_unit_seq.detach(), street_index_seq.detach())
                 loss_total = loss
 
                 # Accumulate the losses for reporting
@@ -167,10 +167,10 @@ class Trainer:
 
             # Print the average losses for the current epoch
             loss_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recun: {loss_mean:.4f}")
 
             if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-bce", loss_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-recun", loss_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
@@ -190,15 +190,15 @@ class Trainer:
                         output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
 
                         # Compute the losses
-                        loss = self.recun_loss(output, gt_unit_seq)
+                        loss = self.recun_loss(output, gt_unit_seq, street_index_seq)
                         loss_mean += loss.detach().item()
 
                     # Print the average losses for the current epoch
                     loss_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {loss_mean:.4f}")
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recun: {loss_mean:.4f}")
 
                     if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-recun", loss_mean, epoch + 1)
 
                 self.transformer.module.train()
 
