@@ -33,7 +33,7 @@ def plot(pred, gt, idx):
     plt.tight_layout()
 
     # 저장할 경로 확인 및 폴더 생성
-    directory = "/mnt/data/images"  # 변경: 저장 경로를 /mnt/data/ 아래로 지정
+    directory = "./images"  # 변경: 저장 경로를 /mnt/data/ 아래로 지정
     if not os.path.exists(directory):
         os.makedirs(directory)
 
