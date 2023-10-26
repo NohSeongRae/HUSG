@@ -114,9 +114,7 @@ class Trainer:
         loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        self.pad_idx = torch.zeros_like(trg[0, 0, :])
-        mask = get_pad_mask(trg[:, 1:], pad_idx=self.pad_idx).float()
-        mask = mask.unsqueeze(-1).repeat(1, 1, loss.shape[2])
+        mask = get_pad_mask(trg[:, :, 0], pad_idx=self.pad_idx).float()
 
         # mask 적용
         masked_loss = loss * mask

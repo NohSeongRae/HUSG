@@ -35,7 +35,6 @@ def get_trg_street_mask(adj_matrix, n_street_node):
 
     # Clip values greater than 1
     street_mask = torch.clamp(street_mask, max=1)
-    print(street_mask[0])
 
     return street_mask.bool()
 
@@ -158,16 +157,11 @@ class GraphTransformer(nn.Module):
 
         enc_output = self.encoder(src_unit_seq, src_street_seq, src_global_mask, src_street_mask, src_local_mask)
 
-        self.pad_idx = torch.zeros_like(trg_adj_seq[0, 0, :])
-
         trg_sub_mask = get_subsequent_mask(trg_adj_seq[:, :, 0])
-        print(trg_sub_mask.shape)
-        print()
         trg_global_mask = get_pad_mask(trg_adj_seq[:, :, 0], pad_idx=self.pad_idx).unsqueeze(-2) & trg_sub_mask
         trg_street_mask = get_trg_street_mask(trg_adj_seq, n_street_node) & trg_global_mask
         trg_local_mask = get_trg_local_mask(trg_adj_seq) & trg_global_mask
 
-        print(trg_adj_seq.shape)
         dec_output = self.decoder(trg_adj_seq, enc_output, trg_global_mask, trg_street_mask, trg_local_mask, src_global_mask)
 
         output = self.dropout(dec_output)
