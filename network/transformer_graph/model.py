@@ -40,7 +40,7 @@ def get_trg_street_mask(adj_matrix, n_street_node):
     return street_mask.bool()
 
 def get_trg_local_mask(adj_matrix):
-    adj_matrix = get_cliped_adj_matrix(adj_matrix)
+    adj_matrix = get_cliped_adj_matrix(adj_matrix[:, :, adj_matrix.shape[1]])
     return adj_matrix.bool()
 
 def get_pad_mask(seq, pad_idx):
