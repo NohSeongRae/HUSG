@@ -132,7 +132,7 @@ class BoundaryTransformer(nn.Module):
         self.decoder = Decoder(d_model=d_model)
         self.pad_idx = pad_idx
         self.eos_idx = eos_idx
-        self.fc = nn.Linear(d_model, 4)
+        self.fc = nn.Linear(d_model // 8, 4)
 
     def forward(self, src_unit_seq, src_street_seq, trg_street_seq):
 
