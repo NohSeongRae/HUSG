@@ -188,6 +188,7 @@ class Trainer:
 
                         # Get the model's predictions
                         output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
+                        print(output[0, :10], gt_unit_seq[0, :10])
 
                         # Compute the losses
                         loss = self.recun_loss(output, gt_unit_seq, street_index_seq)
