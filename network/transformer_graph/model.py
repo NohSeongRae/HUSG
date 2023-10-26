@@ -162,7 +162,7 @@ class GraphTransformer(nn.Module):
         trg_street_mask = get_trg_street_mask(trg_adj_seq, n_street_node) & trg_global_mask
         trg_local_mask = get_trg_local_mask(trg_adj_seq) & trg_global_mask
 
-        print(trg_sub_mask.shape, trg_global_mask.shape, trg_street_mask.shape, trg_local_mask.shape)
+        trg_adj_seq = trg_adj_seq * trg_sub_mask.expand(trg_adj_seq.shape[0], -1, -1)
 
         dec_output = self.decoder(trg_adj_seq, enc_output, trg_global_mask, trg_street_mask, trg_local_mask, src_global_mask)
 
