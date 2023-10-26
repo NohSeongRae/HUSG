@@ -88,7 +88,6 @@ class GraphDataset(Dataset):
                             zeros[len(data) + 2:] = 4
                             data = zeros
                             all_adj_matrix_sequences.append(data)
-                            print(data, len(data))
 
         # Concatenate data from all cities for each key
         cls.full_dataset = {

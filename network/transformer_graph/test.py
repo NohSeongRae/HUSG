@@ -91,7 +91,7 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
             # Compute the losses using the generated sequence
             loss = cross_entropy_loss(output_storage, gt_adj_seq, pad_idx).detach().item()
             print(f"Loss CE: {loss:.4f}")
-
+            print(gt_adj_seq)
             plot(decoder_input.squeeze().detach().cpu().numpy(),
                  gt_adj_seq.squeeze().detach().cpu().numpy(),
                  idx + 1)
