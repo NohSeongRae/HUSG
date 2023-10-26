@@ -89,7 +89,6 @@ class GraphDataset(Dataset):
                             data = zeros
                             all_adj_matrix_sequences.append(data)
 
-        print(np.array(all_unit_position_datasets).shape)
         # Concatenate data from all cities for each key
         cls.full_dataset = {
             'unit_position_datasets': np.array(all_unit_position_datasets),
