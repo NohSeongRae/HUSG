@@ -196,14 +196,14 @@ class Trainer:
                         # output 값을 저장할 텐서를 미리 할당합니다.
                         output_storage = torch.zeros_like(trg_adj_seq, device=self.device)
 
-                        for t in range(gt_adj_seq.shape[1]):  # 임의의 제한값
+                        for t in range(gt_adj_seq.shape[1] - 1):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input, cur_n_street)
                             output_storage[:, t] = output[:, t].detach()
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-2)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses using the generated sequence
-                        loss = self.cross_entropy_loss(output_storage, gt_adj_seq[:, 1:])
+                        loss = self.cross_entropy_loss(output_storage, gt_adj_seq)
                         loss_mean += loss.detach().item()
 
                     # Print the average losses for the current epoch
