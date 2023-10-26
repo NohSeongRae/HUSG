@@ -145,7 +145,7 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq = data
+                src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street = data
                 gt_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
