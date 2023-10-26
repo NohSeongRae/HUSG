@@ -166,5 +166,5 @@ class GraphTransformer(nn.Module):
 
         output = self.dropout(dec_output)
         output = self.adj_fc(output)
-
+        print(output)
         return output

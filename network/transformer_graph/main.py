@@ -176,7 +176,7 @@ class Trainer:
                 self.writer.add_scalar("Train/loss-bce", loss_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
-                self.transformer.eval()
+                self.transformer.module.eval()
                 loss_mean = 0
 
                 with torch.no_grad():
@@ -213,6 +213,8 @@ class Trainer:
 
                     if self.use_tensorboard:
                         self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
+
+                self.transformer.module.train()
 
             if (epoch + 1) % self.save_epoch == 0:
                 # 체크포인트 데이터 준비
