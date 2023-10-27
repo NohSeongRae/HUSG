@@ -174,12 +174,12 @@ class GraphDataset(Dataset):
         street_indices = self.street_index_sequences[index]
         remove_street_indices = np.array([n_street + 1, n_street + 2, 0])
         street_indices = street_indices[~np.isin(street_indices, remove_street_indices)]
-        street_pos = [street_pos[element] for element in street_indices]
+        filtered_street_pos = [street_pos[element] for element in street_indices]
         zeros = np.zeros((n_boundary, d_street, 2))
         zeros[0] = 2
-        zeros[1:len(street_pos) + 1] = street_pos
-        zeros[len(street_pos) + 1] = 3
-        zeros[len(street_pos) + 2:] = 4
+        zeros[1:len(filtered_street_pos) + 1] = filtered_street_pos
+        zeros[len(filtered_street_pos) + 1] = 3
+        zeros[len(filtered_street_pos) + 2:] = 4
         street_position_dataset = torch.tensor(zeros, dtype=torch.float32)
 
         # 패딩된 인접 행렬 생성
