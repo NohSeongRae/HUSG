@@ -72,14 +72,14 @@ class Trainer:
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = BoundaryDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train', load=False)
-        self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=3, rank=rank)
+        self.train_dataset = BoundaryDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train')
+        self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=1, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8)
 
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = BoundaryDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='val', load=False)
-        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=3, rank=rank)
+        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=1, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8)
 

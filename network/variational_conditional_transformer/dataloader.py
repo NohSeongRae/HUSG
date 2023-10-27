@@ -93,16 +93,14 @@ class BoundaryDataset(Dataset):
             if load:
                 self.load_full_dataset()
 
-                # Only save the dataset if the current process has local rank 0
-                if dist.get_rank() == 0:
-                    save_path = './network/variational_conditional_transformer/datasets'
-                    if not os.path.exists(save_path):
-                        os.makedirs(save_path)
-                    np.savez(save_path + '/datasets.npz',
-                             unit_position_datasets=self.full_dataset['unit_position_datasets'],
-                             street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
-                             street_index_sequences=self.full_dataset['street_index_sequences'],
-                             gt_unit_position_datasets=self.full_dataset['gt_unit_position_datasets'])
+                save_path = './network/variational_conditional_transformer/datasets'
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                np.savez(save_path + '/datasets.npz',
+                         unit_position_datasets=self.full_dataset['unit_position_datasets'],
+                         street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
+                         street_index_sequences=self.full_dataset['street_index_sequences'],
+                         gt_unit_position_datasets=self.full_dataset['gt_unit_position_datasets'])
             else:
                 load_path = './network/variational_conditional_transformer/datasets.npz'
                 self.full_dataset = np.load(load_path)
