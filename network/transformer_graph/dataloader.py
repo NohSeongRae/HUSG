@@ -174,6 +174,7 @@ class GraphDataset(Dataset):
         street_indices = self.street_index_sequences[index]
         remove_street_indices = np.array([n_street + 1, n_street + 2, 0])
         street_indices = street_indices[~np.isin(street_indices, remove_street_indices)]
+        print(street_indices)
         filtered_street_pos = [street_pos[element] for element in street_indices]
         zeros = np.zeros((n_boundary, d_street, 2))
         zeros[0] = 2
