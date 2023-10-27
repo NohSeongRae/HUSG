@@ -32,7 +32,7 @@ class GraphDataset(Dataset):
             'adj_matrices'
         ]
 
-        n_street = 50
+        n_street = 70
         n_building = 120
         n_boundary = 250
         d_unit = 8
@@ -163,7 +163,7 @@ class GraphDataset(Dataset):
         edge_index_sequence = torch.tensor(self.edge_index_sequences[index], dtype=torch.long)
         adj_matrix = to_dense_adj(edge_index_sequence)[0].numpy()
 
-        n_street = 50
+        n_street = 70
         n_building = 120
         n_boundary = 250
         d_unit = 8
