@@ -62,9 +62,13 @@ class BoundaryDataset(Dataset):
                             zeros[:len(gt)] = gt
                             zeros = np.reshape(zeros, (-1, 4))
                             all_gt_unit_position_datasets.append(zeros)
-                            print(gt)
-                            print(data)
-                            print('-----')
+                            import torch.distributed as dist
+
+                            local_rank = dist.get_rank()
+                            if local_rank == 0:
+                                print(gt)
+                                print(data)
+                                print('-----')
 
                             zeros = np.zeros((n_boundary, d_unit, 2))
                             zeros[:len(data)] = data
