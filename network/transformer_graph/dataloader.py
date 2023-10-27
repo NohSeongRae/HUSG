@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Dataset
+from torch_geometric.utils import dense_to_sparse, to_dense_adj
 import numpy as np
 import os
 from tqdm import tqdm
@@ -33,15 +34,16 @@ class GraphDataset(Dataset):
 
         n_street = 50
         n_building = 120
-        n_boundary = 200
+        n_boundary = 250
         d_unit = 8
         d_street = 64
 
         all_unit_position_datasets = []
         all_street_unit_position_datasets = []
         all_street_index_sequences = []
-        all_adj_matrix_sequences = []
+        all_edge_index_sequences = []
         all_cur_n_street = []
+        max_edge_length = 0
 
         for city_name in tqdm(city_names):
             loaded_data = {}
@@ -82,20 +84,22 @@ class GraphDataset(Dataset):
                             all_street_unit_position_datasets.append(data)
 
                         elif dataset_name == 'adj_matrices':
-                            zeros = np.zeros((n_street + n_building, n_street + n_building))
-                            zeros[0] = 2
-                            zeros[1:len(data) + 1, 1:len(data)+1] = data
-                            zeros[len(data) + 1] = 3
-                            zeros[len(data) + 2:] = 4
-                            data = zeros
-                            all_adj_matrix_sequences.append(data)
+                            edge_index, _ = dense_to_sparse(torch.tensor(data, dtype=torch.float32))
+                            max_edge_length = max(max_edge_length, edge_index.size(1))
+                            all_edge_index_sequences.append(edge_index.numpy())
+
+        for i in range(len(all_edge_index_sequences)):
+            padded_edge_index = np.pad(all_edge_index_sequences[i],
+                                       ((0, 0), (0, max_edge_length - all_edge_index_sequences[i].shape[1])),
+                                       mode='constant', constant_values=0)
+            all_edge_index_sequences[i] = padded_edge_index
 
         # Concatenate data from all cities for each key
         cls.full_dataset = {
             'unit_position_datasets': np.array(all_unit_position_datasets),
             'street_unit_position_datasets': np.array(all_street_unit_position_datasets),
             'street_index_sequences': np.array(all_street_index_sequences),
-            'adj_matrix_sequences': np.array(all_adj_matrix_sequences),
+            'edge_index_sequences': np.array(all_edge_index_sequences),
             'cur_n_streets': np.array(all_cur_n_street)
         }
 
@@ -115,7 +119,7 @@ class GraphDataset(Dataset):
                          unit_position_datasets=self.full_dataset['unit_position_datasets'],
                          street_unit_position_datasets=self.full_dataset['street_unit_position_datasets'],
                          street_index_sequences=self.full_dataset['street_index_sequences'],
-                         adj_matrix_sequences=self.full_dataset['adj_matrix_sequences'],
+                         edge_index_sequences=self.full_dataset['edge_index_sequences'],  # 수정된 부분
                          cur_n_streets=self.full_dataset['cur_n_streets'])
             else:
                 load_path = './network/transformer_graph/datasets.npz'
@@ -135,13 +139,13 @@ class GraphDataset(Dataset):
         self.unit_position_datasets = self.full_dataset['unit_position_datasets'][self.start_index:self.end_index]
         self.street_unit_position_datasets = self.full_dataset['street_unit_position_datasets'][self.start_index:self.end_index]
         self.street_index_sequences = self.full_dataset['street_index_sequences'][self.start_index:self.end_index]
-        self.adj_matrix_sequences = self.full_dataset['adj_matrix_sequences'][self.start_index:self.end_index]
+        self.edge_index_sequences = self.full_dataset['edge_index_sequences'][self.start_index:self.end_index]
         self.cur_n_streets = self.full_dataset['cur_n_streets'][self.start_index:self.end_index]
 
         print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
         print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
         print('street_index_sequences shape: ', self.street_index_sequences.shape)
-        print('adj_matrix_sequences shape: ', self.adj_matrix_sequences.shape)
+        print('adj_matrix_sequences shape: ', self.edge_index_sequences.shape)
         print('cur_n_streets shape: ', self.cur_n_streets.shape)
 
     def __getitem__(self, index):
@@ -157,16 +161,20 @@ class GraphDataset(Dataset):
         unit_position_dataset = torch.tensor(self.unit_position_datasets[index], dtype=torch.float32)
         street_position_dataset = torch.tensor(self.street_unit_position_datasets[index], dtype=torch.float32)
         street_index_sequence = torch.tensor(self.street_index_sequences[index], dtype=torch.long)
-        # adj_matrix_sequence = torch.tensor(self.adj_matrix_sequences[index], dtype=torch.float32)
         cur_n_street = torch.tensor(self.cur_n_streets[index], dtype=torch.long)
-        # 희소 텐서로 변환하는 코드
-        dense_adj_matrix = self.adj_matrix_sequences[index]
-        non_zero_indices = dense_adj_matrix.nonzero()
-        values = dense_adj_matrix[non_zero_indices.split(1, dim=1)]
-        adj_matrix_sequence = torch.sparse_coo_tensor(indices=non_zero_indices.t(),
-                                                      values=values,
-                                                      size=dense_adj_matrix.shape,
-                                                      dtype=torch.float32)
+
+        edge_index_sequence = torch.tensor(self.edge_index_sequences[index], dtype=torch.long)
+        adj_matrix = to_dense_adj(edge_index_sequence)[0].numpy()
+
+        # 패딩된 인접 행렬 생성
+        n_street = 50
+        n_building = 120
+        zeros = np.zeros((n_street + n_building, n_street + n_building))
+        zeros[0] = 2
+        zeros[1:adj_matrix.shape[0] + 1, 1:adj_matrix.shape[1] + 1] = adj_matrix
+        zeros[adj_matrix.shape[0] + 1] = 3
+        zeros[adj_matrix.shape[0] + 2:] = 4
+        adj_matrix_sequence = torch.tensor(zeros, dtype=torch.float32)
 
         return unit_position_dataset, street_position_dataset, street_index_sequence, adj_matrix_sequence, cur_n_street
 
