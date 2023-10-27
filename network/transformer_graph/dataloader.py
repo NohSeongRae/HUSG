@@ -33,7 +33,7 @@ class GraphDataset(Dataset):
 
         n_street = 50
         n_building = 120
-        n_boundary = 250
+        n_boundary = 200
         d_unit = 8
         d_street = 64
 
