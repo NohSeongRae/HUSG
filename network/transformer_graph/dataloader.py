@@ -157,8 +157,16 @@ class GraphDataset(Dataset):
         unit_position_dataset = torch.tensor(self.unit_position_datasets[index], dtype=torch.float32)
         street_position_dataset = torch.tensor(self.street_unit_position_datasets[index], dtype=torch.float32)
         street_index_sequence = torch.tensor(self.street_index_sequences[index], dtype=torch.long)
-        adj_matrix_sequence = torch.tensor(self.adj_matrix_sequences[index], dtype=torch.float32)
+        # adj_matrix_sequence = torch.tensor(self.adj_matrix_sequences[index], dtype=torch.float32)
         cur_n_street = torch.tensor(self.cur_n_streets[index], dtype=torch.long)
+        # 희소 텐서로 변환하는 코드
+        dense_adj_matrix = self.adj_matrix_sequences[index]
+        non_zero_indices = dense_adj_matrix.nonzero()
+        values = dense_adj_matrix[non_zero_indices.split(1, dim=1)]
+        adj_matrix_sequence = torch.sparse_coo_tensor(indices=non_zero_indices.t(),
+                                                      values=values,
+                                                      size=dense_adj_matrix.shape,
+                                                      dtype=torch.float32)
 
         return unit_position_dataset, street_position_dataset, street_index_sequence, adj_matrix_sequence, cur_n_street
 
