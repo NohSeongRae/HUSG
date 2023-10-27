@@ -141,6 +141,7 @@ class GraphDataset(Dataset):
         self.street_index_sequences = self.full_dataset['street_index_sequences'][self.start_index:self.end_index]
         self.edge_index_sequences = self.full_dataset['edge_index_sequences'][self.start_index:self.end_index]
         self.cur_n_streets = self.full_dataset['cur_n_streets'][self.start_index:self.end_index]
+        self.full_dataset = None
 
         print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
         print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
