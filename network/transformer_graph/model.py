@@ -137,7 +137,7 @@ class GraphDecoder(nn.Module):
         return dec_output
 
 class GraphTransformer(nn.Module):
-    def __init__(self, n_building=120, n_street=70, d_model=512, d_inner=2048, sos_idx=2, eos_idx=3, pad_idx=4,
+    def __init__(self, n_building=120, n_street=50, d_model=512, d_inner=2048, sos_idx=2, eos_idx=3, pad_idx=4,
                  n_layer=6, n_head=8, dropout=0.1, d_unit=8, d_street=64,
                  use_global_attn=True, use_street_attn=True, use_local_attn=True, local_rank=0):
         super(GraphTransformer, self).__init__()
