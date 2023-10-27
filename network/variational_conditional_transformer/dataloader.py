@@ -16,11 +16,11 @@ class BoundaryDataset(Dataset):
     def load_full_dataset(cls):
         dataset_path = '../../../../mnt/2_transformer/train_dataset/'
 
-        # city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
-        #               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
-        #               "sanfrancisco", "miami", "seattle", "boston", "providence",
-        #               "neworleans", "denver", "pittsburgh", "tampa", "washington"]
-        city_names = ['atlanta', 'dallas']
+        city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+                      "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+                      "sanfrancisco", "miami", "seattle", "boston", "providence",
+                      "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+        # city_names = ['atlanta', 'dallas']
 
         dataset_names = [
             'street_index_sequences',
