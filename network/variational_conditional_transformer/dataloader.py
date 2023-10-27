@@ -102,7 +102,7 @@ class BoundaryDataset(Dataset):
                          street_index_sequences=self.full_dataset['street_index_sequences'],
                          gt_unit_position_datasets=self.full_dataset['gt_unit_position_datasets'])
             else:
-                load_path = './network/variational_conditional_transformer/datasets.npz'
+                load_path = './network/variational_conditional_transformer/datasets/datasets.npz'
                 self.full_dataset = np.load(load_path)
 
         total_size = len(self.full_dataset['unit_position_datasets'])
