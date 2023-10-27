@@ -131,6 +131,8 @@ class Trainer:
         valid_mask = seq_range < indices.unsqueeze(1) - 1
 
         # Calculate inter-token loss
+        print(pred.shape, valid_mask.shape)
+        print(pred[valid_mask].shape)
         current_token = pred[valid_mask][:, 1, :]
         next_token = pred[valid_mask][:, 0, :]
         loss = F.mse_loss(current_token, next_token)
