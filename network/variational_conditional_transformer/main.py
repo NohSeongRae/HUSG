@@ -123,8 +123,8 @@ class Trainer:
         return masked_loss.sum() / mask.sum()
 
     def smooth_loss(self, pred, street_indices):
-        cur_token = pred[:, :-1, 1, :]
-        next_token = pred[:, 1:, 0, :]
+        cur_token = pred[:, :-1, 2:]
+        next_token = pred[:, 1:, :2]
         loss = F.mse_loss(cur_token, next_token, reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
