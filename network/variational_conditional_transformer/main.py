@@ -120,33 +120,20 @@ class Trainer:
         # mask 적용
         masked_loss = loss * mask.float()
         # 손실의 평균 반환
-        return masked_loss.mean()
+        return masked_loss.sum() / mask.sum()
 
     def smooth_loss(self, pred, street_indices):
-        zero_mask = (street_indices == 0)
-        indices = (zero_mask.cumsum(1) == 1).max(1).indices
+        cur_token = pred[:, :-1, 1, :]
+        next_token = pred[:, 1:, 0, :]
+        loss = F.mse_loss(cur_token, next_token, reduction='none')
 
-        # Create a mask to select valid sequences based on indices
-        seq_range = torch.arange(pred.size(1)).unsqueeze(0).to(pred.device)
-        valid_mask = seq_range < indices.unsqueeze(1) - 1
+        # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
+        pad_mask = get_pad_mask(street_indices, pad_idx=0)
+        mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)[:, :-1, :]
 
-        # Calculate inter-token loss
-        print(pred.shape, valid_mask.shape)
-        print(pred[valid_mask].shape)
-        current_token = pred[valid_mask][:, 1, :]
-        next_token = pred[valid_mask][:, 0, :]
-        loss = F.mse_loss(current_token, next_token)
+        masked_loss = loss * mask.float()
 
-        # Calculate edge-token loss
-        last_tokens = torch.gather(pred, 1,
-                                   (indices - 1).unsqueeze(1).unsqueeze(-1).unsqueeze(-1).expand(-1, -1, 2, 2))[:, 0, 1,
-                      :]
-        first_tokens = pred[:, 0, 0, :]
-        edge_loss = F.mse_loss(last_tokens, first_tokens)
-
-        total_loss = loss + edge_loss
-
-        return total_loss
+        return masked_loss.sum() / mask.sum()
 
     def train(self):
         """Training loop for the transformer model."""
