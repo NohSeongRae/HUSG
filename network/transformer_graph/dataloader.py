@@ -75,11 +75,9 @@ class GraphDataset(Dataset):
                             all_unit_position_datasets.append(data)
 
                         elif dataset_name == 'street_unit_position_datasets':
-                            zeros = np.zeros((n_boundary, d_street, 2))
-                            zeros[0] = 2
-                            zeros[1:len(data) + 1] = data
-                            zeros[len(data) + 1] = 3
-                            zeros[len(data) + 2:] = 4
+                            zeros = np.zeros((n_street, d_street, 2))
+                            data = np.unique(data, axis=0)
+                            zeros[1:len(data)+1] = data
                             data = zeros
                             all_street_unit_position_datasets.append(data)
 
@@ -141,7 +139,6 @@ class GraphDataset(Dataset):
         self.street_index_sequences = self.full_dataset['street_index_sequences'][self.start_index:self.end_index]
         self.edge_index_sequences = self.full_dataset['edge_index_sequences'][self.start_index:self.end_index]
         self.cur_n_streets = self.full_dataset['cur_n_streets'][self.start_index:self.end_index]
-        self.full_dataset = None
 
         print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
         print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
@@ -160,16 +157,32 @@ class GraphDataset(Dataset):
         - tuple: A tuple containing source unit sequence, source street sequence, and target sequence.
         """
         unit_position_dataset = torch.tensor(self.unit_position_datasets[index], dtype=torch.float32)
-        street_position_dataset = torch.tensor(self.street_unit_position_datasets[index], dtype=torch.float32)
         street_index_sequence = torch.tensor(self.street_index_sequences[index], dtype=torch.long)
         cur_n_street = torch.tensor(self.cur_n_streets[index], dtype=torch.long)
 
         edge_index_sequence = torch.tensor(self.edge_index_sequences[index], dtype=torch.long)
         adj_matrix = to_dense_adj(edge_index_sequence)[0].numpy()
 
-        # 패딩된 인접 행렬 생성
         n_street = 50
         n_building = 120
+        n_boundary = 250
+        d_unit = 8
+        d_street = 64
+
+        # 패딩된 street position 생성
+        street_pos = self.street_unit_position_datasets[index]
+        street_indices = self.street_index_sequences[index]
+        remove_street_indices = np.array([n_street + 1, n_street + 2, 0])
+        street_indices = street_indices[~np.isin(street_indices, remove_street_indices)]
+        street_pos = [street_pos[element] for element in street_indices]
+        zeros = np.zeros((n_boundary, d_street, 2))
+        zeros[0] = 2
+        zeros[1:len(street_pos) + 1] = street_pos
+        zeros[len(street_pos) + 1] = 3
+        zeros[len(street_pos) + 2:] = 4
+        street_position_dataset = torch.tensor(zeros, dtype=torch.float32)
+
+        # 패딩된 인접 행렬 생성
         zeros = np.zeros((n_street + n_building, n_street + n_building))
         zeros[0] = 2
         zeros[1:adj_matrix.shape[0] + 1, 1:adj_matrix.shape[1] + 1] = adj_matrix
