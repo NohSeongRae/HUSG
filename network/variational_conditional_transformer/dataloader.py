@@ -62,14 +62,14 @@ class BoundaryDataset(Dataset):
                             zeros[:len(gt)] = gt
                             zeros = np.reshape(zeros, (-1, 4))
                             all_gt_unit_position_datasets.append(zeros)
-                            print(zeros)
+                            print(gt)
+                            print(data)
+                            print('-----')
 
                             zeros = np.zeros((n_boundary, d_unit, 2))
                             zeros[:len(data)] = data
                             data = zeros
                             all_unit_position_datasets.append(data)
-                            print(data)
-                            print('-----')
 
                         elif dataset_name == 'street_unit_position_datasets':
                             zeros = np.zeros((n_boundary, d_street, 2))
