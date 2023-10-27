@@ -122,6 +122,30 @@ class Trainer:
         # 손실의 평균 반환
         return masked_loss.mean()
 
+    def smooth_loss(self, pred, street_indices):
+        zero_mask = (street_indices == 0)
+        indices = (zero_mask.cumsum(1) == 1).max(1).indices
+
+        # Create a mask to select valid sequences based on indices
+        seq_range = torch.arange(pred.size(1)).unsqueeze(0).to(pred.device)
+        valid_mask = seq_range < indices.unsqueeze(1) - 1
+
+        # Calculate inter-token loss
+        current_token = pred[valid_mask][:, 1, :]
+        next_token = pred[valid_mask][:, 0, :]
+        loss = F.mse_loss(current_token, next_token)
+
+        # Calculate edge-token loss
+        last_tokens = torch.gather(pred, 1,
+                                   (indices - 1).unsqueeze(1).unsqueeze(-1).unsqueeze(-1).expand(-1, -1, 2, 2))[:, 0, 1,
+                      :]
+        first_tokens = pred[:, 0, 0, :]
+        edge_loss = F.mse_loss(last_tokens, first_tokens)
+
+        total_loss = loss + edge_loss
+
+        return total_loss
+
     def train(self):
         """Training loop for the transformer model."""
         epoch_start = 0
@@ -136,7 +160,8 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in range(epoch_start, self.max_epoch):
-            loss_mean = 0
+            loss_recun_mean = 0
+            loss_smooth_mean = 0
 
             # Iterate over batches
             for data in tqdm(self.train_dataloader):
@@ -154,11 +179,13 @@ class Trainer:
                 output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
 
                 # Compute the losses
-                loss = self.recun_loss(output, gt_unit_seq.detach(), street_index_seq.detach())
-                loss_total = loss
+                loss_recun = self.recun_loss(output, gt_unit_seq.detach(), street_index_seq.detach())
+                loss_smooth = self.smooth_loss(output, street_index_seq.detach())
+                loss_total = loss_recun + loss_smooth
 
                 # Accumulate the losses for reporting
-                loss_mean += loss.detach().item()
+                loss_recun_mean += loss_recun.detach().item()
+                loss_smooth_mean += loss_smooth.detach().item()
                 # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
@@ -166,15 +193,19 @@ class Trainer:
             self.scheduler.step()
 
             # Print the average losses for the current epoch
-            loss_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recun: {loss_mean:.4f}")
+            loss_recun_mean /= len(self.train_dataloader)
+            loss_smooth_mean /= len(self.train_dataloader)
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recun: {loss_recun_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Smooth: {loss_smooth_mean:.4f}")
 
             if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-recun", loss_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-recun", loss_recun_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-smooth", loss_smooth_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
-                loss_mean = 0
+                loss_recun_mean = 0
+                loss_smooth_mean = 0
 
                 with torch.no_grad():
                     # Iterate over batches
@@ -188,18 +219,22 @@ class Trainer:
 
                         # Get the model's predictions
                         output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
-                        print(output[0, :10], gt_unit_seq[0, :10])
 
                         # Compute the losses
-                        loss = self.recun_loss(output, gt_unit_seq, street_index_seq)
-                        loss_mean += loss.detach().item()
+                        loss_recun = self.recun_loss(output, gt_unit_seq, street_index_seq)
+                        loss_smooth = self.smooth_loss(output, street_index_seq)
+                        loss_recun_mean += loss_recun.detach().item()
+                        loss_smooth_mean += loss_smooth.detach().item()
 
                     # Print the average losses for the current epoch
-                    loss_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recun: {loss_mean:.4f}")
+                    loss_recun_mean /= len(self.val_dataloader)
+                    loss_smooth_mean /= len(self.val_dataloader)
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recun: {loss_recun_mean:.4f}")
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Smooth: {loss_smooth_mean:.4f}")
 
                     if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-recun", loss_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-recun", loss_recun_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-smooth", loss_smooth_mean, epoch + 1)
 
                 self.transformer.module.train()
 
