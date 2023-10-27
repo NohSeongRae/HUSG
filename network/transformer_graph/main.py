@@ -75,13 +75,13 @@ class Trainer:
         self.train_dataset = GraphDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train', load=False)
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=8, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
-                                           sampler=self.train_sampler, num_workers=8)
+                                           sampler=self.train_sampler, num_workers=8, pin_memory=True)
 
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = GraphDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='val', load=False)
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=8, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
-                                         sampler=self.val_sampler, num_workers=8)
+                                         sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
         self.transformer = GraphTransformer(n_building=self.n_building, sos_idx=self.sos_idx, eos_idx=self.eos_idx, pad_idx=self.pad_idx,
@@ -147,12 +147,12 @@ class Trainer:
 
                 # Get the source and target sequences from the batch
                 src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street = data
-                gt_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
-                src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
-                src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
-                street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
-                trg_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
-                cur_n_street = cur_n_street.to(device=self.device, dtype=torch.long)
+                gt_adj_seq = trg_adj_seq.to(device=self.device)
+                src_unit_seq = src_unit_seq.to(device=self.device)
+                src_street_seq = src_street_seq.to(device=self.device)
+                street_index_seq = street_index_seq.to(device=self.device)
+                trg_adj_seq = trg_adj_seq.to(device=self.device)
+                cur_n_street = cur_n_street.to(device=self.device)
 
                 # Get the model's predictions
                 output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street)

@@ -154,11 +154,11 @@ class GraphDataset(Dataset):
         Returns:
         - tuple: A tuple containing source unit sequence, source street sequence, and target sequence.
         """
-        unit_position_dataset = self.unit_position_datasets[index]
-        street_position_dataset = self.street_unit_position_datasets[index]
-        street_index_sequence = self.street_index_sequences[index]
-        adj_matrix_sequence = self.adj_matrix_sequences[index]
-        cur_n_street = self.cur_n_streets[index]
+        unit_position_dataset = torch.tensor(self.unit_position_datasets[index], dtype=torch.float32)
+        street_position_dataset = torch.tensor(self.street_unit_position_datasets[index], dtype=torch.float32)
+        street_index_sequence = torch.tensor(self.street_index_sequences[index], dtype=torch.long)
+        adj_matrix_sequence = torch.tensor(self.adj_matrix_sequences[index], dtype=torch.float32)
+        cur_n_street = torch.tensor(self.cur_n_streets[index], dtype=torch.long)
 
         return unit_position_dataset, street_position_dataset, street_index_sequence, adj_matrix_sequence, cur_n_street
 
