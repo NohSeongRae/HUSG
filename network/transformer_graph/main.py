@@ -111,7 +111,8 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed BCE loss.
         """
-        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), get_clipped_adj_matrix(trg[:, 1:]), reduction='none')
+        weights = trg.clone() + 1
+        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), get_clipped_adj_matrix(trg[:, 1:]), reduction='none', weight=weights)
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         pad_mask = get_pad_mask(trg[:, 1:, 0], pad_idx=self.pad_idx)
@@ -121,7 +122,7 @@ class Trainer:
         # mask 적용
         masked_loss = loss * mask.float()
         # 손실의 평균 반환
-        return masked_loss.mean()
+        return masked_loss.sum() / mask.float().sum()
 
     def train(self):
         """Training loop for the transformer model."""
