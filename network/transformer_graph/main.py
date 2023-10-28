@@ -73,16 +73,16 @@ class Trainer:
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = GraphDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train', load=True,
+        self.train_dataset = GraphDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train', load=False,
                                           n_street=n_street, n_building=n_building, n_boundary=n_boundary, d_unit=d_unit, d_street=d_street)
-        self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=1, rank=rank)
+        self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=8, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8, pin_memory=True)
 
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = GraphDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='val', load=False,
                                         n_street=n_street, n_building=n_building, n_boundary=n_boundary, d_unit=d_unit, d_street=d_street)
-        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=1, rank=rank)
+        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=8, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
