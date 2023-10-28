@@ -116,7 +116,7 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed CE loss.
         """
-        loss = F.cross_entropy(torch.softmax(pred[:, :-1], dim=-1), trg[:, 1:], ignore_index=self.pad_idx)
+        loss = F.cross_entropy(pred[:, :-1], trg[:, 1:], ignore_index=self.pad_idx)
 
         # 손실의 평균 반환
         return loss
