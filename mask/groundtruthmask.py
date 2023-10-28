@@ -6,7 +6,8 @@ import sys
 import geopandas as gpd
 import rasterio
 from rasterio.features import geometry_mask
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, LineString, Point
+from skimage.morphology import dilation, square
 from tqdm import tqdm
 import numpy as np
 import imageio
@@ -71,66 +72,78 @@ def create_masks_for_dataset(center_positions, img_size):
 
     return masks
 
-def inbuildingcpmask(city_name, image_size, building_center_position_datasets, node_size):
+def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, node_size, line_width):
     for idx, dataset in enumerate(tqdm(building_center_position_datasets)):
-        rows_with_1 = dataset[dataset[:, 0] == 1]
+        unit_coords_dataset = unit_coords_datasets[idx][np.any(unit_coords_datasets[idx] != 0, axis=(1, 2))]
 
-        # Extract columns 1 and 2 from those rows
-        valid_coords = rows_with_1[:, [1, 2]]
+        coordinates = [segment[0] for segment in unit_coords_dataset]
+        coordinates.append(unit_coords_dataset[-1][1])
 
-        # Filter out (0,0) coordinates
-        # valid_coords = dataset[~np.all(dataset == 0, axis=1)]
+        boundary_polygon = Polygon(coordinates)
 
         # Create a folder for this dataset
-        folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', city_name, 'inbuildingcpmask',
+        folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', city_name, 'groundtruthmask',
                                    f'{city_name}_{idx + 1}')
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        # Generate masks based on the number of valid coordinates
-        for i in range(1, len(valid_coords) + 1):
-            polygons = []
+        rows_with_1 = dataset[dataset[:, 0] == 1]
+        valid_coords = rows_with_1[:, [1, 2]]
 
-            # Define the transform for rasterio
-            transform = rasterio.transform.from_bounds(0, 0, 1, 1, image_size, image_size)
+        left, upper, right, lower = get_square_bounds(boundary_polygon)
 
-            # First, mark all previous nodes with value 2
-            if i > 1:  # Check if there are previous nodes
-                for coord in valid_coords[:i - 1]:
-                    # Create a small box around the coordinate (3x3 pixels)
-                    minx = coord[0] - (node_size / 2) / image_size
-                    miny = coord[1] - (node_size / 2) / image_size
-                    maxx = coord[0] + (node_size / 2) / image_size
-                    maxy = coord[1] + (node_size / 2) / image_size
-                    polygons.append(box(minx, miny, maxx, maxy))
+        # 2. Set the transform using these coordinates
+        width, height = image_size, image_size
+        transform = rasterio.transform.from_bounds(left, upper, right, lower, width, height)
 
-                mask_previous = geometry_mask(polygons, transform=transform, invert=True,
-                                              out_shape=(image_size, image_size))
-                mask_previous = (mask_previous * 2).astype(np.uint8)
-            else:
-                mask_previous = np.zeros((image_size, image_size), dtype=np.uint8)
+        for i, coord in enumerate(valid_coords):
+            lines = []  # Initialize the lines list at the beginning of each loop iteration
 
-            # Now, mark the most recent node with value 1
-            polygons = []
-            coord = valid_coords[i - 1]
+            # 1. Create a line perpendicular to the nearest point on the boundary polygon
+            nearest_point = boundary_polygon.boundary.interpolate(boundary_polygon.boundary.project(Point(coord)))
+            vertical_line = LineString([coord, (nearest_point.x, nearest_point.y)])
+            lines.append(vertical_line)
+            # 2. Create a line between the current building and the previous one
+            if i > 0:
+                connection_line = LineString([valid_coords[i - 1], coord])
+                lines.append(connection_line)
+
+            # 3. Generate the mask using rasterio for lines
+            line_mask = geometry_mask(lines, transform=transform, invert=True, out_shape=(image_size, image_size))
+
+            # Adjust the thickness of the lines using dilation
+            line_mask = dilation(line_mask, square(line_width))
+
             minx = coord[0] - (node_size / 2) / image_size
             miny = coord[1] - (node_size / 2) / image_size
             maxx = coord[0] + (node_size / 2) / image_size
             maxy = coord[1] + (node_size / 2) / image_size
-            polygons.append(box(minx, miny, maxx, maxy))
+            current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
+                                                  out_shape=(image_size, image_size))
+            current_building_mask = current_building_mask * 2
 
-            mask_recent = geometry_mask(polygons, transform=transform, invert=True, out_shape=(image_size, image_size))
-            mask_recent = (mask_recent * 1).astype(np.uint8)
+            # Create a mask for the previous building if it exists
+            if i > 0:
+                prev_coord = valid_coords[i - 1]
+                minx = prev_coord[0] - (node_size / 2) / image_size
+                miny = prev_coord[1] - (node_size / 2) / image_size
+                maxx = prev_coord[0] + (node_size / 2) / image_size
+                maxy = prev_coord[1] + (node_size / 2) / image_size
+                previous_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
+                                                       out_shape=(image_size, image_size))
+                previous_building_mask = previous_building_mask * 1
+            else:
+                previous_building_mask = np.zeros((image_size, image_size), dtype=np.uint8)
 
-            # Combine the masks
-            mask_combined = np.maximum(mask_previous, mask_recent)
+            combined_mask = np.where(current_building_mask == 2, 2, np.maximum(line_mask, previous_building_mask))
 
             # Save the mask to the appropriate folder
-            mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i}.png')
-            imageio.imsave(mask_path, mask_combined)
+            mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
+            imageio.imsave(mask_path, combined_mask.astype(np.uint8))
 
 
-if __name__ == "__main__":
+
+if __name__=="__main__":
     import pickle
 
     city_names = ["atlanta"]
@@ -139,7 +152,8 @@ if __name__ == "__main__":
     linewidth = 5
     num_grids = 60
     unit_length = 0.04
-    cp_node_size = 5
+    cp_node_size = 3
+    line_width = 2
 
     pickle_folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer',
                                       'train_dataset')
@@ -163,4 +177,4 @@ if __name__ == "__main__":
         with open(node_features_path, 'rb') as f:
             building_center_position_datasets = pickle.load(f)
 
-        inbuildingcpmask(city_name, image_size, building_center_position_datasets, cp_node_size)
+        groundtruthmask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, cp_node_size, line_width)

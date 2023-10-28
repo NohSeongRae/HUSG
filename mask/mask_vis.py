@@ -13,16 +13,17 @@ available mask type
 6. tfoutput_plotmask
 7. inbuildingcpmask
 8. inedgemask
+9. groundtruthmask 
 """
 
-masktype = "allmask"
+masktype = "inbuildingcpmask"
 # inmasktype = "inedgemask"
 
 city_name = "atlanta"
-dataset_idx = 2645
+dataset_idx = 1
 # 마스크 저장
 
-if masktype == "inbuildingcpmask" or masktype == "inedgemask":
+if masktype == "inbuildingcpmask" or masktype == "inedgemask" or masktype == "groundtruthmask":
     maskfolderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
                                   masktype, f'{city_name}_{dataset_idx}')
     mask_filename = os.path.join(maskfolderpath, f'{city_name}_{dataset_idx}_{dataset_idx}.png')
