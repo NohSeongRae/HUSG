@@ -20,7 +20,7 @@ from transformer import Transformer
 from dataloader import BoundaryDataset
 
 class Trainer:
-    def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
+    def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head, n_street,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
                  weight_decay, scheduler_step, scheduler_gamma,
@@ -48,6 +48,7 @@ class Trainer:
         self.d_unit = d_unit
         self.n_layer = n_layer
         self.n_head = n_head
+        self.n_street = n_street
         self.n_building = n_building
         self.n_boundary = n_boundary
         self.dropout = dropout
@@ -75,13 +76,13 @@ class Trainer:
         self.available_gpus = torch.cuda.device_count()
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = BoundaryDataset(n_boundary, d_street, data_type='train')
+        self.train_dataset = BoundaryDataset(n_boundary, n_street, d_street, data_type='train')
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=self.available_gpus, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8)
 
         # Subsequent initializations will use the already loaded full dataset
-        self.val_dataset = BoundaryDataset(n_boundary, d_street, data_type='val')
+        self.val_dataset = BoundaryDataset(n_boundary, n_street, d_street, data_type='val')
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=self.available_gpus, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8)
@@ -252,6 +253,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_layer", type=int, default=6, help="Number of transformer layers.")
     parser.add_argument("--n_head", type=int, default=8, help="Number of attention heads.")
     parser.add_argument("--n_building", type=int, default=1, help="binary classification for building existence.")
+    parser.add_argument("--n_street", type=int, default=60, help="binary classification for building existence.")
     parser.add_argument("--n_boundary", type=int, default=200, help="Number of boundary or token.")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
@@ -295,7 +297,7 @@ if __name__ == '__main__':
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
-                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
+                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch, n_street=opt.n_street,
                       weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
                       use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path)

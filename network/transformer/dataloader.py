@@ -11,8 +11,9 @@ class BoundaryDataset(Dataset):
     Dataset class for boundary data.
     """
 
-    def __init__(self, n_boundary, d_street, data_type='train'):
+    def __init__(self, n_boundary, n_street, d_street, data_type='train'):
         self.n_boundary = n_boundary
+        self.n_street = n_street
         self.d_street = d_street
 
         load_path = './network/transformer/' + data_type + '_boundary_datasets.npz'
@@ -46,7 +47,7 @@ class BoundaryDataset(Dataset):
         # 패딩된 street position 생성
         street_pos = self.street_unit_position_datasets[index]
         street_indices = self.street_index_sequences[index]
-        remove_street_indices = np.array([0])
+        remove_street_indices = np.array([0, self.n_street + 1, self.n_street + 2])
         street_indices = street_indices[~np.isin(street_indices, remove_street_indices)].astype(int)
         filtered_street_pos = [street_pos[element] for element in street_indices]
         zeros = np.zeros((self.n_boundary, self.d_street, 2))
