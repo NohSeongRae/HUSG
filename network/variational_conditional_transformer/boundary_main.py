@@ -122,8 +122,8 @@ class Trainer:
         loss = F.mse_loss(cur_token, next_token, reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        pad_mask = get_pad_mask(street_indices, pad_idx=0)
-        mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)[:, :-1, :]
+        pad_mask = get_pad_mask(street_indices, pad_idx=self.pad_idx)
+        mask = pad_mask.unsqueeze(-1).expand(-1, -1, 4)[:, :-1, :]
 
         masked_loss = loss * mask.float()
 
