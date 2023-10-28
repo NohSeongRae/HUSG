@@ -64,7 +64,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         zeros = np.zeros((n_boundary, d_street, 2))
                         zeros[:len(data)] = data
                         data = zeros
-                        all_unit_position_datasets.append(data)
+                        all_street_unit_position_datasets.append(data)
 
     # Concatenate data from all cities for each key
     full_dataset = {
