@@ -42,6 +42,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                     if dataset_name == 'street_index_sequences':
                         cur_n_street = np.max(data, axis=0)
                         all_cur_n_street.append(cur_n_street)
+
                         zeros = np.zeros(n_boundary)
                         zeros[0] = n_street + 1
                         zeros[1:len(data) + 1] = data
@@ -136,4 +137,4 @@ if __name__ == '__main__':
 
     preprocesing_dataset(train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
                          n_street=opt.n_street, n_building=opt.n_building,
-                         n_boundary=opt.n_building, d_unit=opt.d_unit, d_street=opt.d_street)
+                         n_boundary=opt.boundary, d_unit=opt.d_unit, d_street=opt.d_street)
