@@ -71,11 +71,7 @@ class Encoder(nn.Module):
 
         return enc_output
 
-    def encoding(self, src_unit_seq, src_street_seq, trg_street_seq):
-        src_pad_mask = get_pad_mask(trg_street_seq, pad_idx=0).unsqueeze(-2)
-        src_street_mask = get_street_mask(trg_street_seq) & src_pad_mask
-        src_local_mask = get_local_mask(trg_street_seq) & src_pad_mask
-
+    def encoding(self, src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask):
         src_unit_seq = self.pos_enc(src_unit_seq).squeeze(dim=-1)
         src_street_seq = self.pos_enc(src_street_seq).squeeze(dim=-1)
         enc_output = self.unit_enc(src_unit_seq) + self.street_enc(src_street_seq)
@@ -99,10 +95,6 @@ class Decoder(nn.Module):
         self.layer_norm3 = nn.LayerNorm(d_model // 8, eps=1e-6)
         self.d_model = d_model
 
-    # mask: 일반적인 transformer 의 deocder 에서 사용되는 mask, pad mask 랑 subsequent mask 의 합
-    # trg_pad_mask: 우리는 단어가 아닌, 집합이기 때문에, 집합의 크기를 맞추기 위해 사용된 pad idx 를 제외하고 aggregate 하기 위한 mask
-    # trg_street_mask: 자기가 속한 street 과 동일한 street index 가진 token 에 대해서만 학습에 들어가도록 만들어주는 mask
-    # trg_local_mask: 자기 포함 자기 뒤 5개를 보도록 만들었던 걸로 기억함. 만약 앞에 거 보고 싶으면, 상삼각행렬로 만들든 gpt 랑 잘 놀아보면 됨
     def forward(self, enc_output):
         dec_output = self.fc1(enc_output)
         dec_output = F.relu(dec_output)
@@ -119,7 +111,7 @@ class Decoder(nn.Module):
         return dec_output
 
 class BoundaryTransformer(nn.Module):
-    def __init__(self, n_building=100, pad_idx=0, eos_idx=2, d_model=512, d_inner=2048,
+    def __init__(self, pad_idx=0, d_model=512, d_inner=2048,
                  n_layer=6, n_head=8, d_k=64, d_v=64, dropout=0.1, n_boundary=200,
                  d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
@@ -131,12 +123,14 @@ class BoundaryTransformer(nn.Module):
                                use_local_attn=use_local_attn)
         self.decoder = Decoder(d_model=d_model)
         self.pad_idx = pad_idx
-        self.eos_idx = eos_idx
         self.fc = nn.Linear(d_model // 8, 4)
 
-    def forward(self, src_unit_seq, src_street_seq, trg_street_seq):
+    def forward(self, src_unit_seq, src_street_seq, street_index_seq):
+        src_pad_mask = get_pad_mask(street_index_seq, pad_idx=self.pad_idx).unsqueeze(-2)
+        src_street_mask = get_street_mask(street_index_seq) & src_pad_mask
+        src_local_mask = get_local_mask(street_index_seq) & src_pad_mask
 
-        enc_output = self.encoder(src_unit_seq, src_street_seq, trg_street_seq)
+        enc_output = self.encoder(src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask)
         dec_output = self.decoder(enc_output)
 
         output = self.fc(dec_output)
