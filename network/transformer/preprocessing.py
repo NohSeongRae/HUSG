@@ -61,7 +61,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         all_street_unit_position_datasets.append(data)
 
                     elif dataset_name == 'building_exist_sequences':
-                        zeros = np.zeros((n_boundary, 1))
+                        zeros = np.zeros((n_boundary))
                         zeros[0] = 2
                         zeros[1:len(data) + 1] = data
                         zeros[len(data) + 1] = 3
