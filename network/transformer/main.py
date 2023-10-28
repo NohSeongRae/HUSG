@@ -122,7 +122,7 @@ class Trainer:
         pred = pred.contiguous().view(-1, pred.shape[-1])
         trg = pred.contiguous().view(-1)
 
-        print(pred.shapem, trg.shape)
+        print(pred.shape, trg.shape)
 
         loss = F.cross_entropy(pred, trg, ignore_index=self.pad_idx)
 
