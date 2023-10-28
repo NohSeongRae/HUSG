@@ -13,6 +13,7 @@ import numpy as np
 import imageio
 from shapely.geometry import box
 from tqdm import tqdm
+import pickle
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -117,7 +118,8 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                     print(f"No valid geometry objects {idx + 1} : {e}")
                     continue
 
-                line_mask = dilation(line_mask, square(line_width))
+                # line_mask = dilation(line_mask, square(line_width))
+                line_mask = dilation(line_mask, square(1))
                 accumulated_edges = np.maximum(accumulated_edges, line_mask)
 
                 # 이전 노드와 현재 노드 사이의 선 그리기
@@ -131,7 +133,8 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                         print(f"No valid geometry objects {idx + 1} : {e}")
                         continue
 
-                    line_mask = dilation(line_mask, square(line_width))
+                    # line_mask = dilation(line_mask, square(line_width))
+                    line_mask = dilation(line_mask, square(1))
                     accumulated_edges = np.maximum(accumulated_edges, line_mask)
 
                 # 현재 노드 마스크 생성
@@ -162,10 +165,34 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
 
             combined_mask = np.maximum(accumulated_edges, accumulated_nodes)
 
-            mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
-            imageio.imsave(mask_path, combined_mask.astype(np.uint8))
+            # mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
+            # imageio.imsave(mask_path, combined_mask.astype(np.uint8))
 
+            # 1과 2의 값을 가진 픽셀의 좌표를 찾습니다.
+            y_positions_1, x_positions_1 = np.where(combined_mask == 1)
+            y_positions_2, x_positions_2 = np.where(combined_mask == 2)
 
+            # 좌표를 튜플 리스트 형태로 변환
+            coords_1 = list(zip(y_positions_1, x_positions_1))
+            coords_2 = list(zip(y_positions_2, x_positions_2))
+
+            # 딕셔너리에 좌표 저장
+            coords_dict = {
+                1: coords_1,
+                2: coords_2
+            }
+
+            # 파일에 저장
+            pickle_folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', "mask_pickle", city_name, 'inedgemask',
+                                   f'{city_name}_{idx + 1}')
+
+            if not os.path.exists(pickle_folder_path):
+                os.makedirs(pickle_folder_path)
+
+            pickle_path = os.path.join(pickle_folder_path, f'{city_name}_{idx + 1}_{i+1}.pkl')
+
+            with open(pickle_path, "wb") as f:
+                pickle.dump(coords_dict, f)
 
 
 if __name__=="__main__":

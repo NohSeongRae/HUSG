@@ -12,6 +12,7 @@ from tqdm import tqdm
 import numpy as np
 import imageio
 from tqdm import tqdm
+import pickle
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -52,7 +53,7 @@ def get_square_bounds(polygon, padding_percentage=10):
     return left, upper, right, lower
 
 
-def allmask(city_name, image_size, unit_coords_datasets, street_index_sequences, building_index_sequences, linewidth=5):
+def allmask(city_name, image_size, unit_coords_datasets, street_index_sequences, building_index_sequences, linewidth=1):
     width, height = image_size, image_size
 
     for dataset_idx in tqdm(range(len(unit_coords_datasets))):
@@ -81,6 +82,7 @@ def allmask(city_name, image_size, unit_coords_datasets, street_index_sequences,
             inside_mask = geometry_mask([boundary_polygon], transform=transform, invert=True, out_shape=(height, width))
 
             thick_boundary_mask = dilation(boundary_mask, square(linewidth))
+            # thick_boundary_mask = dilation(boundary_mask, square(1))
 
             # street_index_sequences에서 padding 값을 무시
             if street_index_sequences[dataset_idx][segment_index] != 0:
@@ -102,13 +104,31 @@ def allmask(city_name, image_size, unit_coords_datasets, street_index_sequences,
             segment_index += 1
 
         final_mask = final_mask.astype(np.uint8)
+        #
+        # # 마스크 저장
+        # allmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
+        #                                        'allmask')
+        #
+        # if not os.path.exists(allmask_folderpath):
+        #     os.makedirs(allmask_folderpath)
+        #
+        # allmask_filename = os.path.join(allmask_folderpath, f'{city_name}_{dataset_idx + 1}.png')
+        # imageio.imsave(allmask_filename, final_mask)
 
-        # 마스크 저장
-        allmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
-                                               'allmask')
+        mask_coords = {}
+        unique_values = np.unique(final_mask)
+        for value in unique_values:
+            y_positions, x_positions = np.where(final_mask == value)
+            coords_list = list(zip(y_positions, x_positions))
+            mask_coords[value] = coords_list
 
-        if not os.path.exists(allmask_folderpath):
-            os.makedirs(allmask_folderpath)
+        # 해당 데이터셋에 대한 좌표를 pickle 파일로 저장
+        save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle', f'{city_name}',
+                                       'allmask')
 
-        allmask_filename = os.path.join(allmask_folderpath, f'{city_name}_{dataset_idx + 1}.png')
-        imageio.imsave(allmask_filename, final_mask)
+        if not os.path.exists(save_folderpath):
+            os.makedirs(save_folderpath)
+        pickle_path = os.path.join(save_folderpath, f'{city_name}_{dataset_idx + 1}.pkl')
+
+        with open(pickle_path, "wb") as f:
+            pickle.dump(mask_coords, f)

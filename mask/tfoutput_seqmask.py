@@ -12,6 +12,7 @@ from tqdm import tqdm
 import numpy as np
 import imageio
 from tqdm import tqdm
+import pickle
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -52,7 +53,7 @@ def get_square_bounds(polygon, padding_percentage=10):
     return left, upper, right, lower
 
 
-def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth=5):
+def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth=1):
     width, height = image_size, image_size
 
     for dataset_idx in tqdm(range(len(unit_coords_datasets))):
@@ -79,7 +80,8 @@ def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index
 
             boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
 
-            thick_boundary_mask = dilation(boundary_mask, square(linewidth))
+            # thick_boundary_mask = dilation(boundary_mask, square(linewidth))
+            thick_boundary_mask = dilation(boundary_mask, square(1))
 
             # building_index_sequences padding 값을 무시
             if building_index_sequences[dataset_idx][segment_index] != 2:
@@ -90,12 +92,23 @@ def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index
 
         final_mask = final_mask.astype(np.uint8)
 
-        # 마스크 저장
-        tfoutput_seqmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
-                                               'tfoutput_seqmask')
+        # # 마스크 저장
+        # tfoutput_seqmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
+        #                                        'tfoutput_seqmask')
+        #
+        # if not os.path.exists(tfoutput_seqmask_folderpath):
+        #     os.makedirs(tfoutput_seqmask_folderpath)
+        #
+        # tfoutput_seqmask_filename = os.path.join(tfoutput_seqmask_folderpath, f'{city_name}_{dataset_idx + 1}.png')
+        # imageio.imsave(tfoutput_seqmask_filename, final_mask)
 
-        if not os.path.exists(tfoutput_seqmask_folderpath):
-            os.makedirs(tfoutput_seqmask_folderpath)
+        y_positions, x_positions = np.where(final_mask == 1)
+        coords_list = list(zip(y_positions, x_positions))
 
-        tfoutput_seqmask_filename = os.path.join(tfoutput_seqmask_folderpath, f'{city_name}_{dataset_idx + 1}.png')
-        imageio.imsave(tfoutput_seqmask_filename, final_mask)
+        save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle', f'{city_name}', 'tfoutput_seqmask')
+        if not os.path.exists(save_folderpath):
+            os.makedirs(save_folderpath)
+        pickle_path = os.path.join(save_folderpath, f'{city_name}_{dataset_idx + 1}.pkl')
+
+        with open(pickle_path, "wb") as f:
+            pickle.dump(coords_list, f)

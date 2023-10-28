@@ -6,12 +6,13 @@ import sys
 import geopandas as gpd
 import rasterio
 from rasterio.features import geometry_mask
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 from tqdm import tqdm
 import numpy as np
 import imageio
 from shapely.geometry import box
 from tqdm import tqdm
+import pickle
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -115,11 +116,12 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
             if i > 1:  # Check if there are previous nodes
                 for coord in valid_coords[:i - 1]:
                     # Create a small box around the coordinate (3x3 pixels)
-                    minx = coord[0] - (node_size / 2) / image_size
-                    miny = coord[1] - (node_size / 2) / image_size
-                    maxx = coord[0] + (node_size / 2) / image_size
-                    maxy = coord[1] + (node_size / 2) / image_size
-                    polygons.append(box(minx, miny, maxx, maxy))
+                    # minx = coord[0] - (node_size / 2) / image_size
+                    # miny = coord[1] - (node_size / 2) / image_size
+                    # maxx = coord[0] + (node_size / 2) / image_size
+                    # maxy = coord[1] + (node_size / 2) / image_size
+                    # polygons.append(box(minx, miny, maxx, maxy))
+                    polygons.append(Point(coord).buffer(0.5))
 
                 try:
                     mask_previous = geometry_mask(polygons, transform=transform, invert=True,
@@ -135,11 +137,13 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
             # Now, mark the most recent node with value 2
             polygons = []
             coord = valid_coords[i - 1]
-            minx = coord[0] - (node_size / 2) / image_size
-            miny = coord[1] - (node_size / 2) / image_size
-            maxx = coord[0] + (node_size / 2) / image_size
-            maxy = coord[1] + (node_size / 2) / image_size
-            polygons.append(box(minx, miny, maxx, maxy))
+            # minx = coord[0] - (node_size / 2) / image_size
+            # miny = coord[1] - (node_size / 2) / image_size
+            # maxx = coord[0] + (node_size / 2) / image_size
+            # maxy = coord[1] + (node_size / 2) / image_size
+            # polygons.append(box(minx, miny, maxx, maxy))
+            polygons.append(Point(coord).buffer(0.5))
+
 
             try:
                 mask_recent = geometry_mask(polygons, transform=transform, invert=True, out_shape=(image_size, image_size))
@@ -151,10 +155,35 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
             # Combine the masks
             mask_combined = np.maximum(mask_previous, mask_recent)
 
-            # Save the mask to the appropriate folder
-            mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i+1}.png')
-            imageio.imsave(mask_path, mask_combined)
+            # # Save the mask to the appropriate folder
+            # mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i+1}.png')
+            # imageio.imsave(mask_path, mask_combined)
 
+            # 1과 2의 값을 가진 픽셀의 좌표를 찾습니다.
+            y_positions_1, x_positions_1 = np.where(mask_combined == 1)
+            y_positions_2, x_positions_2 = np.where(mask_combined == 2)
+
+            # 좌표를 튜플 리스트 형태로 변환
+            coords_1 = list(zip(y_positions_1, x_positions_1))
+            coords_2 = list(zip(y_positions_2, x_positions_2))
+
+            # 딕셔너리에 좌표 저장
+            coords_dict = {
+                1: coords_1,
+                2: coords_2
+            }
+
+            # 파일에 저장
+            pickle_folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', "mask_pickle", city_name, 'inbuildingcpmask',
+                                   f'{city_name}_{idx + 1}')
+
+            if not os.path.exists(pickle_folder_path):
+                os.makedirs(pickle_folder_path)
+
+            pickle_path = os.path.join(pickle_folder_path, f'{city_name}_{idx + 1}_{i+1}.pkl')
+
+            with open(pickle_path, "wb") as f:
+                pickle.dump(coords_dict, f)
 
 if __name__ == "__main__":
     import pickle

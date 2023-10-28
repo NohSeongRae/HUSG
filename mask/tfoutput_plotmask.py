@@ -14,6 +14,7 @@ import numpy as np
 import imageio
 from tqdm import tqdm
 from rtree import index
+import pickle
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -172,8 +173,19 @@ def tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_inde
 
         tfoutput_plotmask_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask',
                                              f'{city_name}', 'tfoutput_plotmask')
-        if not os.path.exists(tfoutput_plotmask_folderpath):
-            os.makedirs(tfoutput_plotmask_folderpath)
+        # if not os.path.exists(tfoutput_plotmask_folderpath):
+        #     os.makedirs(tfoutput_plotmask_folderpath)
 
-        tfoutput_plotmask_filepath = os.path.join(tfoutput_plotmask_folderpath, f'{city_name}_{idx+1}.png')
-        imageio.imsave(tfoutput_plotmask_filepath, scaled_mask)
+        # tfoutput_plotmask_filepath = os.path.join(tfoutput_plotmask_folderpath, f'{city_name}_{idx+1}.png')
+        # imageio.imsave(tfoutput_plotmask_filepath, scaled_mask)
+
+        y_positions, x_positions = np.where(scaled_mask == 1)
+        coords_list = list(zip(y_positions, x_positions))
+
+        save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle', f'{city_name}', 'tfoutput_plotmask')
+        if not os.path.exists(save_folderpath):
+            os.makedirs(save_folderpath)
+        pickle_path = os.path.join(save_folderpath, f'{city_name}_{idx + 1}.pkl')
+
+        with open(pickle_path, "wb") as f:
+            pickle.dump(coords_list, f)
