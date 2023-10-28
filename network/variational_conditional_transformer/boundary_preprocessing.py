@@ -37,18 +37,13 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
                     if dataset_name == 'street_index_sequences':
                         zeros = np.zeros(n_boundary)
-                        zeros[0] = n_street + 1
-                        zeros[1:len(data) + 1] = data
-                        zeros[len(data) + 1] = n_street + 2
+                        zeros[:len(data)] = data
                         data = zeros
                         all_street_index_sequences.append(data)
 
                     elif dataset_name == 'unit_position_datasets':
                         zeros = np.zeros((n_boundary, d_unit, 2))
-                        zeros[0] = 2
-                        zeros[1:len(data) + 1] = data
-                        zeros[len(data) + 1] = 3
-                        zeros[len(data) + 2:] = 4
+                        zeros[:len(data)] = data
                         data = zeros
                         all_unit_position_datasets.append(data)
 
@@ -74,7 +69,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         'gt_unit_position_datasets': np.array(all_gt_unit_position_datasets)
     }
 
-    # Shuffle the dataset
+    # Shuffle the datasets
     permuted_indices = np.random.permutation(len(full_dataset['unit_position_datasets']))
     for key in full_dataset:
         full_dataset[key] = full_dataset[key][permuted_indices]
