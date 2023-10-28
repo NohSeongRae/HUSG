@@ -20,7 +20,7 @@ from transformer import Transformer
 from dataloader import BoundaryDataset
 
 class Trainer:
-    def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
+    def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
                  weight_decay, scheduler_step, scheduler_gamma,
@@ -40,8 +40,9 @@ class Trainer:
         # Initialize trainer parameters
         self.batch_size = batch_size
         self.max_epoch = max_epoch
+        self.sos_idx = sos_idx
+        self.eos_idx = eos_idx
         self.pad_idx = pad_idx
-        self.eos_idx = 2
         self.d_model = d_model
         self.d_street = d_street
         self.d_unit = d_unit
@@ -74,13 +75,13 @@ class Trainer:
         self.available_gpus = torch.cuda.device_count()
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = BoundaryDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train', load=False)
+        self.train_dataset = BoundaryDataset(n_boundary, d_street, data_type='train')
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=self.available_gpus, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8)
 
         # Subsequent initializations will use the already loaded full dataset
-        self.val_dataset = BoundaryDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='val', load=False)
+        self.val_dataset = BoundaryDataset(n_boundary, d_street, data_type='val')
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=self.available_gpus, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8)
@@ -112,24 +113,19 @@ class Trainer:
         - trg (torch.Tensor): Ground truth labels.
 
         Returns:
-        - torch.Tensor: Computed BCE loss.
+        - torch.Tensor: Computed CE loss.
         """
-        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
+        loss = F.cross_entropy(torch.softmax(pred[:, :-1], dim=-1), trg[:, 1:], ignore_index=self.pad_idx)
 
-        # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        mask = get_pad_mask(trg[:, 1:], pad_idx=self.eos_idx).float()
-
-        # mask 적용
-        masked_loss = loss * mask
         # 손실의 평균 반환
-        return masked_loss.mean()
+        return loss
 
     def train(self):
         """Training loop for the transformer model."""
         epoch_start = 0
 
         if self.use_checkpoint:
-            checkpoint = torch.load("./models/transformer_epoch_" + str(self.checkpoint_epoch) + ".pt")
+            checkpoint = torch.load("./models/transformer/epoch_" + str(self.checkpoint_epoch) + ".pt")
             self.transformer.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             epoch_start = checkpoint['epoch']
@@ -146,7 +142,7 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, _ = data
+                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq = data
                 gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
@@ -154,8 +150,7 @@ class Trainer:
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq,
-                                          trg_building_seq, trg_street_seq)
+                output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
 
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach())
@@ -171,10 +166,10 @@ class Trainer:
 
             # Print the average losses for the current epoch
             loss_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss CE: {loss_mean:.4f}")
 
             if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-bce", loss_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-ce", loss_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
@@ -185,7 +180,7 @@ class Trainer:
                     # Iterate over batches
                     for data in tqdm(self.val_dataloader):
                         # Get the source and target sequences from the batch
-                        src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, _ = data
+                        src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq = data
                         gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
                         src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                         src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
@@ -202,7 +197,7 @@ class Trainer:
                         for t in range(self.n_boundary):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
                             output_storage[:, t] = output[:, t].detach()
-                            next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-1)
+                            next_token = torch.argmax(torch.softmax(output, dim=-1), dim=-1).long()[:, t].unsqueeze(-1)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses
@@ -217,11 +212,11 @@ class Trainer:
                     # Print the average losses for the current epoch
                     loss_mean /= len(self.val_dataloader)
                     wd_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {loss_mean:.4f}")
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss CE: {loss_mean:.4f}")
                     print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Wasserstein Distance: {wd_mean:.4f}")
 
                     if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-ce", loss_mean, epoch + 1)
                         self.writer.add_scalar("Val/wasserstein_distance", wd, epoch + 1)
 
                 self.transformer.module.train()
@@ -238,7 +233,7 @@ class Trainer:
                     save_path = os.path.join("./models", self.save_dir_path)
                     if not os.path.exists(save_path):
                         os.makedirs(save_path)
-                    torch.save(checkpoint, os.path.join(save_path, "transformer_epoch_" + str(epoch + 1) + ".pth"))
+                    torch.save(checkpoint, os.path.join(save_path, "epoch_" + str(epoch + 1) + ".pth"))
 
 
 if __name__ == '__main__':
@@ -248,7 +243,9 @@ if __name__ == '__main__':
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
-    parser.add_argument("--pad_idx", type=int, default=0, help="Padding index for sequences.")
+    parser.add_argument("--sos_idx", type=int, default=2, help="Padding index for sequences.")
+    parser.add_argument("--eos_idx", type=int, default=3, help="Padding index for sequences.")
+    parser.add_argument("--pad_idx", type=int, default=4, help="Padding index for sequences.")
     parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
     parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
     parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
@@ -273,7 +270,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--local_rank", type=int)
-    parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
+    parser.add_argument("--save_dir_path", type=str, default="transformer", help="save dir path")
 
     opt = parser.parse_args()
 
@@ -293,7 +290,7 @@ if __name__ == '__main__':
     dist.init_process_group(backend='nccl')
 
     # Create a Trainer instance and start the training process
-    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx,
+    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, sos_idx=opt.sos_idx, eos_idx=opt.eos_idx, pad_idx=opt.pad_idx,
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,

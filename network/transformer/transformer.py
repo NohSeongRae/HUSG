@@ -83,7 +83,7 @@ class Decoder(nn.Module):
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
-        self.building_emb = nn.Embedding(3, d_model, padding_idx=eos_idx)
+        self.building_emb = nn.Embedding(5, d_model, padding_idx=pad_idx)
         self.building_enc = nn.Linear(n_building, 1)
         self.pos_enc = PositionalEncoding(d_model, n_boundary=n_boundary)
         self.dropout = nn.Dropout(dropout)
@@ -129,17 +129,17 @@ class Transformer(nn.Module):
                                use_local_attn=use_local_attn)
         self.pad_idx = pad_idx
         self.eos_idx = eos_idx
-        self.building_fc = nn.Linear(d_model, 1, bias=False)
+        self.building_fc = nn.Linear(d_model, 5, bias=False)
 
     def forward(self, src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq):
-        src_pad_mask = get_pad_mask(trg_street_seq, pad_idx=0).unsqueeze(-2)
-        src_street_mask = get_street_mask(trg_street_seq) & src_pad_mask
-        src_local_mask = get_local_mask(trg_street_seq) & src_pad_mask
+        src_pad_mask = get_pad_mask(src_unit_seq[:, :, 0], pad_idx=self.pad_idx).unsqueeze(-2)
+        src_street_mask = get_street_mask(src_unit_seq[:, :, 0]) & src_pad_mask
+        src_local_mask = get_local_mask(src_unit_seq[:, :, 0]) & src_pad_mask
 
         sub_mask = get_subsequent_mask(trg_building_seq)
-        trg_pad_mask = get_pad_mask(trg_street_seq[:, :trg_building_seq.shape[1]], pad_idx=0).unsqueeze(-2) & sub_mask
-        trg_street_mask = get_street_mask(trg_street_seq[:, :trg_building_seq.shape[1]]) & trg_pad_mask
-        trg_local_mask = get_local_mask(trg_street_seq[:, :trg_building_seq.shape[1]]) & trg_pad_mask
+        trg_pad_mask = get_pad_mask(trg_building_seq, pad_idx=self.pad_idx).unsqueeze(-2) & sub_mask
+        trg_street_mask = get_street_mask(trg_building_seq) & trg_pad_mask
+        trg_local_mask = get_local_mask(trg_building_seq) & trg_pad_mask
 
         enc_output = self.encoder(src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask)
         dec_output = self.decoder(trg_building_seq, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask, src_pad_mask)
