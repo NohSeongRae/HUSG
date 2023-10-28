@@ -61,12 +61,12 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     # Subsequent initializations will use the already loaded full dataset
-    test_dataset = GraphDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio,
+    test_dataset = BoundaryDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio,
                                 data_type='test', load=False)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
-    transformer = GraphTransformer(n_building=n_building, sos_idx=sos_idx, eos_idx=eos_idx,
+    transformer = BoundaryTransformer(n_building=n_building, sos_idx=sos_idx, eos_idx=eos_idx,
                                         pad_idx=pad_idx,
                                         d_street=d_street, d_unit=d_unit, d_model=d_model,
                                         d_inner=d_model * 4, n_layer=n_layer, n_head=n_head,
