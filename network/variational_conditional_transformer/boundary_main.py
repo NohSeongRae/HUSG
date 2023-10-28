@@ -94,7 +94,7 @@ class Trainer:
                                           weight_decay=self.weight_decay)
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
 
-    def recun_loss(self, pred, trg, street_indices):
+    def recon_loss(self, pred, trg, street_indices):
         """
         Compute the binary cross-entropy loss between predictions and targets.
 
@@ -103,7 +103,7 @@ class Trainer:
         - trg (torch.Tensor): Ground truth labels.
 
         Returns:
-        - torch.Tensor: Computed Recun loss.
+        - torch.Tensor: Computed Recon loss.
         """
         loss = F.mse_loss(pred, trg, reduction='none')
 
@@ -143,7 +143,7 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in range(epoch_start, self.max_epoch):
-            loss_recun_mean = 0
+            loss_recon_mean = 0
             loss_smooth_mean = 0
 
             # Iterate over batches
@@ -162,12 +162,12 @@ class Trainer:
                 output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
 
                 # Compute the losses
-                loss_recun = self.recun_loss(output, gt_unit_seq.detach(), street_index_seq.detach())
+                loss_recon = self.recon_loss(output, gt_unit_seq.detach(), street_index_seq.detach())
                 loss_smooth = self.smooth_loss(output, street_index_seq.detach())
-                loss_total = loss_recun + loss_smooth
+                loss_total = loss_recon + loss_smooth
 
                 # Accumulate the losses for reporting
-                loss_recun_mean += loss_recun.detach().item()
+                loss_recon_mean += loss_recon.detach().item()
                 loss_smooth_mean += loss_smooth.detach().item()
                 # Backpropagation and optimization step
                 loss_total.backward()
@@ -176,18 +176,18 @@ class Trainer:
             self.scheduler.step()
 
             # Print the average losses for the current epoch
-            loss_recun_mean /= len(self.train_dataloader)
+            loss_recon_mean /= len(self.train_dataloader)
             loss_smooth_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recun: {loss_recun_mean:.4f}")
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon: {loss_recon_mean:.4f}")
             print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Smooth: {loss_smooth_mean:.4f}")
 
             if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-recun", loss_recun_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-recon", loss_recon_mean, epoch + 1)
                 self.writer.add_scalar("Train/loss-smooth", loss_smooth_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
-                loss_recun_mean = 0
+                loss_recon_mean = 0
                 loss_smooth_mean = 0
 
                 with torch.no_grad():
@@ -204,19 +204,19 @@ class Trainer:
                         output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
 
                         # Compute the losses
-                        loss_recun = self.recun_loss(output, gt_unit_seq, street_index_seq)
+                        loss_recon = self.recon_loss(output, gt_unit_seq, street_index_seq)
                         loss_smooth = self.smooth_loss(output, street_index_seq)
-                        loss_recun_mean += loss_recun.detach().item()
+                        loss_recon_mean += loss_recon.detach().item()
                         loss_smooth_mean += loss_smooth.detach().item()
 
                     # Print the average losses for the current epoch
-                    loss_recun_mean /= len(self.val_dataloader)
+                    loss_recon_mean /= len(self.val_dataloader)
                     loss_smooth_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recun: {loss_recun_mean:.4f}")
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recon: {loss_recon_mean:.4f}")
                     print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Smooth: {loss_smooth_mean:.4f}")
 
                     if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-recun", loss_recun_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-recon", loss_recon_mean, epoch + 1)
                         self.writer.add_scalar("Val/loss-smooth", loss_smooth_mean, epoch + 1)
 
                 self.transformer.module.train()

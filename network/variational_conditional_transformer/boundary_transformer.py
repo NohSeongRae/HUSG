@@ -71,7 +71,11 @@ class Encoder(nn.Module):
 
         return enc_output
 
-    def encoding(self, src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask):
+    def encoding(self, src_unit_seq, src_street_seq, street_index_seq):
+        src_pad_mask = get_pad_mask(street_index_seq, pad_idx=self.pad_idx).unsqueeze(-2)
+        src_street_mask = get_street_mask(street_index_seq) & src_pad_mask
+        src_local_mask = get_local_mask(street_index_seq) & src_pad_mask
+
         src_unit_seq = self.pos_enc(src_unit_seq).squeeze(dim=-1)
         src_street_seq = self.pos_enc(src_street_seq).squeeze(dim=-1)
         enc_output = self.unit_enc(src_unit_seq) + self.street_enc(src_street_seq)
@@ -126,11 +130,7 @@ class BoundaryTransformer(nn.Module):
         self.fc = nn.Linear(d_model // 8, 4)
 
     def forward(self, src_unit_seq, src_street_seq, street_index_seq):
-        src_pad_mask = get_pad_mask(street_index_seq, pad_idx=self.pad_idx).unsqueeze(-2)
-        src_street_mask = get_street_mask(street_index_seq) & src_pad_mask
-        src_local_mask = get_local_mask(street_index_seq) & src_pad_mask
-
-        enc_output = self.encoder(src_unit_seq, src_street_seq, src_pad_mask, src_street_mask, src_local_mask)
+        enc_output = self.encoder(src_unit_seq, src_street_seq, street_index_seq)
         dec_output = self.decoder(enc_output)
 
         output = self.fc(dec_output)
