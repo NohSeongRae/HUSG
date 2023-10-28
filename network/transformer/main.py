@@ -122,6 +122,8 @@ class Trainer:
         pred = pred.contiguous().view(-1, pred.shape[-1])
         trg = pred.contiguous().view(-1)
 
+        print(pred.shapem, trg.shape)
+
         loss = F.cross_entropy(pred, trg, ignore_index=self.pad_idx)
 
         # 손실의 평균 반환
