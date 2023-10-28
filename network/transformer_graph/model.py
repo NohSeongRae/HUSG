@@ -150,7 +150,7 @@ class GraphTransformer(nn.Module):
                                        d_unit=d_unit, d_street=d_street, dropout=0.1,
                                        use_global_attn=use_global_attn, use_street_attn=use_street_attn,
                                        use_local_attn=use_local_attn)
-        self.decoder = GraphDecoder(n_layer=n_layer, n_head=n_head, n_building=n_building,
+        self.decoder = GraphDecoder(n_layer=n_layer, n_head=n_head, n_building=n_building, n_street=n_street,
                                     d_model=d_model, d_inner=d_inner, dropout=0.1,
                                     use_global_attn=use_global_attn, use_street_attn=use_street_attn,
                                     use_local_attn=use_local_attn)
