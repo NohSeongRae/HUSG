@@ -13,9 +13,9 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from tf_autoencoder import get_pad_mask
-from tf_autoencoder import BoundaryTransformer
-from dataloader import BoundaryDataset
+from boundary_transformer import get_pad_mask
+from boundary_transformer import BoundaryTransformer
+from boundary_dataloader import BoundaryDataset
 from visualization import plot
 
 

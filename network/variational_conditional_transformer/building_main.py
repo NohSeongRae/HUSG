@@ -13,9 +13,9 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from tf_autoencoder import get_pad_mask
-from tf_autoencoder import BoundaryTransformer
-from dataloader import BoundaryDataset
+from boundary_transformer import BoundaryTransformer
+from building_transformer import BuildingTransformer
+from building_dataloader import BuildingDataset
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
@@ -72,76 +72,49 @@ class Trainer:
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = BoundaryDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train', load=False)
+        self.train_dataset = BuildingDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train', load=False)
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=3, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8)
 
         # Subsequent initializations will use the already loaded full dataset
-        self.val_dataset = BoundaryDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='val', load=False)
+        self.val_dataset = BuildingDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='val', load=False)
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=3, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8)
 
         # Initialize the Transformer model
-        self.transformer = BoundaryTransformer(n_building=self.n_building, eos_idx=self.eos_idx, pad_idx=self.pad_idx,
+        self.boundary_transformer = BoundaryTransformer(n_building=self.n_building, eos_idx=self.eos_idx, pad_idx=self.pad_idx,
                                                d_street=self.d_street, d_unit=self.d_unit, d_model=self.d_model,
                                                d_inner=self.d_model * 4, n_layer=self.n_layer, n_head=self.n_head,
                                                dropout=self.dropout,
                                                use_global_attn=use_global_attn,
                                                use_street_attn=use_street_attn,
                                                use_local_attn=use_local_attn).to(device=self.device)
-        self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank], find_unused_parameters=True)
+        self.boundary_transformer = nn.parallel.DistributedDataParallel(self.boundary_transformer, device_ids=[local_rank], find_unused_parameters=True)
+        self.building_transformer = BuildingTransformer(n_building=self.n_building, pad_idx=self.pad_idx,
+                                               d_model=self.d_model,
+                                               d_inner=self.d_model * 4, n_layer=self.n_layer, n_head=self.n_head,
+                                               dropout=self.dropout).to(device=self.device)
+        self.building_transformer = nn.parallel.DistributedDataParallel(self.building_transformer, device_ids=[local_rank], find_unused_parameters=True)
 
         # Set the optimizer for the training process
-        self.optimizer = torch.optim.Adam(self.transformer.parameters(),
+        self.optimizer = torch.optim.Adam(self.building_transformer.parameters(),
                                           lr=5e-4,
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
 
-    def recun_loss(self, pred, trg, street_indices):
-        """
-        Compute the binary cross-entropy loss between predictions and targets.
-
-        Args:
-        - pred (torch.Tensor): Model predictions.
-        - trg (torch.Tensor): Ground truth labels.
-
-        Returns:
-        - torch.Tensor: Computed Recun loss.
-        """
-        loss = F.mse_loss(pred, trg, reduction='none')
-
-        # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        pad_mask = get_pad_mask(street_indices, pad_idx=0)
-        mask = pad_mask.unsqueeze(-1).expand(-1, -1, 4)
-
-        # mask 적용
-        masked_loss = loss * mask.float()
-        # 손실의 평균 반환
-        return masked_loss.sum() / mask.sum()
-
-    def smooth_loss(self, pred, street_indices):
-        cur_token = pred[:, :-1, 2:]
-        next_token = pred[:, 1:, :2]
-        loss = F.mse_loss(cur_token, next_token, reduction='none')
-
-        # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        pad_mask = get_pad_mask(street_indices, pad_idx=0)
-        mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)[:, :-1, :]
-
-        masked_loss = loss * mask.float()
-
-        return masked_loss.sum() / mask.sum()
-
     def train(self):
         """Training loop for the transformer model."""
         epoch_start = 0
 
+        checkpoint = torch.load("./models/" + self.save_dir_path + "/boundary_transformer_epoch_" + str(100) + ".pth")
+        self.boundary_transformer.load_state_dict(checkpoint['model_state_dict'])
+
         if self.use_checkpoint:
-            checkpoint = torch.load("./models/transformer_epoch_" + str(self.checkpoint_epoch) + ".pt")
-            self.transformer.load_state_dict(checkpoint['model_state_dict'])
+            checkpoint = torch.load("./models/building_transformer_epoch_" + str(self.checkpoint_epoch) + ".pt")
+            self.building_transformer.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             epoch_start = checkpoint['epoch']
 
@@ -149,8 +122,7 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in range(epoch_start, self.max_epoch):
-            loss_recun_mean = 0
-            loss_smooth_mean = 0
+            loss_recon_mean = 0
 
             # Iterate over batches
             for data in tqdm(self.train_dataloader):
@@ -158,23 +130,22 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, street_index_seq, gt_unit_seq = data
+                src_unit_seq, src_street_seq, street_index_seq, building_features = data
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                 street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
-                gt_unit_seq = gt_unit_seq.to(device=self.device, dtype=torch.float32)
+                building_features = building_features.to(device=self.device, dtype=torch.float32)
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
+                boundary_z = self.boundary_transformer.encoder.encoding(src_unit_seq, src_street_seq, street_index_seq)
+                output, mu, log_var = self.building_transformer(boundary_z, building_features)
 
                 # Compute the losses
-                loss_recun = self.recun_loss(output, gt_unit_seq.detach(), street_index_seq.detach())
-                loss_smooth = self.smooth_loss(output, street_index_seq.detach())
-                loss_total = loss_recun + loss_smooth
+                loss_recon = self.recon_loss(output, building_features.detach(), pad_mask)
+                loss_total = loss_recon
 
                 # Accumulate the losses for reporting
-                loss_recun_mean += loss_recun.detach().item()
-                loss_smooth_mean += loss_smooth.detach().item()
+                loss_recon_mean += loss_recon.detach().item()
                 # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
@@ -182,56 +153,50 @@ class Trainer:
             self.scheduler.step()
 
             # Print the average losses for the current epoch
-            loss_recun_mean /= len(self.train_dataloader)
-            loss_smooth_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recun: {loss_recun_mean:.4f}")
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Smooth: {loss_smooth_mean:.4f}")
+            loss_recon_mean /= len(self.train_dataloader)
+            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon: {loss_recon_mean:.4f}")
 
             if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-recun", loss_recun_mean, epoch + 1)
-                self.writer.add_scalar("Train/loss-smooth", loss_smooth_mean, epoch + 1)
+                self.writer.add_scalar("Train/loss-recon", loss_recon_mean, epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
-                self.transformer.module.eval()
-                loss_recun_mean = 0
+                self.building_transformer.module.eval()
+                loss_recon_mean = 0
                 loss_smooth_mean = 0
 
                 with torch.no_grad():
                     # Iterate over batches
                     for data in tqdm(self.val_dataloader):
                         # Get the source and target sequences from the batch
-                        src_unit_seq, src_street_seq, street_index_seq, gt_unit_seq = data
+                        src_unit_seq, src_street_seq, street_index_seq, building_features = data
                         src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                         src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                         street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
-                        gt_unit_seq = gt_unit_seq.to(device=self.device, dtype=torch.float32)
+                        building_features = building_features.to(device=self.device, dtype=torch.float32)
 
                         # Get the model's predictions
-                        output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
+                        boundary_z = self.boundary_transformer(src_unit_seq, src_street_seq, street_index_seq)
+                        output = self.building_transformer.decoding(boundary_z, building_features)
 
                         # Compute the losses
-                        loss_recun = self.recun_loss(output, gt_unit_seq, street_index_seq)
-                        loss_smooth = self.smooth_loss(output, street_index_seq)
-                        loss_recun_mean += loss_recun.detach().item()
-                        loss_smooth_mean += loss_smooth.detach().item()
+                        loss_recon = self.recon_loss(output, building_features, None)
+
+                        loss_recon_mean += loss_recon.detach().item()
 
                     # Print the average losses for the current epoch
-                    loss_recun_mean /= len(self.val_dataloader)
-                    loss_smooth_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recun: {loss_recun_mean:.4f}")
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Smooth: {loss_smooth_mean:.4f}")
+                    loss_recon_mean /= len(self.val_dataloader)
+                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recon: {loss_recon_mean:.4f}")
 
                     if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-recun", loss_recun_mean, epoch + 1)
-                        self.writer.add_scalar("Val/loss-smooth", loss_smooth_mean, epoch + 1)
+                        self.writer.add_scalar("Val/loss-recon", loss_recon_mean, epoch + 1)
 
-                self.transformer.module.train()
+                self.building_transformer.module.train()
 
             if (epoch + 1) % self.save_epoch == 0:
                 # 체크포인트 데이터 준비
                 checkpoint = {
                     'epoch': epoch,
-                    'model_state_dict': self.transformer.module.state_dict(),
+                    'model_state_dict': self.building_transformer.module.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
                 }
 
