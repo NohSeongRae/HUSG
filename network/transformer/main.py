@@ -152,6 +152,7 @@ class Trainer:
 
                 # Get the model's predictions
                 output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
+                print(output.shape, gt_building_seq.shape)
 
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach())
