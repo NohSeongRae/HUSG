@@ -121,8 +121,13 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
                     maxy = coord[1] + (node_size / 2) / image_size
                     polygons.append(box(minx, miny, maxx, maxy))
 
-                mask_previous = geometry_mask(polygons, transform=transform, invert=True,
-                                              out_shape=(image_size, image_size))
+                try:
+                    mask_previous = geometry_mask(polygons, transform=transform, invert=True,
+                                                  out_shape=(image_size, image_size))
+                except Exception as e:
+                    print(f"No valid geometry objects {idx+1} : {e}")
+                    continue
+
                 mask_previous = (mask_previous * 1).astype(np.uint8)  # Change value to 1
             else:
                 mask_previous = np.zeros((image_size, image_size), dtype=np.uint8)
@@ -136,7 +141,11 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
             maxy = coord[1] + (node_size / 2) / image_size
             polygons.append(box(minx, miny, maxx, maxy))
 
-            mask_recent = geometry_mask(polygons, transform=transform, invert=True, out_shape=(image_size, image_size))
+            try:
+                mask_recent = geometry_mask(polygons, transform=transform, invert=True, out_shape=(image_size, image_size))
+            except Exception as e:
+                print(f"No valid geometry objects {idx + 1} : {e}")
+                continue
             mask_recent = (mask_recent * 2).astype(np.uint8)  # Change value to 2
 
             # Combine the masks

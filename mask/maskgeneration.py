@@ -21,7 +21,7 @@ from groundtruthmask import groundtruthmask
 
 # city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
 
-city_names = ["phoenix", "miami", "littlerock"]
+city_names = ["atlanta", "phoenix", "miami", "littlerock"]
 
 image_size = 120
 linewidth = 5

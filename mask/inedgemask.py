@@ -110,7 +110,13 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                 # 세로 선 그리기
                 nearest_point = boundary_polygon.boundary.interpolate(boundary_polygon.boundary.project(Point(coord)))
                 vertical_line = LineString([coord, (nearest_point.x, nearest_point.y)])
-                line_mask = geometry_mask([vertical_line], transform=transform, invert=True, out_shape=(image_size, image_size))
+
+                try:
+                    line_mask = geometry_mask([vertical_line], transform=transform, invert=True, out_shape=(image_size, image_size))
+                except Exception as e:
+                    print(f"No valid geometry objects {idx + 1} : {e}")
+                    continue
+
                 line_mask = dilation(line_mask, square(line_width))
                 accumulated_edges = np.maximum(accumulated_edges, line_mask)
 
@@ -118,7 +124,13 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                 if j > 0:
                     prev_coord = valid_coords[j - 1]
                     connection_line = LineString([prev_coord, coord])
-                    line_mask = geometry_mask([connection_line], transform=transform, invert=True, out_shape=(image_size, image_size))
+
+                    try:
+                        line_mask = geometry_mask([connection_line], transform=transform, invert=True, out_shape=(image_size, image_size))
+                    except Exception as e:
+                        print(f"No valid geometry objects {idx + 1} : {e}")
+                        continue
+
                     line_mask = dilation(line_mask, square(line_width))
                     accumulated_edges = np.maximum(accumulated_edges, line_mask)
 
@@ -127,8 +139,13 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                 miny = coord[1] - (node_size / 2) / image_size
                 maxx = coord[0] + (node_size / 2) / image_size
                 maxy = coord[1] + (node_size / 2) / image_size
-                current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
-                                                      out_shape=(image_size, image_size))
+
+                try:
+                    current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
+                                                          out_shape=(image_size, image_size))
+                except Exception as e:
+                    print(f"No valid geometry objects {idx + 1} : {e}")
+                    continue
 
                 # 모든 누적된 노드들을 1로 설정
                 accumulated_nodes[accumulated_nodes == 2] = 1

@@ -110,7 +110,11 @@ def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center
                 lines.append(connection_line)
 
             # 3. Generate the mask using rasterio for lines
-            line_mask = geometry_mask(lines, transform=transform, invert=True, out_shape=(image_size, image_size))
+            try:
+                line_mask = geometry_mask(lines, transform=transform, invert=True, out_shape=(image_size, image_size))
+            except Exception as e:
+                print(f"No valid geometry objects {idx + 1} : {e}")
+                continue
 
             # Adjust the thickness of the lines using dilation
             line_mask = dilation(line_mask, square(line_width))
@@ -120,8 +124,13 @@ def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center
             miny = coord[1] - (node_size / 2) / image_size
             maxx = coord[0] + (node_size / 2) / image_size
             maxy = coord[1] + (node_size / 2) / image_size
-            current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
-                                                  out_shape=(image_size, image_size))
+            try:
+                current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
+                                                      out_shape=(image_size, image_size))
+            except Exception as e:
+                print(f"No valid geometry objects {idx + 1} : {e}")
+                continue
+
             current_building_mask = current_building_mask * 2
 
             y_positions, x_positions = np.where(current_building_mask == 2)
@@ -137,8 +146,12 @@ def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center
                 miny = prev_coord[1] - (node_size / 2) / image_size
                 maxx = prev_coord[0] + (node_size / 2) / image_size
                 maxy = prev_coord[1] + (node_size / 2) / image_size
-                previous_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
-                                                       out_shape=(image_size, image_size))
+                try:
+                    previous_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
+                                                           out_shape=(image_size, image_size))
+                except Exception as e:
+                    print(f"No valid geometry objects {idx + 1} : {e}")
+                    continue
                 previous_building_mask = previous_building_mask * 1
             else:
                 previous_building_mask = np.zeros((image_size, image_size), dtype=np.uint8)
