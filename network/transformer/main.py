@@ -199,7 +199,7 @@ class Trainer:
 
                         # output 값을 저장할 텐서를 미리 할당합니다.
                         output_storage = torch.zeros(
-                            (src_unit_seq.size(0), self.n_boundary), device=self.device)
+                            (src_unit_seq.size(0), self.n_boundary, 5), device=self.device)
 
                         for t in range(self.n_boundary):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
