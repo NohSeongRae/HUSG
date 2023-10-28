@@ -20,7 +20,7 @@ from dataloader import GraphDataset
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
-                 train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
+                 val_epoch, save_epoch,
                  weight_decay, scheduler_step, scheduler_gamma, n_street,
                  use_global_attn, use_street_attn, use_local_attn, local_rank, save_dir_path):
         """
@@ -53,9 +53,6 @@ class Trainer:
         self.use_checkpoint = use_checkpoint
         self.checkpoint_epoch = checkpoint_epoch
         self.use_tensorboard = use_tensorboard
-        self.train_ratio = train_ratio
-        self.val_ratio = val_ratio
-        self.test_ratio = test_ratio
         self.val_epoch = val_epoch
         self.save_epoch = save_epoch
         self.weight_decay = weight_decay
@@ -73,11 +70,16 @@ class Trainer:
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = GraphDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='train', load=False,
-                                          n_street=n_street, n_building=n_building, n_boundary=n_boundary, d_unit=d_unit, d_street=d_street)
+        self.train_dataset = GraphDataset(data_type='train', n_street=n_street, n_building=n_building, n_boundary=n_boundary, d_unit=d_unit, d_street=d_street)
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8, pin_memory=True)
+
+        # Subsequent initializations will use the already loaded full dataset
+        self.val_dataset = GraphDataset(data_type='val', n_street=n_street, n_building=n_building, n_boundary=n_boundary, d_unit=d_unit, d_street=d_street)
+        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, rank=rank)
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
+                                         sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
         self.transformer = GraphTransformer(n_building=self.n_building, sos_idx=self.sos_idx, eos_idx=self.eos_idx, pad_idx=self.pad_idx,
@@ -251,9 +253,6 @@ if __name__ == '__main__':
     parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
     parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
-    parser.add_argument("--train_ratio", type=float, default=0.89, help="Use checkpoint index.")
-    parser.add_argument("--val_ratio", type=float, default=0.01, help="Use checkpoint index.")
-    parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
     parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
@@ -292,7 +291,6 @@ if __name__ == '__main__':
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
-                      train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch, n_street=opt.n_street,
                       weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
                       use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
