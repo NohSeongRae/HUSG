@@ -254,7 +254,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_head", type=int, default=8, help="Number of attention heads.")
     parser.add_argument("--n_building", type=int, default=1, help="binary classification for building existence.")
     parser.add_argument("--n_street", type=int, default=60, help="binary classification for building existence.")
-    parser.add_argument("--n_boundary", type=int, default=200, help="Number of boundary or token.")
+    parser.add_argument("--n_boundary", type=int, default=250, help="Number of boundary or token.")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
