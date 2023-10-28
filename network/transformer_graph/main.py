@@ -79,13 +79,6 @@ class Trainer:
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8, pin_memory=True)
 
-        # Subsequent initializations will use the already loaded full dataset
-        self.val_dataset = GraphDataset(train_ratio=train_ratio, val_ratio=val_ratio, test_ratio=test_ratio, data_type='val', load=False,
-                                        n_street=n_street, n_building=n_building, n_boundary=n_boundary, d_unit=d_unit, d_street=d_street)
-        self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, rank=rank)
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
-                                         sampler=self.val_sampler, num_workers=8, pin_memory=True)
-
         # Initialize the Transformer model
         self.transformer = GraphTransformer(n_building=self.n_building, sos_idx=self.sos_idx, eos_idx=self.eos_idx, pad_idx=self.pad_idx,
                                             d_street=self.d_street, d_unit=self.d_unit, d_model=self.d_model,
