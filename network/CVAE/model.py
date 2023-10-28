@@ -19,6 +19,8 @@ class BlockGenerator(nn.Module):
         self.n_head = args.n_head
         self.batch_size=args.batch_size
         self.T = iteration  # Message passing iteration
+        self.convlayer=torch_geometric.nn.GATConv
+        self.global_pool=torch_geometric.nn.global_max_pool
 
         # Embedding
         self.exist_emb = nn.Linear(2, int(self.feature_dim / 4))
@@ -27,9 +29,9 @@ class BlockGenerator(nn.Module):
         self.size_emb = nn.Linear(2, int(self.feature_dim / 2))
 
         # Encoder message passing
-        self.enc_global_mp = MultiHeadAttention
-        self.enc_street_mp = MultiHeadAttention
-        self.enc_local_mp = MultiHeadAttention
+        self.e_conv1 = self.convlayer(int(self.feature_dim * 2.0), self.feature_dim, heads=self.head)
+        self.e_conv2 = self.convlayer(self.feature_dim * self.head, self.feature_dim, heads=self.head)
+        self.e_conv3 = self.convlayer(self.feature_dim * self.head, self.feature_dim, heads=self.head)
 
         # Latent space
         self.aggregate = nn.Linear(int(self.feature_dim) * self.T, self.latent_dim)
@@ -38,9 +40,9 @@ class BlockGenerator(nn.Module):
         self.dec_feature_init = nn.Linear(self.latent_dim, self.feature_dim * self.N)
 
         # Decoder
-        self.dec_global_mp = MultiHeadAttention
-        self.dec_street_mp = MultiHeadAttention
-        self.dec_local_mp = MultiHeadAttention
+        self.d_conv1 = self.convlayer((-1, self.feature_dim + self.N), self.feature_dim, heads=self.head)
+        self.d_conv2 = self.convlayer(self.feature_dim * self.head, self.feature_dim, heads=self.head)
+        self.d_conv3 = self.convlayer(self.feature_dim * self.head, self.feature_dim, heads=self.head)
 
         # Output
         self.dec_exist = nn.Linear(self.feature_dim, self.feature_dim)
@@ -93,8 +95,28 @@ class BlockGenerator(nn.Module):
 
         input_ft=torch.cat((h_iou, h_size, h_pos, ft), dim=1)
 
+        n_embd_1 = F.relu(self.e_conv1(input_ft, edge_index))
+        n_embd_2 = F.relu(self.e_conv2(n_embd_1, edge_index))
+        n_embd_3 = F.relu(self.e_conv3(n_embd_2, edge_index))
 
+        g_embd_0 = self.global_pool(input_ft, data.batch)
+        g_embd_1 = self.global_pool(n_embd_1, data.batch)
+        g_embd_2 = self.global_pool(n_embd_2, data.batch)
+        g_embd_3 = self.global_pool(n_embd_3, data.batch)
 
+        # g_embd = torch.cat((g_embd_0, g_embd_1, g_embd_2, g_embd_3, org_graph_feature), 1)
+
+    def forward(self, data):
+        batch_size = data.ptr.shape[0] - 1
+        mu, log_var = self.encode(data)
+        z = self.reparameterize(mu, log_var)
+        block_condition = data.block_condition.view(batch_size, 2, 64, 64)
+        block_condition = self.cnn_encode(block_condition)
+        exist, posx, posy, sizex, sizey, b_shape, b_iou = self.decode(z, block_condition, data.edge_index)
+        pos = torch.cat((posx, posy), 1)
+        size = torch.cat((sizex, sizey), 1)
+
+        return exist, pos, size, mu, log_var, b_shape, b_iou
 
 
 
