@@ -116,6 +116,12 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed CE loss.
         """
+        pred = pred[:, :-1]
+        trg = trg[:, 1:]
+
+        pred = pred.view(-1, pred.shape[-1])
+        trg = pred.view(-1)
+
         loss = F.cross_entropy(pred[:, :-1], trg[:, 1:], ignore_index=self.pad_idx)
 
         # 손실의 평균 반환
@@ -152,7 +158,6 @@ class Trainer:
 
                 # Get the model's predictions
                 output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
-                print(output.shape, gt_building_seq.shape)
 
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_building_seq.detach())
