@@ -16,12 +16,12 @@ available mask type
 9. groundtruthmask 
 """
 
-masktype = "inedgemask"
+masktype = "inbuildingcpmask"
 # inmasktype = "inedgemask"
 
-city_name = "phoenix"
-dataset_idx = 6
-indata_idx = 4
+city_name = "atlanta"
+dataset_idx = 1
+indata_idx = 3
 # 마스크 저장
 
 if masktype == "inbuildingcpmask" or masktype == "inedgemask" or masktype == "groundtruthmask":
