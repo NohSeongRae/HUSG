@@ -66,7 +66,7 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
-    transformer = BoundaryTransformer(n_building=n_building, sos_idx=sos_idx, eos_idx=eos_idx,
+    transformer = BoundaryTransformer(n_building=n_building, eos_idx=eos_idx,
                                         pad_idx=pad_idx,
                                         d_street=d_street, d_unit=d_unit, d_model=d_model,
                                         d_inner=d_model * 4, n_layer=n_layer, n_head=n_head,
@@ -75,7 +75,7 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                                         use_street_attn=use_street_attn,
                                         use_local_attn=use_local_attn).to(device=device)
 
-    checkpoint = torch.load("./models/" + save_dir_path + "/transformer_epoch_"+ str(checkpoint_epoch) + ".pth")
+    checkpoint = torch.load("./models/" + save_dir_path + "/epoch_"+ str(checkpoint_epoch) + ".pth")
     transformer.load_state_dict(checkpoint['model_state_dict'])
 
     transformer.eval()
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
-    parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
+    parser.add_argument("--save_dir_path", type=str, default="boundary_transformer", help="save dir path")
 
     opt = parser.parse_args()
 
