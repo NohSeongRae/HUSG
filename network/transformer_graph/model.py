@@ -146,6 +146,9 @@ class GraphTransformer(nn.Module):
         self.eos_idx = eos_idx    # [3, 3, 3, ..., 3]
         self.pad_idx = pad_idx    # [4, 4, 4, ..., 4]
 
+        self.n_building = n_building
+        self.n_street = n_street
+
         self.encoder = BoundaryEncoder(n_layer=n_layer, n_head=n_head, d_model=d_model, d_inner=d_inner,
                                        d_unit=d_unit, d_street=d_street, dropout=0.1,
                                        use_global_attn=use_global_attn, use_street_attn=use_street_attn,
@@ -170,7 +173,7 @@ class GraphTransformer(nn.Module):
         trg_street_mask = get_trg_street_mask(trg_adj_seq, n_street_node) & trg_global_mask
         trg_local_mask = get_trg_local_mask(trg_adj_seq) & trg_global_mask
 
-        pad_size = 170 - trg_sub_mask.size(2)
+        pad_size = (self.n_building + self.n_street) - trg_sub_mask.size(2)
         padded_mask = torch.nn.functional.pad(trg_sub_mask.expand(trg_adj_seq.shape[0], -1, -1).float(), (0, pad_size))
         trg_adj_seq = trg_adj_seq * padded_mask
 
