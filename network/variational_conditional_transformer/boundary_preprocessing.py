@@ -61,7 +61,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         zeros = np.reshape(zeros, (-1, 4))
                         all_gt_unit_position_datasets.append(zeros)
 
-                        zeros = np.zeros((n_boundary, d_unit, 2))
+                        zeros = np.zeros((n_boundary, d_street, 2))
                         zeros[:len(data)] = data
                         data = zeros
                         all_unit_position_datasets.append(data)
