@@ -81,7 +81,6 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
 
         boundary_polygon = Polygon(coordinates)
 
-        # Create a folder for this dataset
         folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', city_name, 'inedgemask',
                                    f'{city_name}_{idx + 1}')
         if not os.path.exists(folder_path):
@@ -91,51 +90,64 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
         valid_coords = rows_with_1[:, [1, 2]]
 
         left, upper, right, lower = get_square_bounds(boundary_polygon)
-
-        # 2. Set the transform using these coordinates
-        width, height = image_size, image_size
-        transform = rasterio.transform.from_bounds(left, upper, right, lower, width, height)
+        transform = rasterio.transform.from_bounds(left, upper, right, lower, image_size, image_size)
 
         accumulated_nodes = np.zeros((image_size, image_size), dtype=np.uint8)
         accumulated_edges = np.zeros((image_size, image_size), dtype=np.uint8)
 
-        for i, coord in enumerate(valid_coords):
-            lines = []
+        for i in range(len(valid_coords)): # +1 to include the empty mask iteration
 
-            # 1. Create a line perpendicular to the nearest point on the boundary polygon
-            nearest_point = boundary_polygon.boundary.interpolate(boundary_polygon.boundary.project(Point(coord)))
-            vertical_line = LineString([coord, (nearest_point.x, nearest_point.y)])
-            lines.append(vertical_line)
+            # 첫 번째 마스크는 빈 마스크로 생성
+            if i == 0:
+                mask_empty = np.zeros((image_size, image_size), dtype=np.uint8)
+                mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
+                imageio.imsave(mask_path, mask_empty)
+                continue
 
-            # 2. Create a line between the current building and the previous one
-            if i > 0:
-                connection_line = LineString([valid_coords[i - 1], coord])
-                lines.append(connection_line)
+            for j in range(i):
+                coord = valid_coords[j]
 
-            # 3. Generate the mask using rasterio for lines
-            line_mask = geometry_mask(lines, transform=transform, invert=True, out_shape=(image_size, image_size))
-            line_mask = dilation(line_mask, square(line_width))
-            accumulated_edges = np.maximum(accumulated_edges, line_mask)
+                # 세로 선 그리기
+                nearest_point = boundary_polygon.boundary.interpolate(boundary_polygon.boundary.project(Point(coord)))
+                vertical_line = LineString([coord, (nearest_point.x, nearest_point.y)])
+                line_mask = geometry_mask([vertical_line], transform=transform, invert=True, out_shape=(image_size, image_size))
+                line_mask = dilation(line_mask, square(line_width))
+                accumulated_edges = np.maximum(accumulated_edges, line_mask)
 
-            # Create a mask for the current node
-            minx = coord[0] - (node_size / 2) / image_size
-            miny = coord[1] - (node_size / 2) / image_size
-            maxx = coord[0] + (node_size / 2) / image_size
-            maxy = coord[1] + (node_size / 2) / image_size
-            current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
-                                                  out_shape=(image_size, image_size))
-            current_building_mask = current_building_mask * 2
+                # 이전 노드와 현재 노드 사이의 선 그리기
+                if j > 0:
+                    prev_coord = valid_coords[j - 1]
+                    connection_line = LineString([prev_coord, coord])
+                    line_mask = geometry_mask([connection_line], transform=transform, invert=True, out_shape=(image_size, image_size))
+                    line_mask = dilation(line_mask, square(line_width))
+                    accumulated_edges = np.maximum(accumulated_edges, line_mask)
 
-            # Add the current node to the accumulated nodes (excluding the current iteration)
-            if i > 0:
-                accumulated_nodes += geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
-                                                   out_shape=(image_size, image_size))
+                # 현재 노드 마스크 생성
+                minx = coord[0] - (node_size / 2) / image_size
+                miny = coord[1] - (node_size / 2) / image_size
+                maxx = coord[0] + (node_size / 2) / image_size
+                maxy = coord[1] + (node_size / 2) / image_size
+                current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
+                                                      out_shape=(image_size, image_size))
 
-            combined_mask = np.where(current_building_mask == 2, 2, np.maximum(accumulated_edges, accumulated_nodes))
+                # 모든 누적된 노드들을 1로 설정
+                accumulated_nodes[accumulated_nodes == 2] = 1
 
-            # Save the mask to the appropriate folder
+                # 현재 건물의 중심점만 2로 설정
+                current_building_mask = current_building_mask * 2
+                y_positions, x_positions = np.where(current_building_mask == 2)
+                center_y = np.mean(y_positions).astype(int)
+                center_x = np.mean(x_positions).astype(int)
+                current_building_mask[center_y - 1:center_y + 2, center_x - 1:center_x + 2] = 2
+
+                # 현재 건물을 누적된 노드에 추가
+                accumulated_nodes = np.maximum(accumulated_nodes, current_building_mask)
+
+            combined_mask = np.maximum(accumulated_edges, accumulated_nodes)
+
             mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
             imageio.imsave(mask_path, combined_mask.astype(np.uint8))
+
 
 
 

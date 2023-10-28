@@ -97,6 +97,7 @@ def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center
         transform = rasterio.transform.from_bounds(left, upper, right, lower, width, height)
 
         for i, coord in enumerate(valid_coords):
+            # print(coord)
             lines = []  # Initialize the lines list at the beginning of each loop iteration
 
             # 1. Create a line perpendicular to the nearest point on the boundary polygon
@@ -114,6 +115,7 @@ def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center
             # Adjust the thickness of the lines using dilation
             line_mask = dilation(line_mask, square(line_width))
 
+            epsilon = 1e-6
             minx = coord[0] - (node_size / 2) / image_size
             miny = coord[1] - (node_size / 2) / image_size
             maxx = coord[0] + (node_size / 2) / image_size
@@ -122,9 +124,15 @@ def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center
                                                   out_shape=(image_size, image_size))
             current_building_mask = current_building_mask * 2
 
+            y_positions, x_positions = np.where(current_building_mask == 2)
+            center_y = np.mean(y_positions).astype(int)
+            center_x = np.mean(x_positions).astype(int)
+            current_building_mask[center_y - 1:center_y + 2, center_x - 1:center_x + 2] = 2
+
             # Create a mask for the previous building if it exists
             if i > 0:
                 prev_coord = valid_coords[i - 1]
+                epsilon = 1e-6
                 minx = prev_coord[0] - (node_size / 2) / image_size
                 miny = prev_coord[1] - (node_size / 2) / image_size
                 maxx = prev_coord[0] + (node_size / 2) / image_size

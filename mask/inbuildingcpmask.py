@@ -71,8 +71,14 @@ def create_masks_for_dataset(center_positions, img_size):
 
     return masks
 
-def inbuildingcpmask(city_name, image_size, building_center_position_datasets, node_size):
+def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, node_size):
     for idx, dataset in enumerate(tqdm(building_center_position_datasets)):
+        unit_coords_dataset = unit_coords_datasets[idx][np.any(unit_coords_datasets[idx] != 0, axis=(1, 2))]
+        coordinates = [segment[0] for segment in unit_coords_dataset]
+        coordinates.append(unit_coords_dataset[-1][1])
+
+        boundary_polygon = Polygon(coordinates)
+
         rows_with_1 = dataset[dataset[:, 0] == 1]
 
         # Extract columns 1 and 2 from those rows
@@ -87,12 +93,23 @@ def inbuildingcpmask(city_name, image_size, building_center_position_datasets, n
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
+        left, upper, right, lower = get_square_bounds(boundary_polygon)
+
+        # 2. Set the transform using these coordinates
+        width, height = image_size, image_size
+        transform = rasterio.transform.from_bounds(left, upper, right, lower, width, height)
+
         # Generate masks based on the number of valid coordinates
-        for i in range(1, len(valid_coords) + 1):
+        for i in range(len(valid_coords)):
             polygons = []
 
-            # Define the transform for rasterio
-            transform = rasterio.transform.from_bounds(0, 0, 1, 1, image_size, image_size)
+            # If it's the first iteration for this idx, save an empty mask
+            if i == 0:
+                mask_empty = np.zeros((image_size, image_size), dtype=np.uint8)
+                mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
+                imageio.imsave(mask_path, mask_empty)
+                continue
+
 
             # First, mark all previous nodes with value 2
             if i > 1:  # Check if there are previous nodes
@@ -106,11 +123,11 @@ def inbuildingcpmask(city_name, image_size, building_center_position_datasets, n
 
                 mask_previous = geometry_mask(polygons, transform=transform, invert=True,
                                               out_shape=(image_size, image_size))
-                mask_previous = (mask_previous * 2).astype(np.uint8)
+                mask_previous = (mask_previous * 1).astype(np.uint8)  # Change value to 1
             else:
                 mask_previous = np.zeros((image_size, image_size), dtype=np.uint8)
 
-            # Now, mark the most recent node with value 1
+            # Now, mark the most recent node with value 2
             polygons = []
             coord = valid_coords[i - 1]
             minx = coord[0] - (node_size / 2) / image_size
@@ -120,13 +137,13 @@ def inbuildingcpmask(city_name, image_size, building_center_position_datasets, n
             polygons.append(box(minx, miny, maxx, maxy))
 
             mask_recent = geometry_mask(polygons, transform=transform, invert=True, out_shape=(image_size, image_size))
-            mask_recent = (mask_recent * 1).astype(np.uint8)
+            mask_recent = (mask_recent * 2).astype(np.uint8)  # Change value to 2
 
             # Combine the masks
             mask_combined = np.maximum(mask_previous, mask_recent)
 
             # Save the mask to the appropriate folder
-            mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i}.png')
+            mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i+1}.png')
             imageio.imsave(mask_path, mask_combined)
 
 

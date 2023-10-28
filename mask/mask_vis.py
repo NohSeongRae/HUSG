@@ -16,17 +16,18 @@ available mask type
 9. groundtruthmask 
 """
 
-masktype = "inbuildingcpmask"
+masktype = "inedgemask"
 # inmasktype = "inedgemask"
 
-city_name = "atlanta"
-dataset_idx = 1
+city_name = "phoenix"
+dataset_idx = 6
+indata_idx = 4
 # 마스크 저장
 
 if masktype == "inbuildingcpmask" or masktype == "inedgemask" or masktype == "groundtruthmask":
     maskfolderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}',
                                   masktype, f'{city_name}_{dataset_idx}')
-    mask_filename = os.path.join(maskfolderpath, f'{city_name}_{dataset_idx}_{dataset_idx}.png')
+    mask_filename = os.path.join(maskfolderpath, f'{city_name}_{dataset_idx}_{indata_idx}.png')
 else:
     maskfolderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', f'{city_name}', masktype)
     mask_filename = os.path.join(maskfolderpath, f'{city_name}_{dataset_idx}.png')
