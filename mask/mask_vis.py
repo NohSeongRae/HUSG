@@ -15,11 +15,11 @@ available mask type
 8. inedgemask
 """
 
-masktype = "boundarymask"
+masktype = "allmask"
 # inmasktype = "inedgemask"
 
-city_name = "philadelphia"
-dataset_idx = 1
+city_name = "atlanta"
+dataset_idx = 2645
 # 마스크 저장
 
 if masktype == "inbuildingcpmask" or masktype == "inedgemask":

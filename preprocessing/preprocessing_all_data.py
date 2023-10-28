@@ -67,10 +67,10 @@ n_unit_sample = 8
 # city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
 #               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
 #               "sanfrancisco", "miami", "seattle", "boston", "providence",
-#               "neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
 # city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
-city_names = ["atlanta"]
+# city_names = ["phoenix","miami"]
+city_names = ["phoenix"]
 
 
 city_counts = {}

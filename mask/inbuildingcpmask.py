@@ -73,8 +73,13 @@ def create_masks_for_dataset(center_positions, img_size):
 
 def inbuildingcpmask(city_name, image_size, building_center_position_datasets, node_size):
     for idx, dataset in enumerate(tqdm(building_center_position_datasets)):
+        rows_with_1 = dataset[dataset[:, 0] == 1]
+
+        # Extract columns 1 and 2 from those rows
+        valid_coords = rows_with_1[:, [1, 2]]
+
         # Filter out (0,0) coordinates
-        valid_coords = dataset[~np.all(dataset == 0, axis=1)]
+        # valid_coords = dataset[~np.all(dataset == 0, axis=1)]
 
         # Create a folder for this dataset
         folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', city_name, 'inbuildigcpmask',

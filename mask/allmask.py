@@ -83,17 +83,18 @@ def allmask(city_name, image_size, unit_coords_datasets, street_index_sequences,
             thick_boundary_mask = dilation(boundary_mask, square(linewidth))
 
             # street_index_sequences에서 padding 값을 무시
-            if street_index_sequences[dataset_idx, segment_index] != 0:
-                street_idx = int(street_index_sequences[dataset_idx, segment_index])
+            if street_index_sequences[dataset_idx][segment_index] != 0:
+                street_idx = int(street_index_sequences[dataset_idx][segment_index])
                 final_mask[thick_boundary_mask] = street_idx + 1
 
                 final_mask[inside_mask == 1] = 1
 
             # building_index_sequences padding 값을 무시
-            if building_index_sequences[dataset_idx, segment_index] != 2:
-                tf_output = int(building_index_sequences[dataset_idx, segment_index])
+            if building_index_sequences[dataset_idx][segment_index] != 2:
+                tf_output = int(building_index_sequences[dataset_idx][segment_index])
                 if tf_output == 0:
-                    filtered_values = street_index_sequences[dataset_idx][street_index_sequences[dataset_idx] < 49]
+                    filtered_values = [val for val in street_index_sequences[dataset_idx] if val < 49]
+                    # filtered_values = street_index_sequences[dataset_idx][street_index_sequences[dataset_idx] < 49]
                     final_mask[thick_boundary_mask] = np.max(filtered_values) + 1
 
             # final_mask = np.clip(final_mask, 0, 255).astype(np.uint8)

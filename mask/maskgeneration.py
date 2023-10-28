@@ -3,6 +3,7 @@ import numpy as np
 from shapely.geometry import Polygon
 import matplotlib.pyplot as plt
 import tqdm
+import pickle
 from boundarymask import boundarymask
 from insidemask import insidemask
 from streetmask import streetmask
@@ -19,7 +20,7 @@ from allmask import allmask
 
 # city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
 
-city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
+city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock"]
 
 image_size = 120
 linewidth = 5
@@ -27,27 +28,40 @@ num_grids = 60
 unit_length = 0.04
 cp_node_size = 5
 
+pickle_folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset')
+
 for city_name in city_names:
     print("city name", city_name)
-    city_npz_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', f'{city_name}', 'husg_transformer_dataset.npz')
-    building_center_npz_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', f'{city_name}', 'husg_building_center_position.npz')
+    building_exist_sequences_path = os.path.join(pickle_folder_path, f'{city_name}', 'building_exist_sequences.pkl')
+    street_index_sequences_path = os.path.join(pickle_folder_path, f'{city_name}', 'street_index_sequences.pkl')
+    unit_coords_datasets_path = os.path.join(pickle_folder_path, f'{city_name}', 'unit_coords_datasets.pkl')
+    node_features_path = os.path.join(pickle_folder_path, f'{city_name}', 'node_features.pkl')
 
-    city_npz_data = np.load(city_npz_path)
-    building_npz_data = np.load(building_center_npz_path)
+    # building_center_npz_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', f'{city_name}', 'husg_building_center_position.npz')
+    # building_npz_data = np.load(building_center_npz_path)
+    #
+    # building_center_position_datasets = building_npz_data['building_center_position_datasets']
+    # print(building_center_position_datasets)
 
-    building_index_sequences = city_npz_data['building_index_sequences']
-    street_index_sequences = city_npz_data['street_index_sequences']
-    # unit_position_datasets = city_npz_data['unit_position_datasets']
-    # street_unit_position_datasets = city_npz_data['street_unit_position_datasets']
-    unit_coords_datasets = city_npz_data['unit_coords_datasets']
+    with open(building_exist_sequences_path, 'rb') as f:
+        building_exist_sequences = pickle.load(f)
 
-    building_center_position_datasets = building_npz_data['building_center_position_datasets']
+    with open(street_index_sequences_path, 'rb') as f:
+        street_index_sequences = pickle.load(f)
 
-    boundarymask(city_name, image_size, unit_coords_datasets)
-    insidemask(city_name, image_size, unit_coords_datasets)
-    streetmask(city_name, image_size, unit_coords_datasets, street_index_sequences)
-    tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index_sequences)
-    inbuildingcpmask(city_name, image_size, building_center_position_datasets, cp_node_size) # 갯수 / 매칭 확인
-    inedgemask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, cp_node_size)
-    allmask(city_name, image_size, unit_coords_datasets, street_index_sequences, building_index_sequences)
-    tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth, num_grids, unit_length)
+    with open(unit_coords_datasets_path, 'rb') as f:
+        unit_coords_datasets = pickle.load(f)
+
+    with open(node_features_path, 'rb') as f:
+        building_center_position_datasets = pickle.load(f)
+
+    # print(node_features) # building 여부 , x y w h theta
+
+    # boundarymask(city_name, image_size, unit_coords_datasets)
+    # insidemask(city_name, image_size, unit_coords_datasets)
+    # streetmask(city_name, image_size, unit_coords_datasets, street_index_sequences)
+    # tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_exist_sequences)
+    # inbuildingcpmask(city_name, image_size, building_center_position_datasets, cp_node_size)
+    # inedgemask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, cp_node_size)
+    allmask(city_name, image_size, unit_coords_datasets, street_index_sequences, building_exist_sequences)
+    tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_exist_sequences, linewidth, num_grids, unit_length)

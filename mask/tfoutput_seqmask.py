@@ -82,8 +82,8 @@ def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index
             thick_boundary_mask = dilation(boundary_mask, square(linewidth))
 
             # building_index_sequences padding 값을 무시
-            if building_index_sequences[dataset_idx, segment_index] != 2:
-                street_idx = int(building_index_sequences[dataset_idx, segment_index])
+            if building_index_sequences[dataset_idx][segment_index] != 2:
+                street_idx = int(building_index_sequences[dataset_idx][segment_index])
                 final_mask[thick_boundary_mask] = street_idx * 1
 
             segment_index += 1

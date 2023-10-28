@@ -82,8 +82,8 @@ def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequenc
             thick_boundary_mask = dilation(boundary_mask, square(linewidth))
 
             # street_index_sequences에서 padding 값을 무시
-            if street_index_sequences[dataset_idx, segment_index] != 0:
-                street_idx = int(street_index_sequences[dataset_idx, segment_index])
+            if street_index_sequences[dataset_idx][segment_index] != 0:
+                street_idx = int(street_index_sequences[dataset_idx][segment_index])
                 final_mask[thick_boundary_mask] = street_idx * 1
 
             segment_index += 1
