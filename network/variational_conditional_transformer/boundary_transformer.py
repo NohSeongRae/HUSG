@@ -49,9 +49,11 @@ class PositionalEncoding(nn.Module):
         return x + self.pos_table[:, :x.size(1)].clone().detach()
 
 class Encoder(nn.Module):
-    def __init__(self, n_layer, n_head, d_k, d_v, d_model, d_inner, d_unit, d_street, dropout=0.1, n_boundary=200,
+    def __init__(self, pad_idx, n_layer, n_head, d_k, d_v, d_model, d_inner, d_unit, d_street, dropout=0.1, n_boundary=200,
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
+
+        self.pad_idx = pad_idx
 
         self.pos_enc = nn.Linear(2, 1)
         self.unit_enc = nn.Linear(d_unit, d_model)
@@ -120,7 +122,7 @@ class BoundaryTransformer(nn.Module):
                  d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
-        self.encoder = Encoder(n_boundary=n_boundary,
+        self.encoder = Encoder(pad_idx=pad_idx, n_boundary=n_boundary,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
                                d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
