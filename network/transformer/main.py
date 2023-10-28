@@ -150,7 +150,7 @@ class Trainer:
 
                 # Get the source and target sequences from the batch
                 src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq = data
-                gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
+                gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                 trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
@@ -188,7 +188,7 @@ class Trainer:
                     for data in tqdm(self.val_dataloader):
                         # Get the source and target sequences from the batch
                         src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq = data
-                        gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
+                        gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
                         src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                         src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                         trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
