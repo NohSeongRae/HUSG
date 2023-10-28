@@ -42,12 +42,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         all_street_index_sequences.append(data)
 
                     elif dataset_name == 'unit_position_datasets':
-                        zeros = np.zeros((n_boundary, d_unit, 2))
-                        zeros[:len(data)] = data
-                        data = zeros
-                        all_unit_position_datasets.append(data)
-
-                    elif dataset_name == 'street_unit_position_datasets':
                         zeros = np.zeros((n_boundary, 2, 2))
                         p1 = np.reshape(np.array(data[:, 0, :]), (-1, 1, 2))
                         p2 = np.reshape(np.array(data[:, -1, :]), (-1, 1, 2))
@@ -56,8 +50,15 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         zeros = np.reshape(zeros, (-1, 4))
                         all_gt_unit_position_datasets.append(zeros)
 
-                        zeros = np.zeros((n_boundary, d_street, 2))
+                        zeros = np.zeros((n_boundary, d_unit, 2))
                         zeros[:len(data)] = data
+                        data = zeros
+                        all_unit_position_datasets.append(data)
+
+                    elif dataset_name == 'street_unit_position_datasets':
+                        zeros = np.zeros((n_street, d_street, 2))
+                        data = np.unique(data, axis=0)
+                        zeros[1:len(data) + 1] = data
                         data = zeros
                         all_street_unit_position_datasets.append(data)
 
