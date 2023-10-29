@@ -26,6 +26,9 @@ def extract_numbers_from_boundaryfile(s):
     return int(re.search(r'(\d+)', s).group())
 
 def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
+    print(transformer_output)
+    print(gt_output)
+
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
     # ax1: 예측 결과 시각화
