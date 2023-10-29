@@ -46,6 +46,7 @@ class GraphDataset(Dataset):
         cur_n_street = torch.tensor(self.cur_n_streets[index], dtype=torch.long)
         edge_index_sequence = torch.tensor(self.edge_index_sequences[index], dtype=torch.long)
         adj_matrix = to_dense_adj(edge_index_sequence)[0].numpy()
+        adj_matrix[adj_matrix > 1] = 1
 
         # 패딩된 street position 생성
         street_pos = self.street_unit_position_datasets[index]
