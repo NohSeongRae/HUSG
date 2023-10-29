@@ -118,9 +118,9 @@ class Trainer:
                 mask = get_pad_mask(gt_building_seq, pad_idx=self.eos_idx).float()
                 unit_coord_seq = torch.cat(
                     (src_unit_seq[:, :, 0, :].unsqueeze(2), src_unit_seq[:, :, 7, :].unsqueeze(2)), dim=2)
-                print(output)
-                plot(output.squeeze().detach().cpu().numpy(),
-                     gt_building_seq.squeeze().detach().cpu().numpy(),
+
+                plot(decoder_input[:-1].squeeze().detach().cpu().numpy(),
+                     gt_building_seq[1:].squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
                      mask.squeeze().detach().cpu().numpy(),
                      idx + 1)
