@@ -22,8 +22,8 @@ def plot(pred, gt, idx, mask):
         if mask[idx] == 0:
             break
 
-        x = [gt[idx][0], pred[gt][2]]
-        y = [gt[idx][1], pred[gt][3]]
+        x = [gt[idx][0], gt[idx][2]]
+        y = [gt[idx][1], gt[idx][3]]
         ax2.plot(x, y, 'black')
     ax2.set_title('Ground Truth')
     ax2.grid(True)
