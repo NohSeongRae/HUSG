@@ -84,7 +84,7 @@ class Trainer:
         return loss
 
     def train(self):
-        checkpoint = torch.load("./models/transformer/epoch_" + str(self.checkpoint_epoch) + ".pt")
+        checkpoint = torch.load("./models/transformer/epoch_" + str(self.checkpoint_epoch) + ".pth")
         self.transformer.load_state_dict(checkpoint['model_state_dict'])
 
         self.transformer.eval()
