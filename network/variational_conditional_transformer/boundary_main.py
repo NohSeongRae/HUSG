@@ -20,7 +20,7 @@ from boundary_dataloader import BoundaryDataset
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard, val_epoch, save_epoch,
-                 weight_decay, scheduler_step, scheduler_gamma, n_street,
+                 weight_decay, warmup_steps, n_street,
                  use_global_attn, use_street_attn, use_local_attn, local_rank, save_dir_path):
         """
         Initialize the trainer with the specified parameters.
@@ -54,8 +54,6 @@ class Trainer:
         self.val_epoch = val_epoch
         self.save_epoch = save_epoch
         self.weight_decay = weight_decay
-        self.scheduler_step = scheduler_step
-        self.scheduler_gamma = scheduler_gamma
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
@@ -96,7 +94,9 @@ class Trainer:
                                           lr=5e-4,
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
-        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
+        # Lambda function to compute the learning rate multiplier
+        lr_lambda = lambda step: min((step + 1) ** (-0.5), (step + 1) * warmup_steps ** (-1.5))
+        self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lr_lambda)
 
     def recon_loss(self, pred, trg, street_indices):
         """
@@ -112,7 +112,7 @@ class Trainer:
         loss = F.mse_loss(pred[:, :-1], trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=self.pad_idx)
+        pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=0)
         mask = pad_mask.unsqueeze(-1).expand(-1, -1, 4)
 
         # mask 적용
@@ -126,7 +126,7 @@ class Trainer:
         loss = F.mse_loss(cur_token, next_token, reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=self.pad_idx)
+        pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=0)
         mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)
 
         masked_loss = loss * mask.float()
@@ -276,8 +276,7 @@ if __name__ == '__main__':
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
     parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
-    parser.add_argument("--scheduler_step", type=int, default=200, help="Use checkpoint index.")
-    parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
+    parser.add_argument("--warmup_steps", type=int, default=4000, help="Use checkpoint index.")
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
@@ -308,7 +307,7 @@ if __name__ == '__main__':
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
-                      weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
+                      weight_decay=opt.weight_decay, warmup_steps=opt.warmup_steps,
                       use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path)
 
