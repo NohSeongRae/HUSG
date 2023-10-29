@@ -34,7 +34,7 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
         y = [unit_coord_seq[idx][0][1], unit_coord_seq[idx][1][1]]
         if mask[idx] == 0:
             break
-        elif transformer_output[idx] >= 0.5:
+        elif transformer_output[idx][1] >= 0.5:
             ax1.plot(x, y, 'r-')
         else:
             ax1.plot(x, y, 'black')
