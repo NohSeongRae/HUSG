@@ -102,7 +102,6 @@ class BoundaryEncoder(nn.Module):
 
         enc_output = self.unit_enc(src_unit_seq) + self.street_enc(src_street_seq)
         enc_output = self.dropout(enc_output)
-        enc_output = self.layer_norm(enc_output)
 
         for enc_layer in self.layer_stack:
             enc_output = enc_layer(enc_output, global_mask, street_mask, local_mask)
@@ -115,7 +114,6 @@ class GraphDecoder(nn.Module):
         super(GraphDecoder, self).__init__()
 
         self.node_enc = nn.Linear(n_building + n_street, d_model)
-        self.pos_enc = PositionalEncoding(d_model, n_building=n_building + n_street)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
            DecoderLayer(d_model, d_inner, n_head, dropout,
@@ -127,9 +125,7 @@ class GraphDecoder(nn.Module):
 
     def forward(self, dec_input, enc_output, global_mask, street_mask, local_mask, enc_mask):
         dec_output = self.node_enc(dec_input)
-        dec_output = self.pos_enc(dec_output)
         dec_output = self.dropout(dec_output)
-        dec_output = self.layer_norm(dec_output)
 
         for dec_layer in self.layer_stack:
             dec_output = dec_layer(dec_output, enc_output, global_mask, street_mask, local_mask, enc_mask)
