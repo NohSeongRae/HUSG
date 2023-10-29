@@ -214,7 +214,7 @@ class Trainer:
                         for t in range(self.n_boundary):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input)
                             output_storage[:, t] = output[:, t].detach()
-                            next_token = output[:, t].reshape(self.batch_size, 1, -1)
+                            next_token = output[:, t].reshape(-1, 1, 4)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses
