@@ -1,24 +1,38 @@
+from dataloader import DataLoader
+from model import CVAE
+from train import train
+from infer import infer
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch_geometric
 
+def main():
+    # Load and preprocess data
+    dataloader = DataLoader('data/building_parcel_polygon.csv', 'data/bounding_box.csv')
+    data, conditions = dataloader.load_data()
 
-N=3
-batch_size=1
-device=torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    # Initialize model
+    model = CVAE(input_dim=data.shape[1], condition_dim=conditions.shape[1])
 
-feat_mat=torch.tensor([[1.,2.,3.],[4.,5.,6.],[7.,8.,9.]]).to(device)
-size_mat=torch.randn_like(feat_mat)
-one_hot = torch.eye(N, dtype=torch.float32).to(device).repeat(batch_size, 1)
-print(f'feat_mat: {feat_mat}\n feat_mat.shape: {feat_mat.shape}\n one_hot: {one_hot}\none_hot.shape: {one_hot.shape}')
+    # Load pre-trained weights if they exist
+    try:
+        model.load_state_dict(torch.load('model_weights.pth'))
+    except FileNotFoundError:
+        pass
 
-x=torch.cat([feat_mat,one_hot], dim=1)
-print(f'x: {x}\n x.shape: {x.shape}')
+    # Train model
+    for epoch in range(100):
+        train(model, data, conditions)
 
-print(f'size_mat: {size_mat}\n size_mat.shape: {size_mat.shape}')
-x=torch.cat([size_mat, x], dim=1)
-print('size_mat + x')
-print(f'x: {x}\n x.shape: {x.shape}')
+        # Save model weights every 10 epochs
+        if epoch % 10 == 0:
+            torch.save(model.state_dict(), 'model_weights.pth')
+
+    # Infer new data
+    new_data = infer(model, conditions[0])
+
+    print(new_data)
+
+if __name__ == "__main__":
+    main()
+
 
 
