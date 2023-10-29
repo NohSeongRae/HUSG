@@ -143,7 +143,7 @@ class BoundaryTransformer(nn.Module):
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
                                use_local_attn=use_local_attn)
         self.pad_idx = pad_idx
-        self.fc = nn.Linear(d_model // 8, 4)
+        self.fc = nn.Linear(d_model, 4)
 
     def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_unit_seq):
         enc_output = self.encoder(src_unit_seq, src_street_seq, street_index_seq)
