@@ -116,7 +116,6 @@ class Trainer:
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
 
                 mask = get_pad_mask(gt_building_seq, pad_idx=self.eos_idx).float()
-                print(mask)
                 unit_coord_seq = torch.cat(
                     (src_unit_seq[:, :, 0, :].unsqueeze(2), src_unit_seq[:, :, 7, :].unsqueeze(2)), dim=2)
                 plot(output.squeeze().detach().cpu().numpy(),
