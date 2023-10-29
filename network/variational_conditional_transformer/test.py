@@ -19,7 +19,7 @@ from boundary_dataloader import BoundaryDataset
 from visualization import plot
 
 
-def recun_loss(pred, trg, street_indices):
+def recon_loss(pred, trg, street_indices):
     """
     Compute the binary cross-entropy loss between predictions and targets.
 
@@ -49,7 +49,7 @@ def smooth_loss(pred, street_indices):
 
     # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
     pad_mask = get_pad_mask(street_indices, pad_idx=0)
-    mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)[:, :-1, :]
+    mask = pad_mask.unsqueeze(-1).expand(-1, -1, 4)[:, :-1, :]
 
     masked_loss = loss * mask.float()
 
@@ -90,10 +90,10 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
             output = transformer(src_unit_seq, src_street_seq, street_index_seq)
 
             # Compute the losses
-            loss_recun = recun_loss(output, gt_unit_seq, street_index_seq)
+            loss_recon = recon_loss(output, gt_unit_seq, street_index_seq)
             loss_smooth = smooth_loss(output, street_index_seq)
 
-            print(f"Loss recun: {loss_recun:.4f} \nLoss smooth: {loss_smooth:.4f}")
+            print(f"Loss recon: {loss_recon:.4f} \nLoss smooth: {loss_smooth:.4f}")
 
             pad_mask = get_pad_mask(street_index_seq, pad_idx=0)
 
