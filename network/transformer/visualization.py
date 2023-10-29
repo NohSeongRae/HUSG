@@ -36,7 +36,7 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
             break
         elif transformer_output[idx] == 1:
             ax1.plot(x, y, 'r-')
-        else:
+        elif transformer_output[idx] == 0:
             ax1.plot(x, y, 'black')
     ax1.set_title('Prediction')
     ax1.grid(True)
@@ -49,7 +49,7 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
             break
         elif gt_output[idx] == 1:
             ax2.plot(x, y, 'r-')
-        else:
+        elif gt_output[idx] == 0:
             ax2.plot(x, y, 'black')
     ax2.set_title('Ground Truth')
     ax2.grid(True)
@@ -61,4 +61,4 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
         os.makedirs(directory)
 
     save_path = os.path.join(directory, "building_exist_" + str(test_idx) + ".png")
-    plt.savefig(save_path, dpi=100, bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
