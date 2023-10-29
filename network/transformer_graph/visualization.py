@@ -8,10 +8,7 @@ def get_all_one_rows(matrix):
 
 def plot(pred, gt, idx, cur_n_street):
     one_indices = get_all_one_rows(gt)
-    for idx in range(len(pred)):
-        print(idx)
-        print(pred[idx])
-        print(gt[idx])
+
     i1 = one_indices[0] + 1
     i2 = one_indices[1]
 
