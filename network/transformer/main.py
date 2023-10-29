@@ -21,9 +21,8 @@ from dataloader import BoundaryDataset
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head, n_street,
-                 n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
-                 train_ratio, val_ratio, test_ratio, val_epoch, save_epoch,
-                 weight_decay, scheduler_step, scheduler_gamma,
+                 n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard, val_epoch, save_epoch,
+                 weight_decay, warmup_steps,
                  use_global_attn, use_street_attn, use_local_attn, local_rank, save_dir_path):
         """
         Initialize the trainer with the specified parameters.
@@ -55,14 +54,10 @@ class Trainer:
         self.use_checkpoint = use_checkpoint
         self.checkpoint_epoch = checkpoint_epoch
         self.use_tensorboard = use_tensorboard
-        self.train_ratio = train_ratio
-        self.val_ratio = val_ratio
-        self.test_ratio = test_ratio
         self.val_epoch = val_epoch
         self.save_epoch = save_epoch
         self.weight_decay = weight_decay
-        self.scheduler_step = scheduler_step
-        self.scheduler_gamma = scheduler_gamma
+        self.warmup_steps = warmup_steps
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
@@ -103,7 +98,10 @@ class Trainer:
                                           lr=5e-4,
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
-        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[self.scheduler_step], gamma=self.scheduler_gamma)
+
+        # Lambda function to compute the learning rate multiplier
+        lr_lambda = lambda step: min((step + 1) ** (-0.5), (step + 1) * warmup_steps ** (-1.5))
+        self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lr_lambda)
 
     def cross_entropy_loss(self, pred, trg):
         """
@@ -266,14 +264,10 @@ if __name__ == '__main__':
     parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
     parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
-    parser.add_argument("--train_ratio", type=float, default=0.89, help="Use checkpoint index.")
-    parser.add_argument("--val_ratio", type=float, default=0.01, help="Use checkpoint index.")
-    parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Use checkpoint index.")
-    parser.add_argument("--scheduler_step", type=int, default=200, help="Use checkpoint index.")
-    parser.add_argument("--scheduler_gamma", type=float, default=0.1, help="Use checkpoint index.")
+    parser.add_argument("--warmup_steps", type=int, default=4000, help="Use checkpoint index.")
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
@@ -302,9 +296,8 @@ if __name__ == '__main__':
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
-                      train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch, n_street=opt.n_street,
-                      weight_decay=opt.weight_decay, scheduler_step=opt.scheduler_step, scheduler_gamma=opt.scheduler_gamma,
+                      weight_decay=opt.weight_decay, warmup_steps=opt.warmup_steps,
                       use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path)
 
