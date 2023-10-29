@@ -56,8 +56,7 @@ class Trainer:
         self.val_epoch = val_epoch
         self.save_epoch = save_epoch
         self.weight_decay = weight_decay
-        self.scheduler_step = scheduler_step
-        self.scheduler_gamma = scheduler_gamma
+        self.warmup_steps = warmup_steps
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
