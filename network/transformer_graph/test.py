@@ -60,7 +60,7 @@ def cross_entropy_loss(pred, trg, pad_idx):
     return masked_loss.sum() / mask.float().sum()
 
 def test(sos_idx, eos_idx, pad_idx, n_street, d_street, d_unit, d_model, n_layer, n_head,
-         n_building, n_boundary, dropout, checkpoint_epoch, train_ratio, val_ratio, test_ratio,
+         n_building, n_boundary, dropout, checkpoint_epoch,
          use_global_attn, use_street_attn, use_local_attn, save_dir_path):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
