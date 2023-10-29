@@ -96,7 +96,7 @@ class Trainer:
                                           betas=(0.9, 0.98),
                                           weight_decay=self.weight_decay)
         # Lambda function to compute the learning rate multiplier
-        lr_lambda = lambda step: min(step ** (-0.5), step * warmup_steps ** (-1.5))
+        lr_lambda = lambda step: min((step + 1) ** (-0.5), (step + 1) * warmup_steps ** (-1.5))
         self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lr_lambda)
 
     def cross_entropy_loss(self, pred, trg):
