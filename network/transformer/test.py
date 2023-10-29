@@ -33,8 +33,8 @@ class Trainer:
         # Initialize trainer parameters
         self.batch_size = batch_size
         self.max_epoch = max_epoch
-        self.pad_idx = 2
-        self.eos_idx = 4
+        self.pad_idx = 4
+        self.eos_idx = 3
         self.d_model = d_model
         self.d_street = d_street
         self.d_unit = d_unit
