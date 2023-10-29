@@ -55,5 +55,10 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
     ax2.grid(True)
 
     plt.tight_layout()
-    plt.savefig('./images/' + str(test_idx) + '.png')
-    plt.clf()
+
+    directory = "./images"  # 변경: 저장 경로를 /mnt/data/ 아래로 지정
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    save_path = os.path.join(directory, "building_exist_" + str(test_idx) + ".png")
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
