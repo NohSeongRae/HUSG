@@ -116,9 +116,9 @@ class Trainer:
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         pad_mask = get_pad_mask(trg[:, 1:, 0], pad_idx=self.pad_idx)
         sub_mask = get_subsequent_mask(trg[:, :, 0])[:, 1:, :]
-        sos_mask = torch.ones_like(sub_mask)
+        sos_mask = torch.ones_like(sub_mask).to(device=sub_mask.device)
         sos_mask[:, :, 0] = 0
-        identity_mask = torch.eye(trg.shape[1]).unsqueeze(0).expand(loss.shape[0], -1, -1)
+        identity_mask = torch.eye(trg.shape[1]).unsqueeze(0).expand(loss.shape[0], -1, -1).to(device=sub_mask.device)
         identity_mask = identity_mask[:, 1:, :]
         mask = pad_mask.unsqueeze(-1).expand(-1, -1, loss.shape[2]) & sub_mask & sos_mask.bool() & identity_mask.bool()
 
