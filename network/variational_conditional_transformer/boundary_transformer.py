@@ -111,12 +111,12 @@ class Decoder(nn.Module):
         return enc_output
 
     def encoding(self, trg_unit_seq, enc_output, street_index_seq):
-        src_pad_mask = get_pad_mask(street_index_seq, pad_idx=self.pad_idx).unsqueeze(-2)
+        src_pad_mask = get_pad_mask(street_index_seq, pad_idx=0).unsqueeze(-2)
 
-        sub_mask = get_subsequent_mask(street_index_seq)
-        trg_pad_mask = get_pad_mask(street_index_seq, pad_idx=self.pad_idx).unsqueeze(-2) & sub_mask
-        trg_street_mask = get_street_mask(street_index_seq) & trg_pad_mask
-        trg_local_mask = get_local_mask(street_index_seq) & trg_pad_mask
+        sub_mask = get_subsequent_mask(trg_unit_seq[:, :, 0])
+        trg_pad_mask = get_pad_mask(trg_unit_seq[:, :, 0], pad_idx=self.pad_idx).unsqueeze(-2) & sub_mask
+        trg_street_mask = get_street_mask(trg_unit_seq[:, :, 0]) & trg_pad_mask
+        trg_local_mask = get_local_mask(trg_unit_seq[:, :, 0]) & trg_pad_mask
 
         dec_output = self.unit_enc(trg_unit_seq)
         dec_output = self.dropout(dec_output)
@@ -127,12 +127,12 @@ class Decoder(nn.Module):
         return dec_output
 
 class BoundaryTransformer(nn.Module):
-    def __init__(self, pad_idx=0, d_model=512, d_inner=2048,
+    def __init__(self, sos_idx=2, eos_idx=3, pad_idx=4, d_model=512, d_inner=2048,
                  n_layer=6, n_head=8, d_k=64, d_v=64, dropout=0.1, n_boundary=200,
                  d_unit=8, d_street=32, use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
-        self.encoder = Encoder(pad_idx=pad_idx, n_boundary=n_boundary,
+        self.encoder = Encoder(pad_idx=0, n_boundary=n_boundary,
                                d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
                                d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,

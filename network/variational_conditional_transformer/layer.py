@@ -94,13 +94,10 @@ class DecoderLayer(nn.Module):
 
         if use_global_attn:
             self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
-            print('decoder use global attn')
         if use_street_attn:
             self.street_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
-            print('decoder use street attn')
         if use_local_attn:
             self.local_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
-            print('decoder use local attn')
         self.enc_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=dropout)
 
