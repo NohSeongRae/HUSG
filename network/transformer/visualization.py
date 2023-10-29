@@ -61,4 +61,4 @@ def plot(transformer_output, gt_output, unit_coord_seq, mask, test_idx):
         os.makedirs(directory)
 
     save_path = os.path.join(directory, "building_exist_" + str(test_idx) + ".png")
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.savefig(save_path, dpi=100, bbox_inches='tight')
