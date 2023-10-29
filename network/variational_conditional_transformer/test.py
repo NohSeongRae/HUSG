@@ -55,8 +55,8 @@ def smooth_loss(pred, street_indices):
 
     return masked_loss.sum() / mask.sum()
 
-def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
-         n_building, n_boundary, dropout, checkpoint_epoch, train_ratio, val_ratio, test_ratio,
+def test(d_street, d_unit, d_model, n_layer, n_head,
+         n_building, n_boundary, dropout, checkpoint_epoch,
          use_global_attn, use_street_attn, use_local_attn, save_dir_path):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -65,7 +65,7 @@ def test(sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
-    transformer = BoundaryTransformer(pad_idx=pad_idx,
+    transformer = BoundaryTransformer(pad_idx=0,
                                         d_street=d_street, d_unit=d_unit, d_model=d_model,
                                         d_inner=d_model * 4, n_layer=n_layer, n_head=n_head,
                                         dropout=dropout,
@@ -107,9 +107,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
 
     # Define the arguments with their descriptions
-    parser.add_argument("--sos_idx", type=int, default=2, help="Padding index for sequences.")
-    parser.add_argument("--eos_idx", type=int, default=3, help="Padding index for sequences.")
-    parser.add_argument("--pad_idx", type=int, default=4, help="Padding index for sequences.")
     parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
     parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
     parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
@@ -120,9 +117,6 @@ if __name__ == '__main__':
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
-    parser.add_argument("--train_ratio", type=float, default=0.89, help="Use checkpoint index.")
-    parser.add_argument("--val_ratio", type=float, default=0.01, help="Use checkpoint index.")
-    parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
@@ -140,9 +134,7 @@ if __name__ == '__main__':
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed_all(opt.seed)
 
-    test(sos_idx=opt.sos_idx, eos_idx=opt.eos_idx, pad_idx=opt.pad_idx,
-         d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
+    test(d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
          n_building=opt.n_building, n_boundary=opt.n_boundary, dropout=opt.dropout, checkpoint_epoch=opt.checkpoint_epoch,
-         train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
          use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
          save_dir_path=opt.save_dir_path)
