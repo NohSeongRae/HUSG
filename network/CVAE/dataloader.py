@@ -1,4 +1,4 @@
-import pandas as pd
+import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
 class DataLoader:
@@ -8,8 +8,10 @@ class DataLoader:
 
     def load_data(self):
         # Load data
-        data = pd.read_csv(self.data_path)
-        conditions = pd.read_csv(self.condition_path)
+        with np.load(self.data_path) as data:
+            data = data['arr_0']
+        with np.load(self.condition_path) as conditions:
+            conditions = conditions['arr_0']
 
         # Normalize data
         scaler = MinMaxScaler()
