@@ -20,7 +20,7 @@ from boundary_dataloader import BoundaryDataset
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard, val_epoch, save_epoch,
-                 weight_decay, scheduler_step, scheduler_gamma,
+                 weight_decay, scheduler_step, scheduler_gamma, n_street,
                  use_global_attn, use_street_attn, use_local_attn, local_rank, save_dir_path):
         """
         Initialize the trainer with the specified parameters.
@@ -66,14 +66,14 @@ class Trainer:
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = BoundaryDataset(sos_idx=2, eos_idx=3, pad_idx=4,
+        self.train_dataset = BoundaryDataset(sos_idx=2, eos_idx=3, pad_idx=4, n_street=n_street,
                                              n_boundary=n_boundary, d_street=d_street, data_type='train')
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, num_replicas=8, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8)
 
         # Subsequent initializations will use the already loaded full dataset
-        self.val_dataset = BoundaryDataset(sos_idx=2, eos_idx=3, pad_idx=4,
+        self.val_dataset = BoundaryDataset(sos_idx=2, eos_idx=3, pad_idx=4, n_street=n_street,
                                            n_boundary=n_boundary, d_street=d_street, data_type='val')
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, num_replicas=8, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
@@ -263,6 +263,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_head", type=int, default=8, help="Number of attention heads.")
     parser.add_argument("--n_building", type=int, default=120, help="binary classification for building existence.")
     parser.add_argument("--n_boundary", type=int, default=250, help="Number of boundary or token.")
+    parser.add_argument("--n_street", type=int, default=60, help="Number of boundary or token.")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
@@ -297,7 +298,7 @@ if __name__ == '__main__':
     dist.init_process_group("nccl")
 
     # Create a Trainer instance and start the training process
-    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx,
+    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx, n_street=opt.n_street,
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
