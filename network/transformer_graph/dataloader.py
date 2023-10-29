@@ -45,7 +45,7 @@ class GraphDataset(Dataset):
         street_index_sequence = torch.tensor(self.street_index_sequences[index], dtype=torch.long)
         cur_n_street = torch.tensor(self.cur_n_streets[index], dtype=torch.long)
         edge_index_sequence = torch.tensor(self.edge_index_sequences[index], dtype=torch.long)
-        adj_matrix = to_dense_adj(edge_index_sequence)[0].numpy()
+        adj_matrix = to_dense_adj(edge_index_sequence).numpy()
         print(adj_matrix)
         print('----')
 
