@@ -17,7 +17,7 @@ from visualization import plot
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
-                 n_building, n_boundary, dropout, train_ratio, val_ratio, test_ratio, data_type, checkpoint_epoch):
+                 n_building, n_boundary, n_street, dropout, data_type, checkpoint_epoch):
         """
         Initialize the trainer with the specified parameters.
 
@@ -43,9 +43,6 @@ class Trainer:
         self.n_building = n_building
         self.n_boundary = n_boundary
         self.dropout = dropout
-        self.train_ratio = train_ratio
-        self.val_ratio = val_ratio
-        self.test_ratio = test_ratio
         self.data_type = data_type
         self.checkpoint_epoch = checkpoint_epoch
         self.local_rank = 0
@@ -54,10 +51,7 @@ class Trainer:
         self.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
         # Initialize the dataset and dataloader
-        self.test_dataset = BoundaryDataset(train_ratio=self.train_ratio,
-                                            val_ratio=self.val_ratio,
-                                            test_ratio=self.test_ratio,
-                                            data_type='test')
+        self.test_dataset = BoundaryDataset(n_boundary, n_street, d_street, data_type='test')
         self.test_dataloader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=True)
 
         # Initialize the Transformer model
@@ -76,17 +70,18 @@ class Trainer:
         - trg (torch.Tensor): Ground truth labels.
 
         Returns:
-        - torch.Tensor: Computed BCE loss.
+        - torch.Tensor: Computed CE loss.
         """
-        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), trg[:, 1:], reduction='none')
+        pred = pred[:, :-1]
+        trg = trg[:, 1:]
 
-        # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        mask = get_pad_mask(trg[:, 1:], pad_idx=self.eos_idx).float()
+        pred = pred.contiguous().view(-1, pred.shape[-1])
+        trg = trg.contiguous().view(-1)
 
-        # mask 적용
-        masked_loss = loss * mask
+        loss = F.cross_entropy(pred, trg, ignore_index=self.pad_idx)
+
         # 손실의 평균 반환
-        return masked_loss.mean()
+        return loss
 
     def train(self):
         checkpoint = torch.load("./models/transformer/epoch_" + str(self.checkpoint_epoch) + ".pt")
@@ -96,24 +91,33 @@ class Trainer:
         with torch.no_grad():
             for idx, data in enumerate(self.test_dataloader):
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq, unit_coord_seq = data
-                gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.float32)
+                src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq = data
+                gt_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
                 src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                 src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                 trg_building_seq = trg_building_seq.to(device=self.device, dtype=torch.long)
                 trg_street_seq = trg_street_seq.to(device=self.device, dtype=torch.long)
-                unit_coord_seq = unit_coord_seq.to(device=self.device, dtype=torch.float32)
 
-                for t in range(0, self.n_boundary - 1):
-                    output = self.transformer(src_unit_seq, src_street_seq, trg_building_seq, trg_street_seq)
-                    next_token = (torch.sigmoid(output) > 0.5).long()[:, t]
-                    trg_building_seq[:, t + 1] = next_token
+                # Greedy Search로 시퀀스 생성
+                decoder_input = trg_building_seq[:, :1]  # 시작 토큰만 포함
+
+                # output 값을 저장할 텐서를 미리 할당합니다.
+                output_storage = torch.zeros(
+                    (src_unit_seq.size(0), self.n_boundary, 5), device=self.device)
+
+                for t in range(self.n_boundary):  # 임의의 제한값
+                    output = self.transformer(src_unit_seq, src_street_seq, decoder_input, trg_street_seq)
+                    output_storage[:, t] = output[:, t].detach()
+                    next_token = torch.argmax(torch.softmax(output, dim=-1), dim=-1).long()[:, t].unsqueeze(-1)
+                    decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                 # Compute the losses
-                loss = self.cross_entropy_loss(output, gt_building_seq.detach()).detach().item()
+                loss = self.cross_entropy_loss(output_storage, gt_building_seq.detach())
                 print(f"Epoch {idx + 1}/{self.max_epoch} - Loss CE: {loss:.4f}")
 
                 mask = get_pad_mask(gt_building_seq, pad_idx=self.eos_idx).float()
+                unit_coord_seq = torch.cat(
+                    (src_unit_seq[:, :, 0, :].unsqueeze(2), src_unit_seq[:, :, 7, :].unsqueeze(2)), dim=2)
                 plot(output.squeeze().detach().cpu().numpy(),
                      gt_building_seq.squeeze().detach().cpu().numpy(),
                      unit_coord_seq.squeeze().detach().cpu().numpy(),
@@ -135,11 +139,9 @@ if __name__ == '__main__':
     parser.add_argument("--n_head", type=int, default=8, help="Number of attention heads.")
     parser.add_argument("--n_building", type=int, default=1, help="binary classification for building existence.")
     parser.add_argument("--n_boundary", type=int, default=200, help="Number of boundary or token.")
+    parser.add_argument("--n_street", type=int, default=60, help="Number of boundary or token.")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
-    parser.add_argument("--train_ratio", type=float, default=0.89, help="Use checkpoint index.")
-    parser.add_argument("--val_ratio", type=float, default=0.01, help="Use checkpoint index.")
-    parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--data_type", type=str, default='train', help="Use checkpoint index.")
     parser.add_argument("--checkpoint_epoch", type=int, default=1000, help="Use checkpoint index.")
 
@@ -159,6 +161,5 @@ if __name__ == '__main__':
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx,
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer,
                       n_head=opt.n_head, n_building=opt.n_building, n_boundary=opt.n_boundary, dropout=opt.dropout,
-                      train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
-                      data_type=opt.data_type, checkpoint_epoch=opt.checkpoint_epoch)
+                      data_type=opt.data_type, checkpoint_epoch=opt.checkpoint_epoch, n_street=opt.n_street)
     trainer.train()
