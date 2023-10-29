@@ -212,7 +212,7 @@ class Trainer:
                             (src_unit_seq.size(0), self.n_boundary, 4), device=self.device)
 
                         for t in range(self.n_boundary):  # 임의의 제한값
-                            output = self.transformer(src_unit_seq, src_street_seq, decoder_input, gt_unit_seq)
+                            output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input)
                             output_storage[:, t] = output[:, t].detach()
                             next_token = output[:, t]
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
