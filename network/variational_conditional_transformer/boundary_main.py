@@ -105,10 +105,10 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed Recon loss.
         """
-        loss = F.mse_loss(pred, trg, reduction='none')
+        loss = F.mse_loss(pred[:, :-1], trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        pad_mask = get_pad_mask(street_indices, pad_idx=self.pad_idx)
+        pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=self.pad_idx)
         mask = pad_mask.unsqueeze(-1).expand(-1, -1, 4)
 
         # mask 적용
@@ -122,7 +122,7 @@ class Trainer:
         loss = F.mse_loss(cur_token, next_token, reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-        pad_mask = get_pad_mask(street_indices, pad_idx=self.pad_idx)
+        pad_mask = get_pad_mask(street_indices[:, :-1], pad_idx=self.pad_idx)
         mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)[:, :-1, :]
 
         masked_loss = loss * mask.float()
@@ -159,7 +159,7 @@ class Trainer:
                 gt_unit_seq = gt_unit_seq.to(device=self.device, dtype=torch.float32)
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
+                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, gt_unit_seq)
 
                 # Compute the losses
                 loss_recon = self.recon_loss(output, gt_unit_seq.detach(), street_index_seq.detach())
@@ -200,12 +200,22 @@ class Trainer:
                         street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
                         gt_unit_seq = gt_unit_seq.to(device=self.device, dtype=torch.float32)
 
-                        # Get the model's predictions
-                        output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
+                        # Greedy Search로 시퀀스 생성
+                        decoder_input = gt_unit_seq[:, :1]  # 시작 토큰만 포함
+
+                        # output 값을 저장할 텐서를 미리 할당합니다.
+                        output_storage = torch.zeros(
+                            (src_unit_seq.size(0), self.n_boundary, 4), device=self.device)
+
+                        for t in range(self.n_boundary):  # 임의의 제한값
+                            output = self.transformer(src_unit_seq, src_street_seq, decoder_input, gt_unit_seq)
+                            output_storage[:, t] = output[:, t].detach()
+                            next_token = output[:, t]
+                            decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
                         # Compute the losses
-                        loss_recon = self.recon_loss(output, gt_unit_seq, street_index_seq)
-                        loss_smooth = self.smooth_loss(output, street_index_seq)
+                        loss_recon = self.recon_loss(output_storage, gt_unit_seq, street_index_seq)
+                        loss_smooth = self.smooth_loss(output_storage, street_index_seq)
                         loss_recon_mean += loss_recon.detach().item()
                         loss_smooth_mean += loss_smooth.detach().item()
 

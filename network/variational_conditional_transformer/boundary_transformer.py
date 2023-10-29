@@ -65,7 +65,6 @@ class Encoder(nn.Module):
                          use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.d_model = d_model
 
     def forward(self, src_unit_seq, src_street_seq, trg_street_seq):
@@ -82,7 +81,6 @@ class Encoder(nn.Module):
         src_street_seq = self.pos_enc(src_street_seq).squeeze(dim=-1)
         enc_output = self.unit_enc(src_unit_seq) + self.street_enc(src_street_seq)
         enc_output = self.dropout(enc_output)
-        enc_output = self.layer_norm(enc_output)
 
         for enc_layer in self.layer_stack:
             enc_output = enc_layer(enc_output, src_pad_mask, src_street_mask, src_local_mask)
@@ -90,29 +88,41 @@ class Encoder(nn.Module):
         return enc_output
 
 class Decoder(nn.Module):
-    def __init__(self, d_model):
+    def __init__(self, pad_idx, n_layer, n_head, d_k, d_v, d_model, d_inner, d_unit, d_street, dropout=0.1, n_boundary=200,
+                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super().__init__()
 
-        self.fc1 = nn.Linear(d_model, d_model // 2)
-        self.fc2 = nn.Linear(d_model // 2, d_model // 4)
-        self.fc3 = nn.Linear(d_model // 4, d_model // 8)
-        self.layer_norm1 = nn.LayerNorm(d_model // 2, eps=1e-6)
-        self.layer_norm2 = nn.LayerNorm(d_model // 4, eps=1e-6)
-        self.layer_norm3 = nn.LayerNorm(d_model // 8, eps=1e-6)
+        self.pad_idx = pad_idx
+
+        self.unit_enc = nn.Linear(4, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.layer_stack = nn.ModuleList([
+            DecoderLayer(d_model, d_inner, n_head, d_k, d_v, dropout,
+                         use_global_attn=use_global_attn, use_street_attn=use_street_attn,
+                         use_local_attn=use_local_attn)
+            for _ in range(n_layer)
+        ])
+        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.d_model = d_model
 
-    def forward(self, enc_output):
-        dec_output = self.fc1(enc_output)
-        dec_output = F.relu(dec_output)
-        dec_output = self.layer_norm1(dec_output)
+    def forward(self, src_unit_seq, src_street_seq, trg_street_seq):
+        enc_output = self.encoding(src_unit_seq, src_street_seq, trg_street_seq)
 
-        dec_output = self.fc2(dec_output)
-        dec_output = F.relu(dec_output)
-        dec_output = self.layer_norm2(dec_output)
+        return enc_output
 
-        dec_output = self.fc3(dec_output)
-        dec_output = F.relu(dec_output)
-        dec_output = self.layer_norm3(dec_output)
+    def encoding(self, trg_unit_seq, enc_output, street_index_seq):
+        src_pad_mask = get_pad_mask(street_index_seq, pad_idx=self.pad_idx).unsqueeze(-2)
+
+        sub_mask = get_subsequent_mask(street_index_seq)
+        trg_pad_mask = get_pad_mask(street_index_seq, pad_idx=self.pad_idx).unsqueeze(-2) & sub_mask
+        trg_street_mask = get_street_mask(street_index_seq) & trg_pad_mask
+        trg_local_mask = get_local_mask(street_index_seq) & trg_pad_mask
+
+        dec_output = self.unit_enc(trg_unit_seq)
+        dec_output = self.dropout(dec_output)
+
+        for dec_layer in self.layer_stack:
+            dec_output = dec_layer(dec_output, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask, src_pad_mask)
 
         return dec_output
 
@@ -127,13 +137,17 @@ class BoundaryTransformer(nn.Module):
                                d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
                                use_local_attn=use_local_attn)
-        self.decoder = Decoder(d_model=d_model)
+        self.decoder = Decoder(pad_idx=pad_idx, n_boundary=n_boundary,
+                               d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
+                               d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
+                               use_global_attn=use_global_attn, use_street_attn=use_street_attn,
+                               use_local_attn=use_local_attn)
         self.pad_idx = pad_idx
         self.fc = nn.Linear(d_model // 8, 4)
 
-    def forward(self, src_unit_seq, src_street_seq, street_index_seq):
+    def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_unit_seq):
         enc_output = self.encoder(src_unit_seq, src_street_seq, street_index_seq)
-        dec_output = self.decoder(enc_output)
+        dec_output = self.decoder(trg_unit_seq, enc_output, street_index_seq)
 
         output = self.fc(dec_output)
         output = torch.sigmoid(output)

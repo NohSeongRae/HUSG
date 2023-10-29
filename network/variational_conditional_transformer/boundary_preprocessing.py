@@ -5,7 +5,8 @@ from tqdm import tqdm
 import argparse
 import os
 
-def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
+def preprocesing_dataset(sos_idx=2, eos_idx=3, pad_idx=4,
+                         train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                       n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64):
     dataset_path = '../../datasets/HUSG/'
     # dataset_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset')
@@ -37,7 +38,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
                     if dataset_name == 'street_index_sequences':
                         zeros = np.zeros(n_boundary)
-                        zeros[:len(data)] = data
+                        zeros[0] = n_street + 1
+                        zeros[1:len(data) + 1] = data
+                        zeros[len(data) + 1] = n_street + 2
                         data = zeros
                         all_street_index_sequences.append(data)
 
@@ -46,7 +49,10 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         p1 = np.reshape(np.array(data[:, 0, :]), (-1, 1, 2))
                         p2 = np.reshape(np.array(data[:, -1, :]), (-1, 1, 2))
                         gt = np.concatenate((p1, p2), axis=1)
-                        zeros[:len(gt)] = gt
+                        zeros[0] = sos_idx
+                        zeros[1:len(gt) + 1] = gt
+                        zeros[len(gt) + 1] = eos_idx
+                        zeros[len(gt) + 2] = pad_idx
                         zeros = np.reshape(zeros, (-1, 4))
                         all_gt_unit_position_datasets.append(zeros)
 
@@ -103,6 +109,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
 
     # Define the arguments with their descriptions
+    parser.add_argument("--sos_idx", type=int, default=2, help="Use checkpoint index.")
+    parser.add_argument("--eos_idx", type=int, default=3, help="Use checkpoint index.")
+    parser.add_argument("--pad_idx", type=int, default=4, help="Use checkpoint index.")
     parser.add_argument("--train_ratio", type=float, default=0.89, help="Use checkpoint index.")
     parser.add_argument("--val_ratio", type=float, default=0.01, help="Use checkpoint index.")
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
@@ -118,6 +127,7 @@ if __name__ == '__main__':
     for arg in vars(opt):
         print(f"{arg}: {getattr(opt, arg)}")
 
-    preprocesing_dataset(train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
+    preprocesing_dataset(sos_idx=opt.sos_idx, eos_idx=opt.eos_idx, pad_idx=opt.pad_idx,
+                         train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
                          n_street=opt.n_street, n_building=opt.n_building,
                          n_boundary=opt.n_boundary, d_unit=opt.d_unit, d_street=opt.d_street)
