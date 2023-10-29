@@ -45,9 +45,7 @@ class GraphDataset(Dataset):
         street_index_sequence = torch.tensor(self.street_index_sequences[index], dtype=torch.long)
         cur_n_street = torch.tensor(self.cur_n_streets[index], dtype=torch.long)
         edge_index_sequence = torch.tensor(self.edge_index_sequences[index], dtype=torch.long)
-        adj_matrix = to_dense_adj(edge_index_sequence).numpy()
-        print(adj_matrix)
-        print('----')
+        adj_matrix = to_dense_adj(edge_index_sequence)[0].numpy()
 
         # 패딩된 street position 생성
         street_pos = self.street_unit_position_datasets[index]
@@ -63,7 +61,7 @@ class GraphDataset(Dataset):
         street_position_dataset = torch.tensor(zeros, dtype=torch.float32)
 
         # 패딩된 인접 행렬 생성
-        zeros = np.zeros((self.n_street + self.n_building, self.n_street + self.n_building))
+        zeros = np.eye(self.n_street + self.n_building)
         zeros[0] = 2
         zeros[1:adj_matrix.shape[0] + 1, 1:adj_matrix.shape[1] + 1] = adj_matrix
         zeros[adj_matrix.shape[0] + 1] = 3
