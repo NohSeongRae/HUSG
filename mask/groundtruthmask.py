@@ -13,6 +13,7 @@ import numpy as np
 import imageio
 from shapely.geometry import box
 from tqdm import tqdm
+import pickle
 
 current_script_path = os.path.dirname(os.path.abspath(__file__))
 husg_directory_path = os.path.dirname(current_script_path)
@@ -73,6 +74,8 @@ def create_masks_for_dataset(center_positions, img_size):
     return masks
 
 def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center_position_datasets):
+    invalid_indices = []
+
     for idx, dataset in enumerate(tqdm(building_center_position_datasets)):
         unit_coords_dataset = unit_coords_datasets[idx][np.any(unit_coords_datasets[idx] != 0, axis=(1, 2))]
 
@@ -111,10 +114,27 @@ def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center
                 line_mask = geometry_mask(lines, transform=transform, invert=True, out_shape=(image_size, image_size))
             except Exception as e:
                 print(f"No valid geometry objects {idx + 1} : {e}")
+                invalid_indices.append(idx + 1)
                 continue
 
             current_building_mask = np.zeros((image_size, image_size), dtype=np.uint8)
             current_building_mask[int(coord[1]), int(coord[0])] = 2
+
+            node_size = 1
+
+            minx = coord[0] - (node_size / 2) / image_size
+            miny = coord[1] - (node_size / 2) / image_size
+            maxx = coord[0] + (node_size / 2) / image_size
+            maxy = coord[1] + (node_size / 2) / image_size
+
+            try:
+                current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
+                                                      out_shape=(image_size, image_size))
+            except Exception as e:
+                print(f"No valid geometry objects {idx + 1} : {e}")
+                continue
+
+            current_building_mask = current_building_mask * 2
 
             if i > 0:
                 prev_coord = valid_coords[i - 1]
@@ -148,6 +168,13 @@ def groundtruthmask(city_name, image_size, unit_coords_datasets, building_center
             with open(pickle_path, "wb") as f:
                 pickle.dump(coords_dict, f)
 
+
+    if len(invalid_indices) > 0:
+        invalid_indices_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', "mask_pickle",
+                                            city_name, f"{city_name}_groundtruth_invalid.pkl")
+
+        with open(invalid_indices_path, 'wb') as f:
+            pickle.dump(invalid_indices, f)
 
 if __name__=="__main__":
     import pickle

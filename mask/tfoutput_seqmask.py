@@ -54,6 +54,7 @@ def get_square_bounds(polygon, padding_percentage=10):
 
 
 def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth=1):
+    invalid_indices = []
     width, height = image_size, image_size
 
     for dataset_idx in tqdm(range(len(unit_coords_datasets))):
@@ -78,7 +79,12 @@ def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index
             left, bottom, right, top = get_square_bounds(boundary_polygon)
             transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
 
-            boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
+            try:
+                boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
+            except Exception as e:
+                print(f"No valid geometry objects {dataset_idx + 1} : {e}")
+                invalid_indices.append(dataset_idx + 1)
+                continue
 
             # thick_boundary_mask = dilation(boundary_mask, square(linewidth))
             thick_boundary_mask = dilation(boundary_mask, square(1))
@@ -112,3 +118,10 @@ def tfoutput_seqmask(city_name, image_size, unit_coords_datasets, building_index
 
         with open(pickle_path, "wb") as f:
             pickle.dump(coords_list, f)
+
+    if len(invalid_indices) > 0:
+        invalid_indices_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', "mask_pickle",
+                                            city_name, f"{city_name}_tfoutputseq_invalid.pkl")
+
+        with open(invalid_indices_path, 'wb') as f:
+            pickle.dump(invalid_indices, f)

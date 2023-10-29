@@ -73,6 +73,8 @@ def create_masks_for_dataset(center_positions, img_size):
     return masks
 
 def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, node_size):
+    invalid_indices = []
+
     for idx, dataset in enumerate(tqdm(building_center_position_datasets)):
         unit_coords_dataset = unit_coords_datasets[idx][np.any(unit_coords_datasets[idx] != 0, axis=(1, 2))]
         coordinates = [segment[0] for segment in unit_coords_dataset]
@@ -106,9 +108,17 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
 
             # If it's the first iteration for this idx, save an empty mask
             if i == 0:
-                mask_empty = np.zeros((image_size, image_size), dtype=np.uint8)
-                mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
-                imageio.imsave(mask_path, mask_empty)
+                # mask_empty = np.zeros((image_size, image_size), dtype=np.uint8)
+                # mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
+                # imageio.imsave(mask_path, mask_empty)
+
+                pickle_folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask',
+                                                  "mask_pickle", city_name, 'inbuildingcpmask',
+                                                  f'{city_name}_{idx + 1}')
+
+                if not os.path.exists(pickle_folder_path):
+                    os.makedirs(pickle_folder_path)
+
                 continue
 
 
@@ -121,13 +131,14 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
                     # maxx = coord[0] + (node_size / 2) / image_size
                     # maxy = coord[1] + (node_size / 2) / image_size
                     # polygons.append(box(minx, miny, maxx, maxy))
-                    polygons.append(Point(coord).buffer(0.5))
+                    polygons.append(Point(coord))
 
                 try:
                     mask_previous = geometry_mask(polygons, transform=transform, invert=True,
                                                   out_shape=(image_size, image_size))
                 except Exception as e:
                     print(f"No valid geometry objects {idx+1} : {e}")
+                    invalid_indices.append(idx + 1)
                     continue
 
                 mask_previous = (mask_previous * 1).astype(np.uint8)  # Change value to 1
@@ -142,13 +153,14 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
             # maxx = coord[0] + (node_size / 2) / image_size
             # maxy = coord[1] + (node_size / 2) / image_size
             # polygons.append(box(minx, miny, maxx, maxy))
-            polygons.append(Point(coord).buffer(0.5))
+            polygons.append(Point(coord))
 
 
             try:
                 mask_recent = geometry_mask(polygons, transform=transform, invert=True, out_shape=(image_size, image_size))
             except Exception as e:
                 print(f"No valid geometry objects {idx + 1} : {e}")
+                invalid_indices.append(idx + 1)
                 continue
             mask_recent = (mask_recent * 2).astype(np.uint8)  # Change value to 2
 
@@ -184,6 +196,14 @@ def inbuildingcpmask(city_name, image_size, unit_coords_datasets, building_cente
 
             with open(pickle_path, "wb") as f:
                 pickle.dump(coords_dict, f)
+
+    if len(invalid_indices) > 0:
+        invalid_indices_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', "mask_pickle",
+                                            city_name, f"{city_name}_inbuildingcp_invalid.pkl")
+
+        with open(invalid_indices_path, 'wb') as f:
+            pickle.dump(invalid_indices, f)
+
 
 if __name__ == "__main__":
     import pickle

@@ -114,6 +114,8 @@ def optimized_assign_grids_to_linestrings(unit_coords_dataset, grids):
 
 
 def tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_index_sequences, linewidth, num_grids, unit_length):
+    invalid_indices = []
+
     for idx in tqdm(range(len(unit_coords_datasets))):
         unit_coords_dataset = unit_coords_datasets[idx][np.any(unit_coords_datasets[idx] != 0, axis=(1, 2))]
 
@@ -161,12 +163,14 @@ def tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_inde
             building_mask = geometry_mask(building_polygons, transform=transform, invert=True, out_shape=(height, width))
         except Exception as e:
             print(f"Error processing image {idx + 1}: {e}")
+            invalid_indices.append(idx + 1)
             continue
 
         try:
             rectangle_mask = geometry_mask(rectangle_polygons, transform=transform, invert=False, out_shape=(height, width))
         except Exception as e:
             print(f"No valid geometry objects {idx + 1} : {e}")
+            invalid_indices.append(idx + 1)
             continue
         combined_mask = np.where(rectangle_mask == 0, 0, building_mask)
         scaled_mask = (combined_mask * 1).astype(np.uint8)
@@ -189,3 +193,10 @@ def tfoutput_plotmask(city_name, image_size, unit_coords_datasets, building_inde
 
         with open(pickle_path, "wb") as f:
             pickle.dump(coords_list, f)
+
+    if len(invalid_indices) > 0:
+        invalid_indices_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', "mask_pickle",
+                                            city_name, f"{city_name}_tfoutputplot_invalid.pkl")
+
+        with open(invalid_indices_path, 'wb') as f:
+            pickle.dump(invalid_indices, f)

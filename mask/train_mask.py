@@ -1,103 +1,186 @@
-import os
-import re
+import numpy as np
 import pickle
-from PIL import Image
-
-
+import matplotlib.pyplot as plt
 import os
-import shutil
 
-# ["allmask", "boundarymask", "insidemask", "streetmask", "tfoutput_plotmask", "tfoutput_seqmask"]
-
-def remove_extension(filename):
-    """파일 확장자를 제거하는 함수"""
-    return os.path.splitext(filename)[0]
+### street mask
 
 city_name = "atlanta"
-root_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_City_Team", "3_mask", f"{city_name}")
-boundarymask_path = os.path.join(root_path, "boundarymask")
-allmask_path = os.path.join(root_path, "allmask")
-insidemask_path = os.path.join(root_path, "insidemask")
-streetmask_path = os.path.join(root_path, "streetmask")
-tfoutput_plotmask_path = os.path.join(root_path, "tfoutput_plotmask")
-tfoutput_seqmask_path = os.path.join(root_path, "tfoutput_seqmask")
 
-inbuildingcpmask_path = os.path.join(root_path, "inbuildingcpmask")
-inedgemask_path = os.path.join(root_path, "inedgemask")
-groundtruthmask_path = os.path.join(root_path, "groundtruthmask")
+### allmask, streetmask
 
-# 폴더 경로 설정
-file_folders = [
-    boundarymask_path,
-    allmask_path,
-    insidemask_path,
-    streetmask_path,
-    tfoutput_plotmask_path,
-    tfoutput_seqmask_path
-]
+def streetmask(city_name):
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'streetmask', 'atlanta_1.pkl')
 
-dir_folders = [
-    inbuildingcpmask_path,
-    inedgemask_path,
-    groundtruthmask_path
-]
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
 
-all_folders = file_folders + dir_folders
+    image = np.zeros((120, 120), dtype=np.uint8)
 
-# 모든 폴더에서 파일 및 폴더 이름의 집합을 만듭니다.
-folder_sets = [set(os.listdir(folder)) for folder in all_folders]
+    for pixel_value, coords in mask_coords.items():
+        for y, x in coords:
+            image[y, x] = pixel_value
 
-all_folders = file_folders + dir_folders
+    plt.imshow(image, cmap='gray')
+    plt.show()
 
-# 모든 폴더에서 파일 및 폴더 이름의 집합을 만듭니다.
-folder_sets = [set(map(remove_extension, os.listdir(folder))) for folder in file_folders]
-folder_sets += [set(os.listdir(folder)) for folder in dir_folders]
+def allmask(city_name):
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'allmask', 'atlanta_1.pkl')
 
-# 모든 폴더의 파일 및 폴더 이름의 합집합을 만듭니다.
-all_names = set.union(*folder_sets)
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
 
-# 각 이름에 대해서
-for name in all_names:
-    # 해당 이름이 모든 폴더에 존재하는지 확인합니다.
-    if sum(name in folder_set for folder_set in folder_sets) != len(all_folders):
-        print(name)
-        # 이름이 모든 폴더에 존재하지 않는 경우, 해당 이름으로 된 파일 또는 폴더를 삭제합니다.
-        for folder in all_folders:
-            path = os.path.join(folder, name)
-            if os.path.exists(path):
-                if os.path.isfile(path):
-                    os.remove(path)
-                elif os.path.isdir(path):
-                    shutil.rmtree(path)
+    image = np.zeros((120, 120), dtype=np.uint8)
+
+    for pixel_value, coords in mask_coords.items():
+        for y, x in coords:
+            image[y, x] = pixel_value
+
+    plt.imshow(image, cmap='gray')
+    plt.show()
 
 
-# def extract_number(filename):
-#     match = re.search(r'(\d+).png$', filename)
-#     return int(match.group(1)) if match else 0
-#
-# def save_mask_pkl(city_name, masktype):
-#     folder_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_City_Team", "3_mask", f"{city_name}",
-#                                         f"{masktype}")
-#     all_files = os.listdir(folder_path)
-#     sorted_files = sorted(all_files, key=extract_number)
-#
-#     images = [Image.open(os.path.join(folder_path, file)) for file in sorted_files]
-#
-#     save_folder_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_City_Team", "3_mask", 'train_dataset', f"{city_name}")
-#
-#     if not os.path.exists(save_folder_path):
-#         os.makedirs(save_folder_path)
-#
-#     save_path = os.path.join(save_folder_path, f"{masktype}.pkl")
-#
-#     with open(save_path, "wb") as f:
-#         pickle.dump(images, f)
-#
-# # single_mask_type_list = ["allmask", "boundarymask", "insidemask", "streetmask", "tfoutput_plotmask", "tfoutput_seqmask"]
-# single_mask_type_list = ["allmask", "streetmask", "tfoutput_plotmask", "tfoutput_seqmask"]
-#
-# city_names = ["atlanta"]
-#
-# for city_name in city_names:
-#     for mask_type in single_mask_type_list:
-#         save_mask_pkl(city_name, mask_type)
+def allmask_num(city_name):
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'allmask', f'{city_name}_1.pkl')  # Modified filename
+
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
+
+    image = np.zeros((120, 120), dtype=np.uint8)
+
+    for pixel_value, coords in mask_coords.items():
+        for y, x in coords:
+            image[y, x] = pixel_value
+
+    plt.figure(figsize=(12, 12))
+    plt.imshow(image, cmap='gray')
+    for i in range(120):
+        for j in range(120):
+            if image[i, j] != 0:  # Only display non-zero values
+                plt.text(j, i, str(image[i, j]), ha='center', va='center', color='red', fontsize=6)
+
+    plt.axis('off')
+    plt.show()
+
+# insidemask
+
+def insidemask(city_name):
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'allmask', 'atlanta_1.pkl')
+
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
+
+    image = np.zeros((120, 120), dtype=np.uint8)
+
+    for pixel_value, coords in mask_coords.items():
+        for y, x in coords:
+            image[y, x] = pixel_value
+
+    inside_mask = (image == 1).astype(np.uint8)
+
+    plt.imshow(inside_mask, cmap='gray')
+    plt.show()
+
+def boundarymask(city_name): ## 다시 (boundary만 따로 저장)
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'allmask', 'atlanta_1.pkl')
+
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
+
+    image = np.zeros((120, 120), dtype=np.uint8)
+
+    for pixel_value, coords in mask_coords.items():
+        for y, x in coords:
+            image[y, x] = pixel_value
+
+    boundary_mask = (image > 1).astype(np.uint8)
+
+    plt.imshow(boundary_mask, cmap='gray')
+    plt.show()
+
+def inbuildingcpmask(city_name):
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'inbuildingcpmask', 'atlanta_1', 'atlanta_1_3.pkl')
+
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
+
+    image = np.zeros((120, 120), dtype=np.uint8)
+
+    for pixel_value, coords in mask_coords.items():
+        for y, x in coords:
+            image[y, x] = pixel_value
+
+    plt.imshow(image, cmap='gray')
+    plt.show()
+
+def tfoutputseqmask(city_name): ## 수정?
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'tfoutput_seqmask', 'atlanta_1.pkl')
+
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
+
+    mask = np.zeros((120, 120), dtype=np.uint8)
+
+    for y, x in mask_coords:
+        mask[y, x] = 1
+
+    plt.imshow(mask, cmap='gray')
+    plt.show()
+
+def tfoutputplotmask(city_name): ## 수정?
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'tfoutput_plotmask', 'atlanta_2.pkl')
+
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
+
+    mask = np.zeros((120, 120), dtype=np.uint8)
+
+    for y, x in mask_coords:
+        mask[y, x] = 1
+
+    plt.imshow(mask, cmap='gray')
+    plt.show()
+
+def inedgemask(city_name):
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'inedgemask', 'atlanta_1', 'atlanta_1_2.pkl')
+
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
+
+    image = np.zeros((120, 120), dtype=np.uint8)
+
+    for pixel_value, coords in mask_coords.items():
+        for y, x in coords:
+            image[y, x] = pixel_value
+
+    plt.imshow(image, cmap='gray')
+    plt.show()
+
+def groundtruthmask(city_name):
+    save_folderpath = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', 'mask_pickle',
+                                   f'{city_name}', 'groundtruthmask', 'atlanta_1', 'atlanta_1_1.pkl')
+
+    with open(save_folderpath, 'rb') as f:
+        mask_coords = pickle.load(f)
+
+    image = np.zeros((120, 120), dtype=np.uint8)
+
+    for pixel_value, coords in mask_coords.items():
+        for y, x in coords:
+            image[y, x] = pixel_value
+
+    plt.imshow(image, cmap='gray')
+    plt.show()
+
+# allmask(city_name) ## allmask 수정
+
+groundtruthmask(city_name)

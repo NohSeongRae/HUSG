@@ -74,6 +74,8 @@ def create_masks_for_dataset(center_positions, img_size):
     return masks
 
 def inedgemask(city_name, image_size, unit_coords_datasets, building_center_position_datasets, node_size, line_width):
+    invalid_indices = []
+
     for idx, dataset in enumerate(tqdm(building_center_position_datasets)):
         unit_coords_dataset = unit_coords_datasets[idx][np.any(unit_coords_datasets[idx] != 0, axis=(1, 2))]
 
@@ -100,9 +102,17 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
 
             # 첫 번째 마스크는 빈 마스크로 생성
             if i == 0:
-                mask_empty = np.zeros((image_size, image_size), dtype=np.uint8)
-                mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
-                imageio.imsave(mask_path, mask_empty)
+                # mask_empty = np.zeros((image_size, image_size), dtype=np.uint8)
+                # mask_path = os.path.join(folder_path, f'{city_name}_{idx + 1}_{i + 1}.png')
+                # imageio.imsave(mask_path, mask_empty)
+
+                pickle_folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', 'mask_pickle', '3_mask', city_name,
+                                           'inedgemask',
+                                           f'{city_name}_{idx + 1}')
+
+                if not os.path.exists(pickle_folder_path):
+                    os.makedirs(pickle_folder_path)
+
                 continue
 
             for j in range(i):
@@ -116,6 +126,7 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                     line_mask = geometry_mask([vertical_line], transform=transform, invert=True, out_shape=(image_size, image_size))
                 except Exception as e:
                     print(f"No valid geometry objects {idx + 1} : {e}")
+                    invalid_indices.append(idx + 1)
                     continue
 
                 # line_mask = dilation(line_mask, square(line_width))
@@ -131,6 +142,7 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                         line_mask = geometry_mask([connection_line], transform=transform, invert=True, out_shape=(image_size, image_size))
                     except Exception as e:
                         print(f"No valid geometry objects {idx + 1} : {e}")
+                        invalid_indices.append(idx + 1)
                         continue
 
                     # line_mask = dilation(line_mask, square(line_width))
@@ -143,11 +155,13 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
                 maxx = coord[0] + (node_size / 2) / image_size
                 maxy = coord[1] + (node_size / 2) / image_size
 
+
                 try:
                     current_building_mask = geometry_mask([box(minx, miny, maxx, maxy)], transform=transform, invert=True,
                                                           out_shape=(image_size, image_size))
                 except Exception as e:
                     print(f"No valid geometry objects {idx + 1} : {e}")
+                    invalid_indices.append(idx + 1)
                     continue
 
                 # 모든 누적된 노드들을 1로 설정
@@ -155,10 +169,11 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
 
                 # 현재 건물의 중심점만 2로 설정
                 current_building_mask = current_building_mask * 2
-                y_positions, x_positions = np.where(current_building_mask == 2)
-                center_y = np.mean(y_positions).astype(int)
-                center_x = np.mean(x_positions).astype(int)
-                current_building_mask[center_y - 1:center_y + 2, center_x - 1:center_x + 2] = 2
+                # y_positions, x_positions = np.where(current_building_mask == 2)
+                # center_y = np.mean(y_positions).astype(int)
+                # center_x = np.mean(x_positions).astype(int)
+
+                # current_building_mask[center_y - 1:center_y + 2, center_x - 1:center_x + 2] = 2
 
                 # 현재 건물을 누적된 노드에 추가
                 accumulated_nodes = np.maximum(accumulated_nodes, current_building_mask)
@@ -194,8 +209,15 @@ def inedgemask(city_name, image_size, unit_coords_datasets, building_center_posi
             with open(pickle_path, "wb") as f:
                 pickle.dump(coords_dict, f)
 
+    if len(invalid_indices) > 0:
+        invalid_indices_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', "mask_pickle",
+                                            city_name, f"{city_name}_inedge_invalid.pkl")
 
-if __name__=="__main__":
+        with open(invalid_indices_path, 'wb') as f:
+            pickle.dump(invalid_indices, f)
+
+
+if __name__ == "__main__":
     import pickle
 
     city_names = ["atlanta"]

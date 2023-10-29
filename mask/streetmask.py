@@ -54,6 +54,7 @@ def get_square_bounds(polygon, padding_percentage=10):
 
 
 def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequences, linewidth=1):
+    invalid_indices = []
     width, height = image_size, image_size
 
     for dataset_idx in tqdm(range(len(unit_coords_datasets))):
@@ -78,10 +79,15 @@ def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequenc
             left, bottom, right, top = get_square_bounds(boundary_polygon)
             transform = rasterio.transform.from_bounds(left, bottom, right, top, width, height)
 
-            boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
+            try:
+                boundary_mask = geometry_mask(boundaries_list, transform=transform, invert=True, out_shape=(height, width))
+            except Exception as e:
+                print(f"No valid geometry {dataset_idx + 1}:{e}")
+                invalid_indices.append(dataset_idx+1)
+                continue
 
             # thick_boundary_mask = dilation(boundary_mask, square(linewidth))
-            thick_boundary_mask = dilation(boundary_mask, square(1))
+            thick_boundary_mask = dilation(boundary_mask, square(3))
 
             # street_index_sequences에서 padding 값을 무시
             if street_index_sequences[dataset_idx][segment_index] != 0:
@@ -119,3 +125,10 @@ def streetmask(city_name, image_size, unit_coords_datasets, street_index_sequenc
 
         with open(pickle_path, "wb") as f:
             pickle.dump(mask_coords, f)
+
+    if len(invalid_indices) > 0:
+        invalid_indices_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '3_mask', "mask_pickle",
+                                            city_name, f"{city_name}_street_invalid.pkl")
+
+        with open(invalid_indices_path, 'wb') as f:
+            pickle.dump(invalid_indices, f)

@@ -16,10 +16,10 @@ available mask type
 9. groundtruthmask 
 """
 
-masktype = "tfoutput_plotmask"
+masktype = "allmask"
 # inmasktype = "inedgemask"
 
-city_name = "phoenix"
+city_name = "dallas"
 dataset_idx = 1
 indata_idx = 3
 # 마스크 저장
