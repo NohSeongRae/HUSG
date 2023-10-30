@@ -179,8 +179,7 @@ class Trainer:
                 # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
-
-            self.scheduler.step()
+                self.scheduler.step()
 
             # Print the average losses for the current epoch
             loss_mean /= len(self.train_dataloader)
