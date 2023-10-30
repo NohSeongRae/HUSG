@@ -66,7 +66,7 @@ def test(sos_idx, eos_idx, pad_idx, n_street, d_street, d_unit, d_model, n_layer
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
-    transformer = BoundaryTransformer(pad_idx=0,
+    transformer = BoundaryTransformer(pad_idx=pad_idx,
                                         d_street=d_street, d_unit=d_unit, d_model=d_model,
                                         d_inner=d_model * 4, n_layer=n_layer, n_head=n_head,
                                         dropout=dropout,
