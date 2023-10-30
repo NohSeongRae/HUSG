@@ -124,7 +124,6 @@ class GraphDecoder(nn.Module):
 
     def forward(self, dec_input, enc_output, is_building_tensor,
                 global_mask, street_mask, local_mask, enc_mask):
-        print(is_building_tensor.long()[0])
         dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor.long())
         dec_output = self.dropout(dec_output)
 
