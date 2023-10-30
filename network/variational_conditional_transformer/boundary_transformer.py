@@ -102,7 +102,6 @@ class Decoder(nn.Module):
                          use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.d_model = d_model
 
     def forward(self, src_unit_seq, src_street_seq, trg_street_seq):
