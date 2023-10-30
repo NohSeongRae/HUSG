@@ -17,6 +17,7 @@ from tqdm import tqdm
 from model import get_pad_mask, get_subsequent_mask, get_clipped_adj_matrix
 from model import GraphTransformer
 from dataloader import GraphDataset
+from test import make_upper_follow_lower_torch_padded
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
@@ -205,16 +206,19 @@ class Trainer:
                         cur_n_street = cur_n_street.to(device=self.device, dtype=torch.long)
 
                         # Greedy Search로 시퀀스 생성
-                        decoder_input = trg_adj_seq[:, :1]  # 시작 토큰만 포함
+                        decoder_input = trg_adj_seq[:, :cur_n_street[0] + 1]  # 시작 토큰만 포함
 
                         # output 값을 저장할 텐서를 미리 할당합니다.
                         output_storage = torch.zeros_like(trg_adj_seq, device=self.device)
 
-                        for t in range(gt_adj_seq.shape[1] - 1):  # 임의의 제한값
-                            output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input, cur_n_street)
+                        for t in range(cur_n_street[0], gt_adj_seq.shape[1] - 1):  # 임의의 제한값
+                            output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input,
+                                                 cur_n_street)
                             output_storage[:, t] = output[:, t].detach()
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-2)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
+                            decoder_input = make_upper_follow_lower_torch_padded(decoder_input)
+                            decoder_input[:, :1] = trg_adj_seq[:, :1]
 
                         # Compute the losses using the generated sequence
                         loss = self.cross_entropy_loss(output_storage, gt_adj_seq)
