@@ -30,10 +30,10 @@ def recon_loss(pred, trg, street_indices):
     Returns:
     - torch.Tensor: Computed Recun loss.
     """
-    loss = F.mse_loss(pred, trg, reduction='none')
+    loss = F.mse_loss(pred[:, :-1], trg[:, 1:], reduction='none')
 
     # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-    pad_mask = get_pad_mask(street_indices, pad_idx=0)
+    pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=0)
     mask = pad_mask.unsqueeze(-1).expand(-1, -1, 4)
 
     # mask 적용
@@ -48,8 +48,8 @@ def smooth_loss(pred, street_indices):
     loss = F.mse_loss(cur_token, next_token, reduction='none')
 
     # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-    pad_mask = get_pad_mask(street_indices, pad_idx=0)
-    mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)[:, :-1, :]
+    pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=0)
+    mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)
 
     masked_loss = loss * mask.float()
 
@@ -66,7 +66,7 @@ def test(sos_idx, eos_idx, pad_idx, n_street, d_street, d_unit, d_model, n_layer
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
-    transformer = BoundaryTransformer(pad_idx=pad_idx,
+    transformer = BoundaryTransformer(sos_idx=sos_idx, eos_idx=eos_idx, pad_idx=pad_idx,
                                         d_street=d_street, d_unit=d_unit, d_model=d_model,
                                         d_inner=d_model * 4, n_layer=n_layer, n_head=n_head,
                                         dropout=dropout,
