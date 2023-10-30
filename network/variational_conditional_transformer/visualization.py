@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def plot(pred, gt, idx, mask):
+def plot(pred, gt, file_idx, mask):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
     # ax1: 예측 결과 시각화
@@ -40,5 +40,5 @@ def plot(pred, gt, idx, mask):
         os.makedirs(directory)
 
     # 이미지 파일로 저장
-    save_path = os.path.join(directory, "boundary_" + str(idx) + ".png")
+    save_path = os.path.join(directory, "boundary_" + str(file_idx) + ".png")
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
