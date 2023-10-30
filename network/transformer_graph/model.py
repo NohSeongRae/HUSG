@@ -124,7 +124,7 @@ class GraphDecoder(nn.Module):
 
     def forward(self, dec_input, enc_output, is_building_tensor,
                 global_mask, street_mask, local_mask, enc_mask):
-        dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor)
+        dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor.long())
         dec_output = self.dropout(dec_output)
 
         for dec_layer in self.layer_stack:
@@ -175,10 +175,7 @@ class GraphTransformer(nn.Module):
 
         is_building_tensor = torch.arange(trg_adj_seq.shape[1], device=trg_adj_seq.device)
         is_building_tensor = is_building_tensor.unsqueeze(0).expand(trg_adj_seq.shape[0], -1)
-        print(is_building_tensor.shape, n_street_node.shape)
         is_building_tensor = is_building_tensor < n_street_node.unsqueeze(-1).expand(-1, trg_adj_seq.shape[1])
-
-        print(is_building_tensor[0])
 
         dec_output = self.decoder(trg_adj_seq, enc_output, is_building_tensor,
                                   trg_global_mask, trg_street_mask, trg_local_mask, src_global_mask)
