@@ -94,7 +94,6 @@ class BoundaryEncoder(nn.Module):
                          use_global_attn=use_global_attn, use_street_attn=use_street_attn, use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
     def forward(self, src_unit_seq, src_street_seq, global_mask, street_mask, local_mask):
         src_unit_seq = self.pos_enc(src_unit_seq).squeeze(dim=-1)
@@ -120,7 +119,6 @@ class GraphDecoder(nn.Module):
                         use_global_attn=use_global_attn, use_street_attn=use_street_attn, use_local_attn=use_local_attn)
            for _ in range(n_layer)
         ])
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.d_model = d_model
 
     def forward(self, dec_input, enc_output, global_mask, street_mask, local_mask, enc_mask):
