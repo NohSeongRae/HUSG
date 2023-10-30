@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel
+from transformers.optimization import AdamW, get_cosine_schedule_with_warmup
 
 from scipy.stats import wasserstein_distance
 import numpy as np
@@ -93,15 +94,23 @@ class Trainer:
                                        use_local_attn=use_local_attn).to(device=self.device)
         self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank], find_unused_parameters=True)
 
-        # Set the optimizer for the training process
-        self.optimizer = torch.optim.Adam(self.transformer.parameters(),
-                                          lr=5e-4,
-                                          betas=(0.9, 0.98),
-                                          weight_decay=self.weight_decay)
+        # optimizer
+        param_optimizer = list(self.transformer.named_parameters())
+        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_optimizer if not any(
+                nd in n for nd in no_decay)], 'weight_decay': 0.01},
+            {'params': [p for n, p in param_optimizer if any(
+                nd in n for nd in no_decay)], 'weight_decay': 0.0}
+        ]
+        optimizer = AdamW(optimizer_grouped_parameters, lr=3e-5, correct_bias=False)
 
-        # Lambda function to compute the learning rate multiplier
-        lr_lambda = lambda step: min((step + 1) ** (-0.5), (step + 1) * warmup_steps ** (-1.5))
-        self.scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lr_lambda)
+        # scheduler
+        data_len = len(self.train_dataloader)
+        num_train_steps = int(data_len / batch_size * self.max_epoch)
+        num_warmup_steps = int(num_train_steps * 0.1)
+        self.scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps,
+                                                    num_training_steps=num_train_steps)
 
     def cross_entropy_loss(self, pred, trg):
         """
