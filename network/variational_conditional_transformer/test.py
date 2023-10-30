@@ -55,13 +55,14 @@ def smooth_loss(pred, street_indices):
 
     return masked_loss.sum() / mask.sum()
 
-def test(d_street, d_unit, d_model, n_layer, n_head,
+def test(sos_idx, eos_idx, pad_idx, n_street, d_street, d_unit, d_model, n_layer, n_head,
          n_building, n_boundary, dropout, checkpoint_epoch,
          use_global_attn, use_street_attn, use_local_attn, save_dir_path):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     # Subsequent initializations will use the already loaded full dataset
-    test_dataset = BoundaryDataset(n_boundary=n_boundary, d_street=d_street, data_type='test')
+    test_dataset = BoundaryDataset(sos_idx=sos_idx, eos_idx=eos_idx, pad_idx=pad_idx, n_street=n_street,
+                                             n_boundary=n_boundary, d_street=d_street, data_type='test')
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
@@ -137,4 +138,4 @@ if __name__ == '__main__':
     test(d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
          n_building=opt.n_building, n_boundary=opt.n_boundary, dropout=opt.dropout, checkpoint_epoch=opt.checkpoint_epoch,
          use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
-         save_dir_path=opt.save_dir_path)
+         save_dir_path=opt.save_dir_path, sos_idx=2, eos_idx=3, pad_idx=4, n_street=60)
