@@ -103,13 +103,13 @@ class Trainer:
             {'params': [p for n, p in param_optimizer if any(
                 nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
-        optimizer = AdamW(optimizer_grouped_parameters, lr=3e-5, correct_bias=False)
+        self.optimizer = AdamW(optimizer_grouped_parameters, lr=3e-5, correct_bias=False)
 
         # scheduler
         data_len = len(self.train_dataloader)
         num_train_steps = int(data_len / batch_size * self.max_epoch)
         num_warmup_steps = int(num_train_steps * 0.1)
-        self.scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps,
+        self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, num_warmup_steps=num_warmup_steps,
                                                     num_training_steps=num_train_steps)
 
     def cross_entropy_loss(self, pred, trg):
