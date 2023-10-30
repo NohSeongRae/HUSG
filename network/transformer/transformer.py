@@ -63,7 +63,6 @@ class Encoder(nn.Module):
                          use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.d_model = d_model
 
     def forward(self, src_unit_seq, src_street_seq, mask, src_street_mask, src_local_mask):
@@ -71,7 +70,6 @@ class Encoder(nn.Module):
         src_street_seq = self.pos_enc(src_street_seq).squeeze(dim=-1)
         enc_output = self.unit_enc(src_unit_seq) + self.street_enc(src_street_seq)
         enc_output = self.dropout(enc_output)
-        enc_output = self.layer_norm(enc_output)
 
         for enc_layer in self.layer_stack:
             enc_output = enc_layer(enc_output, mask,src_street_mask,src_local_mask)
@@ -93,7 +91,6 @@ class Decoder(nn.Module):
                          use_local_attn=use_local_attn)
             for _ in range(n_layer)
         ])
-        self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
         self.d_model = d_model
 
     # mask: 일반적인 transformer 의 deocder 에서 사용되는 mask, pad mask 랑 subsequent mask 의 합
@@ -104,7 +101,6 @@ class Decoder(nn.Module):
         dec_output = self.building_emb(seq)
         dec_output = self.pos_enc(dec_output)
         dec_output = self.dropout(dec_output)
-        dec_output = self.layer_norm(dec_output)
 
         for dec_layer in self.layer_stack:
             dec_output = dec_layer(dec_output, enc_output, mask, trg_local_mask, trg_street_mask, src_pad_mask)
