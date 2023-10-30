@@ -16,6 +16,8 @@ def plot(pred, gt, idx, mask):
 
     ax1.set_title('Prediction')
     ax1.grid(True)
+    ax1.set_xlim([-0.1, 1.1])  # x축 범위 설정
+    ax1.set_ylim([-0.1, 1.1])  # y축 범위 설정
 
     # ax2: Ground Truth 시각화
     for idx in range(len(pred)):
@@ -27,6 +29,8 @@ def plot(pred, gt, idx, mask):
         ax2.plot(x, y, 'black')
     ax2.set_title('Ground Truth')
     ax2.grid(True)
+    ax2.set_xlim([-0.1, 1.1])  # x축 범위 설정
+    ax2.set_ylim([-0.1, 1.1])  # y축 범위 설정
 
     plt.tight_layout()
 
