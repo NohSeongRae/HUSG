@@ -130,7 +130,7 @@ class Trainer:
         sos_mask = torch.ones_like(sub_mask).to(device=sub_mask.device)
         sos_mask[:, :, 0] = 0
         identity_mask = torch.eye(trg.shape[1]).unsqueeze(0).expand(loss.shape[0], -1, -1).to(device=sub_mask.device)
-        identity_mask = identity_mask[:, 1:, :]
+        identity_mask = 1 - identity_mask[:, 1:, :]
         mask = pad_mask & sub_mask & sos_mask.bool() & identity_mask.bool()
 
         print('pad mask')
