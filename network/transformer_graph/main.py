@@ -133,8 +133,6 @@ class Trainer:
         identity_mask = 1 - identity_mask[:, 1:, :]
         mask = pad_mask & sub_mask & sos_mask.bool() & identity_mask.bool()
 
-        print('pad mask')
-        print(mask[0, :20, :20])
         # mask 적용
         masked_loss = loss * mask.float()
         # 손실의 평균 반환
