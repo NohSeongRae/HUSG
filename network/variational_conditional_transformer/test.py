@@ -87,18 +87,28 @@ def test(sos_idx, eos_idx, pad_idx, n_street, d_street, d_unit, d_model, n_layer
             street_index_seq = street_index_seq.to(device=device, dtype=torch.long)
             gt_unit_seq = gt_unit_seq.to(device=device, dtype=torch.float32)
 
-            # Get the model's predictions
-            output = transformer(src_unit_seq, src_street_seq, street_index_seq)
+            # Greedy Search로 시퀀스 생성
+            decoder_input = gt_unit_seq[:, :1]  # 시작 토큰만 포함
+
+            # output 값을 저장할 텐서를 미리 할당합니다.
+            output_storage = torch.zeros(
+                (src_unit_seq.size(0), n_boundary, 4), device=device)
+
+            for t in range(n_boundary):  # 임의의 제한값
+                output = transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input)
+                output_storage[:, t] = output[:, t].detach()
+                next_token = output[:, t].reshape(-1, 1, 4)
+                decoder_input = torch.cat([decoder_input, next_token], dim=1)
 
             # Compute the losses
-            loss_recon = recon_loss(output, gt_unit_seq, street_index_seq)
-            loss_smooth = smooth_loss(output, street_index_seq)
+            loss_recon = recon_loss(output_storage, gt_unit_seq, street_index_seq)
+            loss_smooth = smooth_loss(output_storage, street_index_seq)
 
             print(f"Loss recon: {loss_recon:.4f} \nLoss smooth: {loss_smooth:.4f}")
 
             pad_mask = get_pad_mask(street_index_seq, pad_idx=0)
 
-            plot(output.squeeze().detach().cpu().numpy(),
+            plot(decoder_input.squeeze().detach().cpu().numpy(),
                  gt_unit_seq.squeeze().detach().cpu().numpy(),
                  idx + 1,
                  pad_mask.squeeze().detach().cpu().numpy())
