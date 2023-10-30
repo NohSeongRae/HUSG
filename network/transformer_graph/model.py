@@ -176,7 +176,7 @@ class GraphTransformer(nn.Module):
         is_building_tensor = torch.arange(trg_adj_seq.shape[1], device=trg_adj_seq.device)
         is_building_tensor = is_building_tensor.unsqueeze(0).expand(trg_adj_seq.shape[0], -1)
         print(is_building_tensor.shape, n_street_node.shape)
-        is_building_tensor = is_building_tensor < n_street_node
+        is_building_tensor = is_building_tensor < n_street_node.unsqueeze(-1).expand(-1, trg_adj_seq.shape[1])
 
         print(is_building_tensor[0])
 
