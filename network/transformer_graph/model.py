@@ -173,9 +173,9 @@ class GraphTransformer(nn.Module):
         padded_mask = torch.nn.functional.pad(trg_sub_mask.expand(trg_adj_seq.shape[0], -1, -1).float(), (0, pad_size))
         trg_adj_seq = trg_adj_seq * padded_mask
 
-        is_building_tensor = torch.arange(trg_adj_seq.shape[1], device=trg_adj_seq.device)
+        is_building_tensor = torch.arange(trg_adj_seq.shape[1], device=trg_adj_seq.device).unsqueeze(0).expand(trg_adj_seq.shape[0], -1)
         is_building_tensor = is_building_tensor < n_street_node
-        is_building_tensor = is_building_tensor.unsqueeze(0).expand(trg_adj_seq.shape[0], -1)
+
         print(is_building_tensor[0])
 
         dec_output = self.decoder(trg_adj_seq, enc_output, is_building_tensor,
