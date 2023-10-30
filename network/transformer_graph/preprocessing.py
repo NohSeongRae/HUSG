@@ -8,7 +8,9 @@ from torch_geometric.utils import dense_to_sparse, to_dense_adj
 
 def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                       n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64):
-    dataset_path = '../../datasets/HUSG/'
+    # dataset_path = '../../datasets/HUSG/'
+    dataset_path = '../../../../mnt/2_transformer/train_dataset/'
+
     # dataset_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset')
     city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
                   "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
