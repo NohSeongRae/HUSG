@@ -139,7 +139,7 @@ class Trainer:
 
         if self.use_checkpoint:
             checkpoint = torch.load("./models/" + self.save_dir_path + "/epoch_" + str(self.checkpoint_epoch) + ".pth")
-            self.transformer.load_state_dict(checkpoint['model_state_dict'])
+            self.transformer.module.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             epoch_start = checkpoint['epoch']
 
