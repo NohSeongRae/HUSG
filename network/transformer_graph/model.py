@@ -112,6 +112,7 @@ class GraphDecoder(nn.Module):
                  use_global_attn=True, use_street_attn=True, use_local_attn=True):
         super(GraphDecoder, self).__init__()
 
+        self.type_emb = nn.Embedding(2, d_model)
         self.node_enc = nn.Linear(n_building + n_street, d_model)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
@@ -121,8 +122,9 @@ class GraphDecoder(nn.Module):
         ])
         self.d_model = d_model
 
-    def forward(self, dec_input, enc_output, global_mask, street_mask, local_mask, enc_mask):
-        dec_output = self.node_enc(dec_input)
+    def forward(self, dec_input, enc_output, is_building_tensor,
+                global_mask, street_mask, local_mask, enc_mask):
+        dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor)
         dec_output = self.dropout(dec_output)
 
         for dec_layer in self.layer_stack:
@@ -171,7 +173,13 @@ class GraphTransformer(nn.Module):
         padded_mask = torch.nn.functional.pad(trg_sub_mask.expand(trg_adj_seq.shape[0], -1, -1).float(), (0, pad_size))
         trg_adj_seq = trg_adj_seq * padded_mask
 
-        dec_output = self.decoder(trg_adj_seq, enc_output, trg_global_mask, trg_street_mask, trg_local_mask, src_global_mask)
+        is_building_tensor = torch.arange(trg_adj_seq.shape[1], device=trg_adj_seq.device)
+        is_building_tensor = is_building_tensor < n_street_node
+        is_building_tensor = is_building_tensor.unsqueeze(0).expand(trg_adj_seq.shape[0], -1)
+        print(is_building_tensor[0])
+
+        dec_output = self.decoder(trg_adj_seq, enc_output, is_building_tensor,
+                                  trg_global_mask, trg_street_mask, trg_local_mask, src_global_mask)
 
         output = self.dropout(dec_output)
         output = self.adj_fc(output)
