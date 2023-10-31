@@ -2,6 +2,7 @@ import torch
 from torch_geometric.data import Data, Dataset
 import networkx as nx
 import numpy as np
+import pickle
 
 class GraphDataset(Dataset):
     """
@@ -11,7 +12,8 @@ class GraphDataset(Dataset):
         super(GraphDataset, self).__init__(transform, pre_transform)
 
         load_path = './network/cvae_graph/' + data_type + '_datasets.gpickle'
-        self.graphs = nx.read_gpickle(load_path)
+        with open(load_path, 'rb') as f:
+            self.graphs = pickle.load(f)
 
     def get(self, idx):
         # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
