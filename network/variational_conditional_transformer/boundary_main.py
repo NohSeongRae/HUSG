@@ -119,7 +119,7 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed Recon loss.
         """
-        loss = F.mse_loss(pred[:, :-1], trg[:, 1:], reduction='none')
+        loss = F.mse_loss(pred[:, 1:], trg[:, 1:], reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=0)
