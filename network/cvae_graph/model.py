@@ -115,7 +115,8 @@ class GraphDecoder(nn.Module):
 
     def node_order_within_batch(self, batch):
         num_nodes_per_graph = degree(batch, dtype=torch.long)
-        cum_nodes_per_graph = torch.cat([torch.tensor([0]), torch.cumsum(num_nodes_per_graph, dim=0)[:-1]], dim=0)
+        cum_nodes_per_graph = torch.cat([torch.tensor([0]).to(device=batch.device),
+                                         torch.cumsum(num_nodes_per_graph, dim=0)[:-1]], dim=0)
         order_within_batch = batch - cum_nodes_per_graph[batch]
         return order_within_batch
 
