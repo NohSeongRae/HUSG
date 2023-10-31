@@ -23,7 +23,7 @@ class PositionalEncoding(nn.Module):
         return torch.FloatTensor(sinusoid_table).unsqueeze(0)
 
     def forward(self, x):
-        return self.pos_table[:, :x.size(1)].clone().detach()
+        return self.pos_table[:, :x].clone().detach()
 
 class GraphEncoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head):
