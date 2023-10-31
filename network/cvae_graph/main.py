@@ -85,7 +85,6 @@ class Trainer:
                                                          num_training_steps=num_train_steps)
 
     def recon_loss(self, pred, trg, mask):
-        print(pred, trg, mask)
         recon_loss = F.mse_loss(pred, trg, reduction='none')
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum()
