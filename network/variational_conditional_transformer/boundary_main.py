@@ -106,7 +106,7 @@ class Trainer:
         num_train_steps = int(data_len / batch_size * self.max_epoch)
         num_warmup_steps = int(num_train_steps * 0.1)
         self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, num_warmup_steps=num_warmup_steps,
-                                                    num_training_steps=num_train_steps)
+                                                         num_training_steps=num_train_steps)
 
     def recon_loss(self, pred, trg, street_indices):
         """
@@ -173,7 +173,7 @@ class Trainer:
                 gt_unit_seq = gt_unit_seq.to(device=self.device, dtype=torch.float32)
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, gt_unit_seq)
+                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
 
                 # Compute the losses
                 loss_recon = self.recon_loss(output, gt_unit_seq.detach(), street_index_seq.detach())
@@ -213,22 +213,11 @@ class Trainer:
                         street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
                         gt_unit_seq = gt_unit_seq.to(device=self.device, dtype=torch.float32)
 
-                        # Greedy Search로 시퀀스 생성
-                        decoder_input = gt_unit_seq[:, :1]  # 시작 토큰만 포함
-
-                        # output 값을 저장할 텐서를 미리 할당합니다.
-                        output_storage = torch.zeros(
-                            (src_unit_seq.size(0), self.n_boundary, 4), device=self.device)
-
-                        for t in range(self.n_boundary):  # 임의의 제한값
-                            output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input)
-                            output_storage[:, t] = output[:, t].detach()
-                            next_token = output[:, t].reshape(-1, 1, 4)
-                            decoder_input = torch.cat([decoder_input, next_token], dim=1)
+                        output = self.transformer(src_unit_seq, src_street_seq, street_index_seq)
 
                         # Compute the losses
-                        loss_recon = self.recon_loss(output_storage, gt_unit_seq, street_index_seq)
-                        loss_smooth = self.smooth_loss(output_storage, street_index_seq)
+                        loss_recon = self.recon_loss(output, gt_unit_seq, street_index_seq)
+                        loss_smooth = self.smooth_loss(output, street_index_seq)
                         loss_recon_mean += loss_recon.detach().item()
                         loss_smooth_mean += loss_smooth.detach().item()
 

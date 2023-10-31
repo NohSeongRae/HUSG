@@ -88,20 +88,16 @@ class Encoder(nn.Module):
         return enc_output
 
 class Decoder(nn.Module):
-    def __init__(self, pad_idx, n_layer, n_head, d_k, d_v, d_model, d_inner, d_unit, d_street, dropout=0.1, n_boundary=200,
-                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
+    def __init__(self, d_model):
         super().__init__()
 
-        self.pad_idx = pad_idx
+        self.fc1 = nn.Linear(d_model, d_model // 2)
+        self.fc2 = nn.Linear(d_model // 2, d_model // 4)
+        self.fc3 = nn.Linear(d_model // 4, d_model // 8)
+        self.layer_norm1 = nn.LayerNorm(d_model // 2, eps=1e-6)
+        self.layer_norm2 = nn.LayerNorm(d_model // 4, eps=1e-6)
+        self.layer_norm3 = nn.LayerNorm(d_model // 8, eps=1e-6)
 
-        self.unit_enc = nn.Linear(4, d_model)
-        self.dropout = nn.Dropout(dropout)
-        self.layer_stack = nn.ModuleList([
-            DecoderLayer(d_model, d_inner, n_head, d_k, d_v, dropout,
-                         use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                         use_local_attn=use_local_attn)
-            for _ in range(n_layer)
-        ])
         self.d_model = d_model
 
     def forward(self, src_unit_seq, src_street_seq, trg_street_seq):
@@ -109,19 +105,18 @@ class Decoder(nn.Module):
 
         return enc_output
 
-    def encoding(self, trg_unit_seq, enc_output, street_index_seq):
-        src_pad_mask = get_pad_mask(street_index_seq, pad_idx=0).unsqueeze(-2)
+    def encoding(self, enc_output):
+        dec_output = self.fc1(enc_output)
+        dec_output = F.relu(dec_output)
+        dec_output = self.layer_norm1(dec_output)
 
-        sub_mask = get_subsequent_mask(trg_unit_seq[:, :, 0])
-        trg_pad_mask = get_pad_mask(trg_unit_seq[:, :, 0], pad_idx=self.pad_idx).unsqueeze(-2) & sub_mask
-        trg_street_mask = get_street_mask(trg_unit_seq[:, :, 0]) & trg_pad_mask
-        trg_local_mask = get_local_mask(trg_unit_seq[:, :, 0]) & trg_pad_mask
+        dec_output = self.fc2(dec_output)
+        dec_output = F.relu(dec_output)
+        dec_output = self.layer_norm2(dec_output)
 
-        dec_output = self.unit_enc(trg_unit_seq)
-        dec_output = self.dropout(dec_output)
-
-        for dec_layer in self.layer_stack:
-            dec_output = dec_layer(dec_output, enc_output, trg_pad_mask, trg_street_mask, trg_local_mask, src_pad_mask)
+        dec_output = self.fc3(dec_output)
+        dec_output = F.relu(dec_output)
+        dec_output = self.layer_norm3(dec_output)
 
         return dec_output
 
@@ -136,17 +131,13 @@ class BoundaryTransformer(nn.Module):
                                d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
                                use_global_attn=use_global_attn, use_street_attn=use_street_attn,
                                use_local_attn=use_local_attn)
-        self.decoder = Decoder(pad_idx=pad_idx, n_boundary=n_boundary,
-                               d_model=d_model, d_inner=d_inner, n_layer=n_layer, n_head=n_head,
-                               d_k=d_k, d_v=d_v, d_unit=d_unit, d_street=d_street, dropout=dropout,
-                               use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                               use_local_attn=use_local_attn)
+        self.decoder = Decoder(d_model=d_model)
         self.pad_idx = pad_idx
-        self.fc = nn.Linear(d_model, 4)
+        self.fc = nn.Linear(d_model // 8, 4)
 
-    def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_unit_seq):
+    def forward(self, src_unit_seq, src_street_seq, street_index_seq):
         enc_output = self.encoder(src_unit_seq, src_street_seq, street_index_seq)
-        dec_output = self.decoder(trg_unit_seq, enc_output, street_index_seq)
+        dec_output = self.decoder(enc_output)
 
         output = self.fc(dec_output)
         output = torch.sigmoid(output)
