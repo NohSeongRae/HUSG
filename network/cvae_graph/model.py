@@ -39,7 +39,7 @@ class GraphEncoder(nn.Module):
         self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
         self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
 
-        self.aggregate = nn.Linear(int(feature_dim * (2.0 + n_head * T)), latent_dim)
+        self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), latent_dim)
         self.fc_mu = nn.Linear(latent_dim, latent_dim)
         self.fc_var = nn.Linear(latent_dim, latent_dim)
 
