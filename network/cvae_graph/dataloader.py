@@ -32,7 +32,7 @@ class GraphDataset(Dataset):
 
         # PyG 데이터 객체를 생성합니다.
         data = Data(street_feature=street_feature, building_feature=building_feature, street_mask=street_masks,
-                    building_mask=building_masks, edge_index=edge_index)
+                    building_mask=building_masks, edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
         return data
 
