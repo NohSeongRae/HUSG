@@ -3,27 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric
 from torch_geometric.utils import degree
-import numpy as np
-
-class PositionalEncoding(nn.Module):
-
-    def __init__(self, d_hid, n_node=180):
-        super(PositionalEncoding, self).__init__()
-        self.register_buffer('pos_table', self._get_sinusoid_encoding_table(n_node, d_hid))
-
-    def _get_sinusoid_encoding_table(self, n_node, d_hid):
-
-        def get_position_angle_vec(position):
-            return [position / np.power(10000, 2 * (hid_j // 2) / d_hid) for hid_j in range(d_hid)]
-
-        sinusoid_table = np.array([get_position_angle_vec(pos_i) for pos_i in range(n_node)])
-        sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])
-        sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])
-
-        return torch.FloatTensor(sinusoid_table).unsqueeze(0)
-
-    def forward(self, x):
-        return self.pos_table[:, :x].clone().detach()
 
 class GraphEncoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head):
@@ -77,12 +56,11 @@ class GraphDecoder(nn.Module):
         super(GraphDecoder, self).__init__()
 
         self.dec_feature_init = nn.Linear(latent_dim, feature_dim)
-        self.pos_enc = PositionalEncoding(feature_dim, n_node=180)
 
         self.convlayer = torch_geometric.nn.GATConv
         self.global_pool = torch_geometric.nn.global_max_pool
 
-        self.d_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
+        self.d_conv1 = self.convlayer(feature_dim + 180, feature_dim, heads=n_head)
         self.d_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
         self.d_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
 
@@ -114,11 +92,9 @@ class GraphDecoder(nn.Module):
         return output
 
     def node_order_within_batch(self, batch):
-        num_nodes_per_graph = degree(batch, dtype=torch.long)
-        cum_nodes_per_graph = torch.cat([torch.tensor([0]).to(device=batch.device),
-                                         torch.cumsum(num_nodes_per_graph, dim=0)[:-1]], dim=0)
-        order_within_batch = batch - cum_nodes_per_graph[batch]
-        return order_within_batch
+        order_within_batch = (batch - batch.roll(1) * (batch != batch.roll(1))).cumsum(dim=0) - 1
+        one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=180)
+        return one_hot_order
 
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8):
