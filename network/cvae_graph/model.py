@@ -90,7 +90,7 @@ class GraphDecoder(nn.Module):
         unique_batches = batch.unique()
         for ub in unique_batches:
             mask = (batch == ub)
-            order_within_batch[mask] = torch.arange(mask.sum())
+            order_within_batch[mask] = torch.arange(mask.sum(), device=batch.device)
 
         one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=180)
         return one_hot_order
