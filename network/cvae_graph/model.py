@@ -68,18 +68,12 @@ class GraphDecoder(nn.Module):
         self.fc_geo = nn.Linear(feature_dim, 5)
 
     def forward(self, z, edge_index, batch):
-        print(z.shape)
         z = self.dec_feature_init(z)
-        print(z.shape)
         z = z[batch]
-        print(z.shape)
 
         pos = self.node_order_within_batch(batch)
-        print(pos.shape)
-        pos = self.pos_enc(pos)
-        print(pos.shape)
+        print(pos)
         z = torch.cat([z, pos], 1)
-        print(z.shape)
 
         d_embed_0 = F.relu(z)
         d_embed_1 = F.relu(self.d_conv1(d_embed_0, edge_index))
