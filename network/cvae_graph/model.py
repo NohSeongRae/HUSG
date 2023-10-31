@@ -64,7 +64,6 @@ class GraphEncoder(nn.Module):
         g_embed_3 = self.global_pool(n_embed_3, data.batch)
 
         g_embed = torch.cat((g_embed_0, g_embed_1, g_embed_2, g_embed_3), 1)
-        print(g_embed_0.shape, g_embed_1.shape, g_embed_2.shape, g_embed_3.shape, g_embed.shape)
         latent = self.aggregate(g_embed)
 
         mu = self.fc_mu(latent)
@@ -95,6 +94,7 @@ class GraphDecoder(nn.Module):
         z = z[batch]
 
         pos = degree(batch, dtype=torch.float32)
+        print(z.shape, pos.shape)
         z = torch.cat([z, pos], 1)
 
         d_embed_0 = F.relu(z)
