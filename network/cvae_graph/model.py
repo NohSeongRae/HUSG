@@ -72,7 +72,6 @@ class GraphDecoder(nn.Module):
         z = z[batch]
 
         pos = self.node_order_within_batch(batch)
-        print(pos)
         z = torch.cat([z, pos], 1)
 
         d_embed_0 = F.relu(z)
