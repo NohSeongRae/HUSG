@@ -97,7 +97,7 @@ class GraphDecoder(nn.Module):
         print(z.shape)
 
         pos = degree(batch, dtype=torch.float32)
-        print(z.shape, pos.shape)
+        print(batch, pos)
         z = torch.cat([z, pos], 1)
 
         d_embed_0 = F.relu(z)
