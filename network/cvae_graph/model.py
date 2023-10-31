@@ -96,9 +96,12 @@ class GraphDecoder(nn.Module):
         z = z[batch]
         print(z.shape)
 
-        pos = degree(batch, dtype=torch.float32)
-        print(batch, pos)
+        pos = self.node_order_within_batch(batch)
+        print(pos.shape)
+        pos = self.pos_enc(pos)
+        print(pos.shape)
         z = torch.cat([z, pos], 1)
+        print(z.shape)
 
         d_embed_0 = F.relu(z)
         d_embed_1 = F.relu(self.d_conv1(d_embed_0, edge_index))
@@ -109,6 +112,12 @@ class GraphDecoder(nn.Module):
         output = self.fc_geo(output)
 
         return output
+
+    def node_order_within_batch(self, batch):
+        num_nodes_per_graph = degree(batch, dtype=torch.long)
+        cum_nodes_per_graph = torch.cat([torch.tensor([0]), torch.cumsum(num_nodes_per_graph, dim=0)[:-1]], dim=0)
+        order_within_batch = batch - cum_nodes_per_graph[batch]
+        return order_within_batch
 
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8):
