@@ -90,8 +90,11 @@ class GraphDecoder(nn.Module):
         self.fc_geo = nn.Linear(feature_dim, 5)
 
     def forward(self, z, edge_index, batch):
+        print(z.shape)
         z = self.dec_feature_init(z)
+        print(z.shape)
         z = z[batch]
+        print(z.shape)
 
         pos = degree(batch, dtype=torch.float32)
         print(z.shape, pos.shape)
