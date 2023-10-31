@@ -100,8 +100,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
 
     # Define the arguments with their descriptions
-    parser.add_argument("--train_ratio", type=float, default=0.89, help="Use checkpoint index.")
-    parser.add_argument("--val_ratio", type=float, default=0.01, help="Use checkpoint index.")
+    parser.add_argument("--train_ratio", type=float, default=0.8, help="Use checkpoint index.")
+    parser.add_argument("--val_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
     parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
     parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
