@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch_geometric.data import DataLoader
+from torch_geometric.loader import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
 from transformers.optimization import AdamW, get_cosine_schedule_with_warmup
@@ -64,7 +64,7 @@ class Trainer:
 
         # Initialize the Transformer model
         self.cvae = GraphCVAE(T=3, feature_dim=256, latent_dim=256, n_head=8).to(device=self.device)
-        self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank], find_unused_parameters=True)
+        self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
         # optimizer
         param_optimizer = list(self.cvae.named_parameters())
