@@ -86,7 +86,12 @@ class GraphDecoder(nn.Module):
         return output
 
     def node_order_within_batch(self, batch):
-        order_within_batch = (batch - batch.roll(1) * (batch != batch.roll(1))).cumsum(dim=0) - 1
+        order_within_batch = torch.zeros_like(batch)
+        unique_batches = batch.unique()
+        for ub in unique_batches:
+            mask = (batch == ub)
+            order_within_batch[mask] = torch.arange(mask.sum())
+
         one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=180)
         return one_hot_order
 
