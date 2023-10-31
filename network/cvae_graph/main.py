@@ -201,7 +201,7 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
-    parser.add_argument("--local-rank", type=int)
+    parser.add_argument("--local_rank", type=int)
     parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
 
     opt = parser.parse_args()
