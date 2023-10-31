@@ -100,8 +100,8 @@ class Decoder(nn.Module):
 
         self.d_model = d_model
 
-    def forward(self, src_unit_seq, src_street_seq, trg_street_seq):
-        enc_output = self.encoding(src_unit_seq, src_street_seq, trg_street_seq)
+    def forward(self, src_unit_seq):
+        enc_output = self.encoding(src_unit_seq)
 
         return enc_output
 
