@@ -21,10 +21,13 @@ class GraphDataset(Dataset):
 
         # 그래프를 PyG 데이터 객체로 변환합니다.
         # 노드 특성과 엣지 인덱스를 추출합니다.
-        street_feature = torch.tensor(np.array([graph.nodes[node]['street_feature'] for node in graph.nodes()]), dtype=torch.float)
-        building_feature = torch.tensor([graph.nodes[node]['building_feature'] for node in graph.nodes()], dtype=torch.float)
-        street_masks = torch.tensor([graph.nodes[node]['street_masks'] for node in graph.nodes()], dtype=torch.float)
-        building_masks = torch.tensor([graph.nodes[node]['building_masks'] for node in graph.nodes()],
+        street_feature = torch.tensor(np.array([graph.nodes[node]['street_feature'] for node in graph.nodes()]),
+                                      dtype=torch.float)
+        building_feature = torch.tensor(np.array([graph.nodes[node]['building_feature'] for node in graph.nodes()]),
+                                        dtype=torch.float)
+        street_masks = torch.tensor(np.array([graph.nodes[node]['street_masks'] for node in graph.nodes()]),
+                                    dtype=torch.float)
+        building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                       dtype=torch.float)
 
         edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()

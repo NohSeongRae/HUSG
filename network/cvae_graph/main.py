@@ -196,7 +196,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_epoch", type=int, default=200, help="Maximum number of epochs for training.")
     parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
-    parser.add_argument("--use_tensorboard", type=bool, default=False, help="Use tensorboard.")
+    parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
     parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
