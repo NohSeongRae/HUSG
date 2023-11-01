@@ -288,6 +288,7 @@ if __name__ == '__main__':
     parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
 
     opt = parser.parse_args()
+    wandb.config.update(opt)
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
