@@ -179,16 +179,16 @@ class Trainer:
 
                 # Backpropagation and optimization step
                 loss_total.backward()
-
-                # 모든 GPU에서 손실 값을 합산 <-- 추가된 부분
-                dist.reduce(loss_total, dst=0, op=dist.ReduceOp.SUM, out=total_loss)
-
                 self.optimizer.step()
                 self.scheduler.step()
 
-            # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 추가된 부분
+                # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
+                dist.all_reduce(loss, op=dist.ReduceOp.SUM)
+                total_loss += loss
+
+                # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
             if self.local_rank == 0:
-                loss_mean = total_loss.item() / dist.get_world_size()
+                loss_mean = total_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
 
                 if self.use_tensorboard:
@@ -196,7 +196,7 @@ class Trainer:
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
-                val_total_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_val_loss = torch.tensor([0.0], device=self.device)  # <--- 추가된 부분
 
                 with torch.no_grad():
                     # Iterate over batches
@@ -228,12 +228,13 @@ class Trainer:
                         # Compute the losses using the generated sequence
                         loss = self.cross_entropy_loss(output_storage, gt_adj_seq)
 
-                        # 모든 GPU에서 Validation 손실 값을 합산 <-- 추가된 부분
-                        dist.reduce(loss, dst=0, op=dist.ReduceOp.SUM, out=val_total_loss)
+                        # 모든 GPU에서 손실 값을 합산 <-- 추가된 부분
+                        dist.all_reduce(loss, op=dist.ReduceOp.SUM)
+                        total_val_loss += loss
 
-                        # 첫 번째 GPU에서만 평균 Validation 손실을 계산하고 출력 <-- 추가된 부분
+                        # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 추가된 부분
                     if self.local_rank == 0:
-                        val_loss_mean = val_total_loss.item() / dist.get_world_size()
+                        val_loss_mean = total_val_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {val_loss_mean:.4f}")
 
                         if self.use_tensorboard:
