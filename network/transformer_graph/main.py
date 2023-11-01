@@ -24,8 +24,7 @@ import wandb
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
-                 val_epoch, save_epoch,
-                 weight_decay, warmup_steps, n_street,
+                 val_epoch, save_epoch, n_street, lr,
                  use_global_attn, use_street_attn, use_local_attn, local_rank, save_dir_path):
         """
         Initialize the trainer with the specified parameters.
@@ -59,13 +58,12 @@ class Trainer:
         self.use_tensorboard = use_tensorboard
         self.val_epoch = val_epoch
         self.save_epoch = save_epoch
-        self.weight_decay = weight_decay
-        self.warmup_steps = warmup_steps
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
         self.local_rank = local_rank
         self.save_dir_path = save_dir_path
+        self.lr = lr
 
         print('local_rank', self.local_rank)
 
@@ -92,7 +90,7 @@ class Trainer:
                                             use_global_attn=use_global_attn,
                                             use_street_attn=use_street_attn,
                                             use_local_attn=use_local_attn).to(device=self.device)
-        self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank], find_unused_parameters=True)
+        self.transformer = nn.parallel.DistributedDataParallel(self.transformer, device_ids=[local_rank])
 
         # optimizer
         param_optimizer = list(self.transformer.named_parameters())
@@ -103,7 +101,7 @@ class Trainer:
             {'params': [p for n, p in param_optimizer if any(
                 nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
-        self.optimizer = AdamW(optimizer_grouped_parameters, lr=3e-5, correct_bias=False)
+        self.optimizer = AdamW(optimizer_grouped_parameters, lr=self.lr, correct_bias=False, no_deprecation_warning=True)
 
         # scheduler
         data_len = len(self.train_dataloader)
@@ -282,13 +280,12 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
-    parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
-    parser.add_argument("--warmup_steps", type=int, default=4000, help="Use checkpoint index.")
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--local-rank", type=int)
     parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
+    parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
 
     opt = parser.parse_args()
 
@@ -325,8 +322,7 @@ if __name__ == '__main__':
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
-                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch, n_street=opt.n_street,
-                      weight_decay=opt.weight_decay, warmup_steps=opt.warmup_steps,
+                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch, n_street=opt.n_street, lr=opt.lr,
                       use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path)
 
