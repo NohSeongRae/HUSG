@@ -95,12 +95,9 @@ def test(sos_idx, eos_idx, pad_idx, n_street, d_street, d_unit, d_model, n_layer
             print(f"Loss recon: {loss_recon:.4f} \nLoss smooth: {loss_smooth:.4f}")
 
             pad_mask = get_pad_mask(street_index_seq, pad_idx=0)
-            print(pad_mask)
             sos_mask = get_pad_mask(street_index_seq, pad_idx=n_street + 1)
-            print(sos_mask)
             eos_mask = get_pad_mask(street_index_seq, pad_idx=n_street + 2)
-            print(eos_mask)
-            combined_mask = torch.logical_or(torch.logical_or(pad_mask, sos_mask), eos_mask)
+            combined_mask = pad_mask & sos_mask & eos_mask
 
             plot(output[1:].squeeze().detach().cpu().numpy(),
                  gt_unit_seq[1:].squeeze().detach().cpu().numpy(),
