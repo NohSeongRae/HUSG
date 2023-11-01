@@ -193,7 +193,7 @@ class Trainer:
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
 
                 if self.use_tensorboard:
-                    wandb.log({"Train bce loss": loss_mean, "epoch": epoch + 1})
+                    wandb.log({"Train bce loss": loss_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
@@ -239,7 +239,7 @@ class Trainer:
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {val_loss_mean:.4f}")
 
                         if self.use_tensorboard:
-                            wandb.log({"Val bce loss": val_loss_mean, "epoch": epoch + 1})
+                            wandb.log({"Val bce loss": val_loss_mean}, step=epoch + 1)
 
                 self.transformer.module.train()
 
