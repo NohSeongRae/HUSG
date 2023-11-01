@@ -22,8 +22,8 @@ from dataloader import GraphDataset
 import wandb
 
 class Trainer:
-    def __init__(self, batch_size, max_epoch, d_model, use_checkpoint, checkpoint_epoch, use_tensorboard,
-                 val_epoch, save_epoch, local_rank, save_dir_path, lr):
+    def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
+                 val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head):
         """
         Initialize the trainer with the specified parameters.
 
@@ -39,7 +39,6 @@ class Trainer:
         # Initialize trainer parameters
         self.batch_size = batch_size
         self.max_epoch = max_epoch
-        self.d_model = d_model
         self.use_checkpoint = use_checkpoint
         self.checkpoint_epoch = checkpoint_epoch
         self.use_tensorboard = use_tensorboard
@@ -48,6 +47,10 @@ class Trainer:
         self.local_rank = local_rank
         self.save_dir_path = save_dir_path
         self.lr = lr
+        self.T = T
+        self.d_feature = d_feature
+        self.d_latent = d_latent
+        self.n_head = n_head
 
         print('local_rank', self.local_rank)
 
@@ -67,7 +70,7 @@ class Trainer:
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
-        self.cvae = GraphCVAE(T=3, feature_dim=256, latent_dim=256, n_head=8).to(device=self.device)
+        self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
         # optimizer
@@ -88,7 +91,17 @@ class Trainer:
         self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, num_warmup_steps=num_warmup_steps,
                                                          num_training_steps=num_train_steps)
 
-    def recon_loss(self, pred, trg, mask):
+    def recon_pos_loss(self, pred, trg, mask):
+        recon_loss = F.mse_loss(pred, trg, reduction='none')
+        recon_loss = recon_loss * mask
+        return recon_loss.sum() / mask.sum()
+
+    def recon_size_loss(self, pred, trg, mask):
+        recon_loss = F.mse_loss(pred, trg, reduction='none')
+        recon_loss = recon_loss * mask
+        return recon_loss.sum() / mask.sum()
+
+    def recon_theta_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum()
@@ -110,10 +123,12 @@ class Trainer:
         if self.use_tensorboard:
             self.writer = SummaryWriter()
             if self.local_rank == 0:
-                wandb.watch(self.transformer.module, log='all')  # <--- 추가된 부분
+                wandb.watch(self.cvae.module, log='all')  # <--- 추가된 부분
 
         for epoch in range(epoch_start, self.max_epoch):
-            total_recon_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+            total_pos_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+            total_size_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+            total_theta_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
             total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
             # Iterate over batches
@@ -123,12 +138,14 @@ class Trainer:
 
                 # Get the model's predictions
                 data = data.to(device=self.device)
-                output, mu, log_var = self.cvae(data)
+                output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
                 # Compute the losses
-                loss_recon = self.recon_loss(output, data.building_feature.detach(), data.building_mask.detach())
+                loss_pos = self.recon_pos_loss(output[:, :2], data.building_feature.detach()[:, :2], data.building_mask.detach())
+                loss_size = self.recon_size_loss(output[:, 2:4], data.building_feature.detach()[:, 2:4], data.building_mask.detach())
+                loss_theta = self.recon_theta_loss(output[:, 4:], data.building_feature.detach()[:, 4:], data.building_mask.detach())
                 loss_kl = self.kl_loss(mu, log_var)
-                loss_total = loss_recon + loss_kl
+                loss_total = loss_pos + loss_size + loss_theta + loss_kl
 
                 # Backpropagation and optimization step
                 loss_total.backward()
@@ -136,25 +153,37 @@ class Trainer:
                 self.scheduler.step()
 
                 # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
-                dist.all_reduce(loss_recon, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
-                total_recon_loss += loss_recon
+                total_pos_loss += loss_pos
+                total_size_loss += loss_size
+                total_theta_loss += loss_theta
                 total_kl_loss += loss_kl
 
                 # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
             if self.local_rank == 0:
-                loss_recon_mean = total_recon_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_theta_mean = total_theta_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
-                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon: {loss_recon_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Pos: {loss_pos_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Size: {loss_size_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Theta: {loss_theta_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl_mean:.4f}")
 
                 if self.use_tensorboard:
-                    wandb.log({"Train recon loss": loss_recon_mean}, step=epoch + 1)
+                    wandb.log({"Train pos loss": loss_pos_mean}, step=epoch + 1)
+                    wandb.log({"Train size loss": loss_size_mean}, step=epoch + 1)
+                    wandb.log({"Train theta loss": loss_theta_mean}, step=epoch + 1)
                     wandb.log({"Train kl loss": loss_kl_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.cvae.module.eval()
-                total_recon_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_pos_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_size_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_theta_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
                 total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
                 with torch.no_grad():
@@ -165,24 +194,36 @@ class Trainer:
                         output, mu, log_var = self.cvae(data)
 
                         # Compute the losses using the generated sequence
-                        loss_recon = self.recon_loss(output, data.building_feature.detach(), data.building_mask.detach())
+                        loss_pos = self.recon_pos_loss(output[:, :2], data.building_feature[:, :2],data.building_mask)
+                        loss_size = self.recon_size_loss(output[:, 2:4], data.building_feature[:, 2:4],data.building_mask)
+                        loss_theta = self.recon_theta_loss(output[:, 4:], data.building_feature[:, 4:],data.building_mask)
                         loss_kl = self.kl_loss(mu, log_var)
 
                         # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
-                        dist.all_reduce(loss_recon, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
-                        total_recon_loss += loss_recon
+                        total_pos_loss += loss_pos
+                        total_size_loss += loss_size
+                        total_theta_loss += loss_theta
                         total_kl_loss += loss_kl
 
                         # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
                     if self.local_rank == 0:
-                        loss_recon_mean = total_recon_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
-                        loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
-                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recon: {loss_recon_mean:.4f}")
+                        loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                        loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                        loss_theta_mean = total_theta_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                        loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Pos: {loss_pos_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Size: {loss_size_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Theta: {loss_theta_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss KL: {loss_kl_mean:.4f}")
 
                         if self.use_tensorboard:
-                            wandb.log({"Validation recon loss": loss_recon_mean}, step=epoch + 1)
+                            wandb.log({"Validation pos loss": loss_pos_mean}, step=epoch + 1)
+                            wandb.log({"Validation size loss": loss_size_mean}, step=epoch + 1)
+                            wandb.log({"Validation theta loss": loss_theta_mean}, step=epoch + 1)
                             wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
 
                 self.cvae.module.train()
@@ -209,7 +250,10 @@ if __name__ == '__main__':
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=200, help="Maximum number of epochs for training.")
-    parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
+    parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
+    parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
+    parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
+    parser.add_argument("--n_head", type=int, default=8, help="Dimension of the model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
     parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
@@ -245,15 +289,16 @@ if __name__ == '__main__':
 
     if opt.local_rank == 0:
         wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
-        wandb.init(project='boundary_transformer')
+        wandb.init(project='cvae_graph')
         # 실행 이름 설정
-        wandb.run.name = 'fix smooth loss'
+        wandb.run.name = 'cvae init'
         wandb.run.save()
         wandb.config.update(opt)
 
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch,
-                      d_model=opt.d_model, use_tensorboard=opt.use_tensorboard,
+                      d_feature=opt.d_feaure, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
+                      use_tensorboard=opt.use_tensorboard,
                       use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr)

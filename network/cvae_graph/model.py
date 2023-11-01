@@ -64,8 +64,14 @@ class GraphDecoder(nn.Module):
         self.d_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
         self.d_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
 
-        self.dec_geo = nn.Linear(feature_dim * n_head, feature_dim)
-        self.fc_geo = nn.Linear(feature_dim, 5)
+        self.dec_pos = nn.Linear(feature_dim * n_head, feature_dim)
+        self.fc_pos = nn.Linear(feature_dim, 2)
+
+        self.dec_size = nn.Linear(feature_dim * n_head, feature_dim)
+        self.fc_size = nn.Linear(feature_dim, 2)
+
+        self.dec_theta = nn.Linear(feature_dim * n_head, feature_dim)
+        self.fc_theta = nn.Linear(feature_dim, 1)
 
     def forward(self, z, edge_index, batch):
         z = self.dec_feature_init(z)
@@ -79,10 +85,16 @@ class GraphDecoder(nn.Module):
         d_embed_2 = F.relu(self.d_conv2(d_embed_1, edge_index))
         d_embed_3 = F.relu(self.d_conv3(d_embed_2, edge_index))
 
-        output = F.relu(self.dec_geo(d_embed_3))
-        output = self.fc_geo(output)
+        output_pos = F.relu(self.dec_pos(d_embed_3))
+        output_pos = self.fc_pos(output_pos)
 
-        return output
+        output_size = F.relu(self.dec_size(d_embed_3))
+        output_size = self.fc_size(output_size)
+
+        output_theta = F.relu(self.dec_theta(d_embed_3))
+        output_theta = self.fc_theta(output_theta)
+
+        return output_pos, output_size, output_theta
 
     def node_order_within_batch(self, batch):
         order_within_batch = torch.zeros_like(batch)
@@ -108,6 +120,6 @@ class GraphCVAE(nn.Module):
         edge_index = data.edge_index
         mu, log_var = self.encoder(data, edge_index)
         z = self.reparameterize(mu, log_var)
-        output = self.decoder(z, edge_index, data.batch)
+        output_pos, output_size, output_theta = self.decoder(z, edge_index, data.batch)
 
-        return output, mu, log_var
+        return output_pos, output_size, output_theta, mu, log_var
