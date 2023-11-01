@@ -18,10 +18,12 @@ from boundary_transformer import get_pad_mask
 from boundary_transformer import BoundaryTransformer
 from boundary_dataloader import BoundaryDataset
 
+import wandb
+
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard, val_epoch, save_epoch,
-                 weight_decay, warmup_steps, n_street,
+                 lr, n_street,
                  use_global_attn, use_street_attn, use_local_attn, local_rank, save_dir_path):
         """
         Initialize the trainer with the specified parameters.
@@ -54,7 +56,7 @@ class Trainer:
         self.use_tensorboard = use_tensorboard
         self.val_epoch = val_epoch
         self.save_epoch = save_epoch
-        self.weight_decay = weight_decay
+        self.lr = lr
         self.use_global_attn = use_global_attn
         self.use_street_attn = use_street_attn
         self.use_local_attn = use_local_attn
@@ -101,7 +103,7 @@ class Trainer:
             {'params': [p for n, p in param_optimizer if any(
                 nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
-        self.optimizer = AdamW(optimizer_grouped_parameters, lr=3e-5, correct_bias=False)
+        self.optimizer = AdamW(optimizer_grouped_parameters, lr=self.lr, correct_bias=False)
 
         # scheduler
         data_len = len(self.train_dataloader)
@@ -159,8 +161,8 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in range(epoch_start, self.max_epoch):
-            loss_recon_mean = 0
-            loss_smooth_mean = 0
+            total_recon_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+            total_smooth_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
             # Iterate over batches
             for data in tqdm(self.train_dataloader):
@@ -182,28 +184,32 @@ class Trainer:
                 loss_smooth = self.smooth_loss(output, street_index_seq.detach())
                 loss_total = loss_recon + loss_smooth
 
-                # Accumulate the losses for reporting
-                loss_recon_mean += loss_recon.detach().item()
-                loss_smooth_mean += loss_smooth.detach().item()
                 # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
                 self.scheduler.step()
 
-            # Print the average losses for the current epoch
-            loss_recon_mean /= len(self.train_dataloader)
-            loss_smooth_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon: {loss_recon_mean:.4f}")
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Smooth: {loss_smooth_mean:.4f}")
+                # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
+                dist.all_reduce(loss_recon, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_smooth, op=dist.ReduceOp.SUM)
+                total_recon_loss += loss_recon
+                total_smooth_loss += loss_smooth
 
-            if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-recon", loss_recon_mean, epoch + 1)
-                self.writer.add_scalar("Train/loss-smooth", loss_smooth_mean, epoch + 1)
+                # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
+            if self.local_rank == 0:
+                loss_recon_mean = total_recon_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_smooth_mean = total_smooth_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon: {loss_recon_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Smooth: {loss_smooth_mean:.4f}")
+
+                if self.use_tensorboard:
+                    wandb.log({"Train recon loss": loss_recon_mean, "epoch": epoch + 1})
+                    wandb.log({"Train smooth loss": loss_smooth_mean, "epoch": epoch + 1})
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
-                loss_recon_mean = 0
-                loss_smooth_mean = 0
+                total_recon_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_smooth_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
                 with torch.no_grad():
                     # Iterate over batches
@@ -220,18 +226,23 @@ class Trainer:
                         # Compute the losses
                         loss_recon = self.recon_loss(output, gt_unit_seq, street_index_seq)
                         loss_smooth = self.smooth_loss(output, street_index_seq)
-                        loss_recon_mean += loss_recon.detach().item()
-                        loss_smooth_mean += loss_smooth.detach().item()
 
-                    # Print the average losses for the current epoch
-                    loss_recon_mean /= len(self.val_dataloader)
-                    loss_smooth_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recon: {loss_recon_mean:.4f}")
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Smooth: {loss_smooth_mean:.4f}")
+                        # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
+                        dist.all_reduce(loss_recon, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_smooth, op=dist.ReduceOp.SUM)
+                        total_recon_loss += loss_recon
+                        total_smooth_loss += loss_smooth
 
-                    if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-recon", loss_recon_mean, epoch + 1)
-                        self.writer.add_scalar("Val/loss-smooth", loss_smooth_mean, epoch + 1)
+                        # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
+                    if self.local_rank == 0:
+                        loss_recon_mean = total_recon_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_smooth_mean = total_smooth_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recon: {loss_recon_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Smooth: {loss_smooth_mean:.4f}")
+
+                        if self.use_tensorboard:
+                            wandb.log({"Validation recon loss": loss_recon_mean, "epoch": epoch + 1})
+                            wandb.log({"Validation smooth loss": loss_smooth_mean, "epoch": epoch + 1})
 
                 self.transformer.module.train()
 
@@ -275,13 +286,13 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
-    parser.add_argument("--weight_decay", type=float, default=1e-5, help="Use checkpoint index.")
-    parser.add_argument("--warmup_steps", type=int, default=4000, help="Use checkpoint index.")
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--local-rank", type=int)
     parser.add_argument("--save_dir_path", type=str, default="boundary_transformer", help="save dir path")
+    parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
+
 
     opt = parser.parse_args()
 
@@ -300,14 +311,21 @@ if __name__ == '__main__':
     torch.cuda.set_device(rank)
     dist.init_process_group("nccl")
 
+    if opt.local_rank == 0:
+        wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
+        wandb.init(project='boundary_transformer')
+        # 실행 이름 설정
+        wandb.run.name = 'fix smooth loss'
+        wandb.run.save()
+        wandb.config.update(opt)
+
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, pad_idx=opt.pad_idx, n_street=opt.n_street,
                       sos_idx=opt.sos_idx, eos_idx=opt.eos_idx,
                       d_street=opt.d_street, d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
                       n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
                       dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
-                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
-                      weight_decay=opt.weight_decay, warmup_steps=opt.warmup_steps,
+                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch, lr=opt.lr,
                       use_global_attn=opt.use_global_attn, use_street_attn=opt.use_street_attn, use_local_attn=opt.use_local_attn,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path)
 
