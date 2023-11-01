@@ -4,6 +4,7 @@ import os
 
 def plot(pred, gt, file_idx, mask):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    print(mask)
 
     # ax1: 예측 결과 시각화
     for idx in range(len(pred)):
