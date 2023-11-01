@@ -211,10 +211,10 @@ class Trainer:
 
                         # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
                     if self.local_rank == 0:
-                        loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
-                        loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
-                        loss_theta_mean = total_theta_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
-                        loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                        loss_pos_mean = total_pos_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_size_mean = total_size_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_theta_mean = total_theta_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Pos: {loss_pos_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Size: {loss_size_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Theta: {loss_theta_mean:.4f}")
