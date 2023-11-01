@@ -8,6 +8,7 @@ import networkx as nx
 from rasterio.features import geometry_mask
 import rasterio
 from tqdm import tqdm
+import concurrent.futures
 
 from gemoetry_utils import *
 from general_utils import *
@@ -64,23 +65,19 @@ street_eos_idx = n_street - 1
 n_street_sample = 64
 n_unit_sample = 8
 
-# city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
-#               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
-#               "sanfrancisco", "miami", "seattle", "boston", "providence",
-
-# city_names = ["philadelphia", "phoenix", "portland", "richmond", "saintpaul"]
-# city_names = ["phoenix","miami"]
-city_names = ["phoenix"]
-
-
-city_counts = {}
+city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+              "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+              "sanfrancisco", "miami", "seattle", "boston", "providence",
+              "neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
 def sort_key(filename):
     # 파일 이름에서 숫자만 추출
     num = int(''.join(filter(str.isdigit, filename)))
     return num
 
-for city_name in city_names:
+def process_city(city_name):
+    print("Processing city:", city_name)
+
     adj_matrices = []
     node_features = []
     building_exist_sequences = []
@@ -88,11 +85,9 @@ for city_name in city_names:
     unit_position_datasets = []
     street_unit_position_datasets = []
     unit_coords_datasets = []
+    building_polygon_datasets = []
     building_filenames = []
     boundary_filenames = []
-
-    print("city_name : ", city_name)
-    city_counts[city_name] = 0
 
     building_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset',
                                      'density20_building120_rotate_normalized', 'Buildings')
@@ -138,7 +133,6 @@ for city_name in city_names:
             unit_roads, closest_unit_index = split_into_unit_roads(boundary_lines, unit_length)
 
             if len(unit_roads) >= 200:
-                city_counts[city_name] += 1
                 continue
 
             for _, segment in unit_roads:
@@ -317,6 +311,10 @@ for city_name in city_names:
                 file_name = boundary_filename.split('\\')[-1]
                 unit_coords_dataset[idx] = [[unit_road[1][0][0], unit_road[1][0][1]], [unit_road[1][1][0], unit_road[1][1][1]]]
 
+            building_polygons_coord = []
+            for building in building_polygons:
+                building_polygons_coord.append(np.array(building[2].exterior.coords))
+
             building_exist_sequences.append(building_exist_sequence)
             street_index_sequences.append(street_index_sequence)
             unit_position_datasets.append(unit_position_dataset)
@@ -324,6 +322,7 @@ for city_name in city_names:
             unit_coords_datasets.append(unit_coords_dataset)
             node_features.append(node_feature)
             adj_matrices.append(adj_matrix)
+            building_polygon_datasets.append(building_polygons_coord)
             building_filenames.append(building_filepath)
             boundary_filenames.append(boundary_filepath)
 
@@ -341,6 +340,7 @@ for city_name in city_names:
         ('unit_coords_datasets', unit_coords_datasets),
         ('node_features', node_features),
         ('adj_matrices', adj_matrices),
+        ('building_polygons', building_polygon_datasets),
         ('building_filenames', building_filenames),
         ('boundary_filenames', boundary_filenames)
     ]
@@ -349,8 +349,9 @@ for city_name in city_names:
         with open(filepath, 'wb') as f:
             pickle.dump(dataset, f)
 
-    for city, count in city_counts.items():
-        print(f"{city} : {count}")
+    print("Processing for city", city_name, "finished")
 
-    print("Total:", sum(city_counts.values()))
-    print("save finish")
+if __name__ == '__main__':
+    for city_name in city_names:
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            executor.map(process_city, city_names)
