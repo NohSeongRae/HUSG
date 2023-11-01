@@ -141,9 +141,9 @@ class Trainer:
                 output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
                 # Compute the losses
-                loss_pos = self.recon_pos_loss(output[:, :2], data.building_feature.detach()[:, :2], data.building_mask.detach())
-                loss_size = self.recon_size_loss(output[:, 2:4], data.building_feature.detach()[:, 2:4], data.building_mask.detach())
-                loss_theta = self.recon_theta_loss(output[:, 4:], data.building_feature.detach()[:, 4:], data.building_mask.detach())
+                loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2], data.building_mask.detach())
+                loss_size = self.recon_size_loss(output_size, data.building_feature.detach()[:, 2:4], data.building_mask.detach())
+                loss_theta = self.recon_theta_loss(output_theta, data.building_feature.detach()[:, 4:], data.building_mask.detach())
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_total = loss_pos + loss_size + loss_theta + loss_kl
 
@@ -191,12 +191,12 @@ class Trainer:
                     for data in tqdm(self.val_dataloader):
                         # Get the source and target sequences from the batch
                         data = data.to(device=self.device)
-                        output, mu, log_var = self.cvae(data)
+                        output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
                         # Compute the losses using the generated sequence
-                        loss_pos = self.recon_pos_loss(output[:, :2], data.building_feature[:, :2],data.building_mask)
-                        loss_size = self.recon_size_loss(output[:, 2:4], data.building_feature[:, 2:4],data.building_mask)
-                        loss_theta = self.recon_theta_loss(output[:, 4:], data.building_feature[:, 4:],data.building_mask)
+                        loss_pos = self.recon_pos_loss(output_pos, data.building_feature[:, :2],data.building_mask)
+                        loss_size = self.recon_size_loss(output_size, data.building_feature[:, 2:4],data.building_mask)
+                        loss_theta = self.recon_theta_loss(output_theta, data.building_feature[:, 4:],data.building_mask)
                         loss_kl = self.kl_loss(mu, log_var)
 
                         # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
