@@ -28,11 +28,12 @@ class BoundaryDataset(Dataset):
         self.street_index_sequences = self.full_dataset['street_index_sequences']
         self.gt_unit_position_datasets = self.full_dataset['gt_unit_position_datasets']
 
-        if torch.distributed.get_rank() == 0:
-            print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
-            print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
-            print('street_index_sequences shape: ', self.street_index_sequences.shape)
-            print('gt_unit_position_datasets shape: ', self.gt_unit_position_datasets.shape)
+        if data_type is not 'test':
+            if torch.distributed.get_rank() == 0:
+                print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
+                print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
+                print('street_index_sequences shape: ', self.street_index_sequences.shape)
+                print('gt_unit_position_datasets shape: ', self.gt_unit_position_datasets.shape)
 
     def __getitem__(self, index):
         """
