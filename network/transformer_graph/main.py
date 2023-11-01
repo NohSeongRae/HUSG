@@ -290,8 +290,9 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
-    for arg in vars(opt):
-        print(f"{arg}: {getattr(opt, arg)}")
+    if torch.distributed.get_rank() == 0:
+        for arg in vars(opt):
+            print(f"{arg}: {getattr(opt, arg)}")
 
     # Set the random seed for reproducibility
     random.seed(opt.seed)
