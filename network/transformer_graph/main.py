@@ -151,6 +151,8 @@ class Trainer:
 
         if self.use_tensorboard:
             self.writer = SummaryWriter()
+            if self.local_rank == 0:
+                wandb.watch(self.transformer.module, log='all')  # <--- 추가된 부분
 
         for epoch in range(epoch_start, self.max_epoch):
             total_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
