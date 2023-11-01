@@ -297,7 +297,7 @@ if __name__ == '__main__':
 
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch,
-                      d_feature=opt.d_feaure, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
+                      d_feature=opt.d_feature, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
                       use_tensorboard=opt.use_tensorboard,
                       use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
