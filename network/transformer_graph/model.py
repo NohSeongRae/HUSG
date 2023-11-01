@@ -78,7 +78,7 @@ class PositionalEncoding(nn.Module):
         return torch.FloatTensor(sinusoid_table).unsqueeze(0)
 
     def forward(self, x):
-        return x + self.pos_table[:, :x.size(1)].clone().detach()
+        return self.pos_table[:, :x.size(1)].clone().detach()
 
 class BoundaryEncoder(nn.Module):
     def __init__(self, n_layer=6, n_head=8, d_model=512, d_inner=2048, d_unit=8, d_street=64,
@@ -114,6 +114,7 @@ class GraphDecoder(nn.Module):
 
         self.type_emb = nn.Embedding(2, d_model)
         self.node_enc = nn.Linear(n_building + n_street, d_model)
+        self.pos_enc = PositionalEncoding(d_model, n_building=n_building + n_street)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
            DecoderLayer(d_model, d_inner, n_head, dropout,
@@ -122,9 +123,8 @@ class GraphDecoder(nn.Module):
         ])
         self.d_model = d_model
 
-    def forward(self, dec_input, enc_output, is_building_tensor,
-                global_mask, street_mask, local_mask, enc_mask):
-        dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor.long())
+    def forward(self, dec_input, enc_output, is_building_tensor, global_mask, street_mask, local_mask, enc_mask):
+        dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor.long()) + self.pos_enc(dec_input)
         dec_output = self.dropout(dec_output)
 
         for dec_layer in self.layer_stack:
