@@ -47,8 +47,8 @@ def smooth_loss(pred, street_indices):
     loss = F.mse_loss(cur_token, next_token, reduction='none')
 
     # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
-    pad_mask = get_pad_mask(street_indices[:, 1:], pad_idx=0)
-    mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)
+    pad_mask = get_pad_mask(street_indices, pad_idx=0)
+    mask = pad_mask.unsqueeze(-1).expand(-1, -1, 2)[:, :-1, :]
 
     masked_loss = loss * mask.float()
 
@@ -95,11 +95,14 @@ def test(sos_idx, eos_idx, pad_idx, n_street, d_street, d_unit, d_model, n_layer
             print(f"Loss recon: {loss_recon:.4f} \nLoss smooth: {loss_smooth:.4f}")
 
             pad_mask = get_pad_mask(street_index_seq, pad_idx=0)
+            sos_mask = get_pad_mask(street_index_seq, pad_idx=n_street + 1)
+            eos_mask = get_pad_mask(street_index_seq, pad_idx=n_street + 2)
+            combined_mask = torch.logical_or(torch.logical_or(pad_mask, sos_mask), eos_mask)
 
-            plot(output.squeeze().detach().cpu().numpy(),
-                 gt_unit_seq.squeeze().detach().cpu().numpy(),
+            plot(output[1:].squeeze().detach().cpu().numpy(),
+                 gt_unit_seq[1:].squeeze().detach().cpu().numpy(),
                  idx + 1,
-                 pad_mask.squeeze().detach().cpu().numpy())
+                 combined_mask.squeeze().detach().cpu().numpy())
 
 if __name__ == '__main__':
     # Set the argparse

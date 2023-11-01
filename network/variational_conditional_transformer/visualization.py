@@ -8,7 +8,7 @@ def plot(pred, gt, file_idx, mask):
     # ax1: 예측 결과 시각화
     for idx in range(len(pred)):
         if mask[idx] == 0:
-            break
+            continue
 
         x = [pred[idx][0], pred[idx][2]]
         y = [pred[idx][1], pred[idx][3]]
@@ -22,7 +22,7 @@ def plot(pred, gt, file_idx, mask):
     # ax2: Ground Truth 시각화
     for idx in range(len(pred)):
         if mask[idx] == 0:
-            break
+            continue
 
         x = [gt[idx][0], gt[idx][2]]
         y = [gt[idx][1], gt[idx][3]]
