@@ -23,7 +23,7 @@ import wandb
 wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
 wandb.init(project='transformer_graph')
 # 실행 이름 설정
-wandb.run.name = 'ssw03270'
+wandb.run.name = 'PE & different weight'
 wandb.run.save()
 
 class Trainer:
@@ -159,7 +159,7 @@ class Trainer:
             self.writer = SummaryWriter()
 
         for epoch in range(epoch_start, self.max_epoch):
-            loss_mean = 0
+            total_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
             # Iterate over batches
             for data in tqdm(self.train_dataloader):
@@ -182,23 +182,26 @@ class Trainer:
                 loss = self.cross_entropy_loss(output, gt_adj_seq.detach())
                 loss_total = loss
 
-                # Accumulate the losses for reporting
-                loss_mean += loss.detach().item()
                 # Backpropagation and optimization step
                 loss_total.backward()
+
+                # 모든 GPU에서 손실 값을 합산 <-- 추가된 부분
+                dist.reduce(loss_total, dst=0, op=dist.ReduceOp.SUM, out=total_loss)
+
                 self.optimizer.step()
                 self.scheduler.step()
 
-            # Print the average losses for the current epoch
-            loss_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
+            # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 추가된 부분
+            if self.local_rank == 0:
+                loss_mean = total_loss.item() / dist.get_world_size()
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
 
-            if self.use_tensorboard:
-                wandb.log({"Train bce loss": loss_mean, "epoch": epoch + 1})
+                if self.use_tensorboard:
+                    wandb.log({"Train bce loss": loss_mean, "epoch": epoch + 1})
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
-                loss_mean = 0
+                val_total_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
                 with torch.no_grad():
                     # Iterate over batches
@@ -229,14 +232,17 @@ class Trainer:
 
                         # Compute the losses using the generated sequence
                         loss = self.cross_entropy_loss(output_storage, gt_adj_seq)
-                        loss_mean += loss.detach().item()
 
-                    # Print the average losses for the current epoch
-                    loss_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {loss_mean:.4f}")
+                        # 모든 GPU에서 Validation 손실 값을 합산 <-- 추가된 부분
+                        dist.reduce(loss, dst=0, op=dist.ReduceOp.SUM, out=val_total_loss)
 
-                    if self.use_tensorboard:
-                        wandb.log({"Val bce loss": loss_mean, "epoch": epoch + 1})
+                        # 첫 번째 GPU에서만 평균 Validation 손실을 계산하고 출력 <-- 추가된 부분
+                    if self.local_rank == 0:
+                        val_loss_mean = val_total_loss.item() / dist.get_world_size()
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {val_loss_mean:.4f}")
+
+                        if self.use_tensorboard:
+                            wandb.log({"Val bce loss": val_loss_mean, "epoch": epoch + 1})
 
                 self.transformer.module.train()
 
