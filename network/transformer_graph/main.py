@@ -13,6 +13,7 @@ import torch.distributed as dist
 import numpy as np
 import random
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from model import get_pad_mask, get_subsequent_mask, get_clipped_adj_matrix
 from model import GraphTransformer
