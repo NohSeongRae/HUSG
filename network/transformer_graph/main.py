@@ -20,11 +20,6 @@ from dataloader import GraphDataset
 from test import make_upper_follow_lower_torch_padded
 
 import wandb
-wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
-wandb.init(project='transformer_graph')
-# 실행 이름 설정
-wandb.run.name = 'PE & different weight'
-wandb.run.save()
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
@@ -295,7 +290,6 @@ if __name__ == '__main__':
     parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
 
     opt = parser.parse_args()
-    wandb.config.update(opt)
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
@@ -316,6 +310,14 @@ if __name__ == '__main__':
 
         else:
             dist.init_process_group("nccl")
+
+    if opt.local_rank == 0:
+        wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
+        wandb.init(project='transformer_graph')
+        # 실행 이름 설정
+        wandb.run.name = 'PE & different weight'
+        wandb.run.save()
+        wandb.config.update(opt)
 
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch, sos_idx=opt.sos_idx, eos_idx=opt.eos_idx, pad_idx=opt.pad_idx,
