@@ -1,44 +1,28 @@
-import pickle
+import os
 import numpy as np
+import geopandas as gpd
+import matplotlib
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+from shapely.geometry import Polygon, LineString, Point
+import copy
+matplotlib.use('TkAgg')
+building_file_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_City_Team", "atlanta_dataset",
+                                  "density20_building120_rotate_normalized", "Buildings",
+                                  "atlanta_buildings133.geojson")
+gdf_utm = gpd.read_file(building_file_path)
+# gdf_utm = gdf_utm.to_crs(building_gdf.estimate_utm_crs())
+# xmin, ymin, xmax, ymax = gdf_utm.total_bounds
+# width = xmax - xmin
+# height = ymax - ymin
+# max_range = max(width, height)
+# scale_factor = 1 / max_range
+# gdf_utm['geometry'] = gdf_utm.scale(xfact=scale_factor, yfact=scale_factor, origin=(xmin,ymin))
+# gdf_utm['geometry'] = gdf_utm.translate(-xmin * scale_factor, -ymin * scale_factor)
+fig2, ax2 = plt.subplots(figsize=(8, 8))
 
-def summarize_structure(obj, level=0, sample=False):
-    indent = ' ' * level
-    if isinstance(obj, dict):
-        print(f"{indent}{type(obj)} containing {len(obj)} key-value pairs:")
-        for i, (key, value) in enumerate(obj.items()):
-            print(f"{indent}  Key: {key} ->", end=" ")
-            summarize_structure(value, level+4, sample=(i == 0))  # Sample the first item
-    elif isinstance(obj, list):
-        print(f"{indent}{type(obj)} with {len(obj)} elements:")
-        if len(obj) > 0 and sample:
-            print(f"{indent}  Sample element:")
-            summarize_structure(obj[0], level+4, sample=True)
-    elif isinstance(obj, np.ndarray):
-        print(f"{indent}{type(obj)} with shape {obj.shape} and data type {obj.dtype}")
-        if sample:
-            # Take a slice from each dimension; adjust the slice sizes as necessary
-            sample_slice = tuple(slice(0, min(10, dim)) for dim in obj.shape)
-            sample_data = obj[sample_slice]
-            print(f"{indent}  Sample data (slice of the array): {sample_data}")
-    elif hasattr(obj, '__dict__'):
-        print(f"{indent}{type(obj)} with attributes:")
-        for attr in obj.__dict__:
-            print(f"{indent}  {attr}")
-            if sample:
-                attr_value = getattr(obj, attr)
-                if isinstance(attr_value, (np.ndarray, list)) and len(attr_value) > 0:
-                    print(f"{indent}    Sample data: {attr_value[0]}")
-                else:
-                    print(f"{indent}    Value: {attr_value}")
-                sample = False  # Only sample the first attribute
-    else:
-        print(f"{indent}{type(obj)}")
-        if sample:
-            print(f"{indent}  Value: {obj}")
-
-
-
-with open(r'Z:\iiixr-drive\Projects\2023_City_Team\2_transformer\train_dataset\littlerock\node_features.pkl',
-          'rb') as file:
-    data = pickle.load(file)
-    summarize_structure(data, sample=True)
+gdf_utm.plot(ax=ax2, color='red', label='Buildings')
+ax2.set_title("Aligned Building Block with Buildings")
+ax2.set_aspect('equal')
+ax2.legend()
+plt.show()
