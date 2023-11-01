@@ -160,6 +160,8 @@ class Trainer:
 
         if self.use_tensorboard:
             self.writer = SummaryWriter()
+            if self.local_rank == 0:
+                wandb.watch(self.transformer.module, log='all')  # <--- 추가된 부분
 
         for epoch in range(epoch_start, self.max_epoch):
             total_recon_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
@@ -204,8 +206,8 @@ class Trainer:
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Smooth: {loss_smooth_mean:.4f}")
 
                 if self.use_tensorboard:
-                    wandb.log({"Train recon loss": loss_recon_mean, "epoch": epoch + 1})
-                    wandb.log({"Train smooth loss": loss_smooth_mean, "epoch": epoch + 1})
+                    wandb.log({"Train recon loss": loss_recon_mean}, step=epoch + 1)
+                    wandb.log({"Train smooth loss": loss_smooth_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
@@ -242,8 +244,8 @@ class Trainer:
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Smooth: {loss_smooth_mean:.4f}")
 
                         if self.use_tensorboard:
-                            wandb.log({"Validation recon loss": loss_recon_mean, "epoch": epoch + 1})
-                            wandb.log({"Validation smooth loss": loss_smooth_mean, "epoch": epoch + 1})
+                            wandb.log({"Validation recon loss": loss_recon_mean}, step=epoch + 1)
+                            wandb.log({"Validation smooth loss": loss_smooth_mean}, step=epoch + 1)
 
                 self.transformer.module.train()
 
