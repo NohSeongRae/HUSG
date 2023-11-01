@@ -10,6 +10,7 @@ from torch.utils.data.distributed import DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
 from transformers.optimization import AdamW, get_cosine_schedule_with_warmup
 import torch.distributed as dist
+import matplotlib.pyplot as plt
 
 import numpy as np
 import random
@@ -18,9 +19,11 @@ from tqdm import tqdm
 from model import GraphCVAE
 from dataloader import GraphDataset
 
+import wandb
+
 class Trainer:
     def __init__(self, batch_size, max_epoch, d_model, use_checkpoint, checkpoint_epoch, use_tensorboard,
-                 val_epoch, save_epoch, local_rank, save_dir_path):
+                 val_epoch, save_epoch, local_rank, save_dir_path, lr):
         """
         Initialize the trainer with the specified parameters.
 
@@ -44,6 +47,7 @@ class Trainer:
         self.save_epoch = save_epoch
         self.local_rank = local_rank
         self.save_dir_path = save_dir_path
+        self.lr = lr
 
         print('local_rank', self.local_rank)
 
@@ -75,7 +79,7 @@ class Trainer:
             {'params': [p for n, p in param_optimizer if any(
                 nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
-        self.optimizer = AdamW(optimizer_grouped_parameters, lr=3e-5, correct_bias=False)
+        self.optimizer = AdamW(optimizer_grouped_parameters, lr=self.lr, correct_bias=False, no_deprecation_warning=True)
 
         # scheduler
         data_len = len(self.train_dataloader)
@@ -105,10 +109,12 @@ class Trainer:
 
         if self.use_tensorboard:
             self.writer = SummaryWriter()
+            if self.local_rank == 0:
+                wandb.watch(self.transformer.module, log='all')  # <--- 추가된 부분
 
         for epoch in range(epoch_start, self.max_epoch):
-            loss_recon_mean = 0
-            loss_kl_mean = 0
+            total_recon_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+            total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
             # Iterate over batches
             for data in tqdm(self.train_dataloader):
@@ -124,28 +130,32 @@ class Trainer:
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_total = loss_recon + loss_kl
 
-                # Accumulate the losses for reporting
-                loss_recon_mean += loss_recon.detach().item()
-                loss_kl_mean += loss_kl.detach().item()
                 # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
                 self.scheduler.step()
 
-            # Print the average losses for the current epoch
-            loss_recon_mean /= len(self.train_dataloader)
-            loss_kl_mean /= len(self.train_dataloader)
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon: {loss_recon_mean:.4f}")
-            print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl_mean:.4f}")
+                # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
+                dist.all_reduce(loss_recon, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
+                total_recon_loss += loss_recon
+                total_kl_loss += loss_kl
 
-            if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-recon", loss_recon_mean, epoch + 1)
-                self.writer.add_scalar("Train/loss-kl", loss_kl_mean, epoch + 1)
+                # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
+            if self.local_rank == 0:
+                loss_recon_mean = total_recon_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Recon: {loss_recon_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl_mean:.4f}")
+
+                if self.use_tensorboard:
+                    wandb.log({"Train recon loss": loss_recon_mean}, step=epoch + 1)
+                    wandb.log({"Train kl loss": loss_kl_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.cvae.module.eval()
-                loss_recon_mean = 0
-                loss_kl_mean = 0
+                total_recon_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
                 with torch.no_grad():
                     # Iterate over batches
@@ -157,18 +167,23 @@ class Trainer:
                         # Compute the losses using the generated sequence
                         loss_recon = self.recon_loss(output, data.building_feature.detach(), data.building_mask.detach())
                         loss_kl = self.kl_loss(mu, log_var)
-                        loss_recon_mean += loss_recon.detach().item()
-                        loss_kl_mean += loss_kl.detach().item()
 
-                    # Print the average losses for the current epoch
-                    loss_recon_mean /= len(self.val_dataloader)
-                    loss_kl_mean /= len(self.val_dataloader)
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recon: {loss_recon_mean:.4f}")
-                    print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss KL: {loss_kl_mean:.4f}")
+                        # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
+                        dist.all_reduce(loss_recon, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
+                        total_recon_loss += loss_recon
+                        total_kl_loss += loss_kl
 
-                    if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-recon", loss_recon_mean, epoch + 1)
-                        self.writer.add_scalar("Val/loss-kl", loss_kl_mean, epoch + 1)
+                        # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
+                    if self.local_rank == 0:
+                        loss_recon_mean = total_recon_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Recon: {loss_recon_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss KL: {loss_kl_mean:.4f}")
+
+                        if self.use_tensorboard:
+                            wandb.log({"Validation recon loss": loss_recon_mean}, step=epoch + 1)
+                            wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
 
                 self.cvae.module.train()
 
@@ -203,12 +218,14 @@ if __name__ == '__main__':
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
     parser.add_argument("--local_rank", type=int)
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
+    parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
 
     opt = parser.parse_args()
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
-    for arg in vars(opt):
-        print(f"{arg}: {getattr(opt, arg)}")
+    if opt.local_rank == 0:
+        for arg in vars(opt):
+            print(f"{arg}: {getattr(opt, arg)}")
 
     # Set the random seed for reproducibility
     random.seed(opt.seed)
@@ -226,11 +243,19 @@ if __name__ == '__main__':
         else:
             dist.init_process_group("nccl")
 
+    if opt.local_rank == 0:
+        wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
+        wandb.init(project='boundary_transformer')
+        # 실행 이름 설정
+        wandb.run.name = 'fix smooth loss'
+        wandb.run.save()
+        wandb.config.update(opt)
+
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch,
                       d_model=opt.d_model, use_tensorboard=opt.use_tensorboard,
                       use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
-                      local_rank=opt.local_rank, save_dir_path=opt.save_dir_path)
+                      local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr)
 
     trainer.train()
