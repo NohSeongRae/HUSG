@@ -13,6 +13,7 @@ import torch.distributed as dist
 import numpy as np
 import random
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from boundary_transformer import get_pad_mask
 from boundary_transformer import BoundaryTransformer
