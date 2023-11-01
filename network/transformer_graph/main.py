@@ -291,7 +291,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
-    if torch.distributed.get_rank() == 0:
+    if opt.local_rank == 0:
         for arg in vars(opt):
             print(f"{arg}: {getattr(opt, arg)}")
 
