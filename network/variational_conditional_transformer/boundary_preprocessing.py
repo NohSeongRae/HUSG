@@ -51,7 +51,7 @@ def preprocesing_dataset(sos_idx=2, eos_idx=3, pad_idx=4,
                         gt = np.concatenate((p1, p2), axis=1)
                         zeros[0] = sos_idx
                         zeros[1:len(gt) + 1] = gt
-                        zeros[len(gt) + 1] = eos_idx
+                        zeros[len(gt) + 1] = gt[0]
                         zeros[len(gt) + 2] = pad_idx
                         zeros = np.reshape(zeros, (-1, 4))
                         all_gt_unit_position_datasets.append(zeros)
