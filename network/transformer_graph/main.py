@@ -19,6 +19,12 @@ from model import GraphTransformer
 from dataloader import GraphDataset
 from test import make_upper_follow_lower_torch_padded
 
+import wandb
+wandb.init(project='transformer_graph')
+# 실행 이름 설정
+wandb.run.name = 'ssw03270'
+wandb.run.save()
+
 class Trainer:
     def __init__(self, batch_size, max_epoch, sos_idx, eos_idx, pad_idx, d_street, d_unit, d_model, n_layer, n_head,
                  n_building, n_boundary, dropout, use_checkpoint, checkpoint_epoch, use_tensorboard,
@@ -187,7 +193,7 @@ class Trainer:
             print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
 
             if self.use_tensorboard:
-                self.writer.add_scalar("Train/loss-bce", loss_mean, epoch + 1)
+                wandb.log({"Train bce loss": loss_mean, "epoch": epoch + 1})
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
@@ -229,7 +235,7 @@ class Trainer:
                     print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {loss_mean:.4f}")
 
                     if self.use_tensorboard:
-                        self.writer.add_scalar("Val/loss-bce", loss_mean, epoch + 1)
+                        wandb.log({"Val bce loss": loss_mean, "epoch": epoch + 1})
 
                 self.transformer.module.train()
 
