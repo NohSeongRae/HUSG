@@ -99,10 +99,10 @@ def test(sos_idx, eos_idx, pad_idx, n_street, d_street, d_unit, d_model, n_layer
             eos_mask = get_pad_mask(street_index_seq, pad_idx=n_street + 2)
             combined_mask = pad_mask & sos_mask & eos_mask
 
-            plot(output[1:].squeeze().detach().cpu().numpy(),
-                 gt_unit_seq[1:].squeeze().detach().cpu().numpy(),
+            plot(output[:, 1:].squeeze().detach().cpu().numpy(),
+                 gt_unit_seq[:, 1:].squeeze().detach().cpu().numpy(),
                  idx + 1,
-                 combined_mask.squeeze().detach().cpu().numpy())
+                 combined_mask[:, 1:].squeeze().detach().cpu().numpy())
 
 if __name__ == '__main__':
     # Set the argparse
