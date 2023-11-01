@@ -20,6 +20,7 @@ from dataloader import GraphDataset
 from test import make_upper_follow_lower_torch_padded
 
 import wandb
+wandb.login(key=['5a8475b9b95df52a68ae430b3491fe9f67c327cd'])
 wandb.init(project='transformer_graph')
 # 실행 이름 설정
 wandb.run.name = 'ssw03270'
