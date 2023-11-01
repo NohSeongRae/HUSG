@@ -46,16 +46,12 @@ def normalize_coordinates(geometry, min_x, min_y, scale_factor):
     return geometry
 
 
-def plot_boundary_building(building_polygons, boundary_polygon):
-    plt.figure(figsize=(8, 8))
-    for poly in building_polygons:
-        x, y = poly.exterior.xy
-
-        plt.plot(x, y)
-
-    boundary_x, boundary_y = boundary_polygon.exterior.xy
-    plt.plot(boundary_x, boundary_y)
-
+def plot_boundary_building(building_polygons, boundary_polygon, label):
+    fig2, ax2 = plt.subplots(figsize=(8, 8))
+    building_polygons.boundary.plot(ax=ax2, color='blue')
+    boundary_polygon.plot(ax=ax2, color='red')
+    ax2.set_title(label)
+    ax2.legend()
     plt.show()
 
 
@@ -159,8 +155,8 @@ def align_block_to_axis(block, buildings):
     # print(f"avg_angle no outlier{avg_angle_no_outlier}")
     # Rotate the entire block and buildings by the negative average angle
     center_point = compute_center_point(buildings.geometry)
-    rotated_block = block.rotate(-avg_angle_no_outlier, origin=center_point)
-    rotated_buildings = buildings.rotate(-avg_angle_no_outlier, origin=center_point)
+    rotated_block = gpd.GeoDataFrame(geometry=block.rotate(-avg_angle_no_outlier, origin=center_point))
+    rotated_buildings = gpd.GeoDataFrame(geometry=buildings.rotate(-avg_angle_no_outlier, origin=center_point))
 
     return rotated_block, rotated_buildings
 
@@ -189,20 +185,45 @@ for city_name in city_names:
             boundary_gdf = gpd.read_file(boundary_filename)
             building_gdf = gpd.read_file(building_filename)
 
-            rotated_block_gdf, rotated_buildings_gdf = align_block_to_axis(boundary_gdf, building_gdf)
+            utm_boundary = boundary_gdf.to_crs(boundary_gdf.estimate_utm_crs())
+            utm_building = building_gdf.to_crs(building_gdf.estimate_utm_crs())
+            rotated_block_gdf, rotated_buildings_gdf = align_block_to_axis(utm_boundary, utm_building)
 
             # print(type(rotated_block_gdf), type(rotated_buildings_gdf))
-            min_x = min(rotated_buildings_gdf.bounds.minx.min(), rotated_block_gdf.bounds.minx.min())
-            min_y = min(rotated_buildings_gdf.bounds.miny.min(), rotated_block_gdf.bounds.miny.min())
-            max_x = max(rotated_buildings_gdf.bounds.maxx.max(), rotated_block_gdf.bounds.maxx.max())
-            max_y = max(rotated_buildings_gdf.bounds.maxy.max(), rotated_block_gdf.bounds.maxy.max())
+            # min_x = min(rotated_buildings_gdf.bounds.minx.min(), rotated_block_gdf.bounds.minx.min())
+            # min_y = min(rotated_buildings_gdf.bounds.miny.min(), rotated_block_gdf.bounds.miny.min())
+            # max_x = max(rotated_buildings_gdf.bounds.maxx.max(), rotated_block_gdf.bounds.maxx.max())
+            # max_y = max(rotated_buildings_gdf.bounds.maxy.max(), rotated_block_gdf.bounds.maxy.max())
             #
             # # Normalize the coordinates of the GeoSeries
+            xmin, ymin, xmax, ymax = rotated_block_gdf.total_bounds
 
-            scale_factor = max(max_x - min_x, max_y - min_y)
-            rotated_buildings_gdf = rotated_buildings_gdf.apply(normalize_coordinates,
-                                                                args=(min_x, min_y, scale_factor))
-            rotated_block_gdf = rotated_block_gdf.apply(normalize_coordinates, args=(min_x, min_y, scale_factor))
+            width = xmax - xmin
+            height = ymax - ymin
+            max_range = max(width, height)
+            scale_factor = 1 / max_range
+
+            rotated_block_gdf['geometry'] = rotated_block_gdf.scale(xfact=scale_factor, yfact=scale_factor,
+                                                                          origin=(xmin, ymin))
+            rotated_block_gdf['geometry'] = rotated_block_gdf.translate(-xmin * scale_factor,
+                                                                              -ymin * scale_factor)
+            rotated_buildings_gdf['geometry'] = rotated_buildings_gdf.scale(xfact=scale_factor, yfact=scale_factor,
+                                                                            origin=(xmin, ymin))
+            rotated_buildings_gdf['geometry'] = rotated_buildings_gdf.translate(-xmin * scale_factor,
+                                                                                -ymin * scale_factor)
+
+            xmin, ymin, xmax, ymax = rotated_block_gdf.total_bounds
+
+            if xmin != 0 or ymin != 0:
+                rotated_block_gdf['geometry'] = rotated_block_gdf.translate(-xmin, -ymin)
+                rotated_buildings_gdf['geometry'] = rotated_buildings_gdf.translate(-xmin, -ymin)
+                xmin, ymin, xmax, ymax = rotated_block_gdf.total_bounds
+
+
+
+            # rotated_buildings_gdf = rotated_buildings_gdf.apply(normalize_coordinates,
+            #                                                     args=(min_x, min_y, scale_factor))
+            # rotated_block_gdf = rotated_block_gdf.apply(normalize_coordinates, args=(min_x, min_y, scale_factor))
 
             # saving code
             building_new_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
@@ -211,6 +232,7 @@ for city_name in city_names:
             boundary_new_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team',
                                                  f'{city_name}_dataset',
                                                  'density20_building120_rotate_normalized', 'Boundaries')
+
             os.makedirs(building_new_dir_path, exist_ok=True)
             os.makedirs(boundary_new_dir_path, exist_ok=True)
 

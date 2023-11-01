@@ -43,16 +43,22 @@ def normalize_coordinates(geometry, min_x, min_y, scale_factor):
         return Polygon(exterior, interiors)
     return geometry
 
-def plot_boundary_building(building_polygons, boundary_polygon):
-    plt.figure(figsize=(8, 8))
-    for poly in building_polygons:
-        x, y = poly.exterior.xy
-
-        plt.plot(x, y)
-
-    boundary_x, boundary_y = boundary_polygon.exterior.xy
-    plt.plot(boundary_x, boundary_y)
-
+def plot_boundary_building(building_polygons, boundary_polygon, label):
+    # plt.figure(figsize=(8, 8))
+    # for poly in building_polygons:
+    #     x, y = poly.exterior.xy
+    #
+    #     plt.plot(x, y)
+    #
+    # boundary_x, boundary_y = boundary_polygon.exterior.xy
+    # plt.plot(boundary_x, boundary_y)
+    #
+    # plt.show()
+    fig2, ax2 = plt.subplots(figsize=(8, 8))
+    building_polygons.boundary.plot(ax=ax2, color='blue')
+    boundary_polygon.plot(ax=ax2, color='red')
+    ax2.set_title(label)
+    ax2.legend()
     plt.show()
 
 
@@ -81,7 +87,7 @@ def get_obb_rotation_angle(polygon):
         if dist > max_dist:
             max_dist = dist
             p1, p2 = Point(obb_coords[i]), Point(obb_coords[i + 1])
-
+    # print(f'p1: {p1}, p2: {p2}')
     # Calculate the angle to rotate the longest side to align with x-axis
     angle_rad = np.arctan2(p2.y - p1.y, p2.x - p1.x)
     angle_deg = np.degrees(angle_rad)
@@ -153,14 +159,17 @@ def align_block_to_axis(block, buildings):
     print(f"avg_angle no outlier{avg_angle_no_outlier}")
     # Rotate the entire block and buildings by the negative average angle
     center_point = compute_center_point(buildings.geometry)
-    rotated_block = block.rotate(-avg_angle_no_outlier, origin=center_point)
-    rotated_buildings = buildings.rotate(-avg_angle_no_outlier, origin=center_point)
+    rotated_block = gpd.GeoDataFrame(geometry=block.rotate(-avg_angle_no_outlier, origin=center_point))
+    rotated_buildings = gpd.GeoDataFrame(geometry=buildings.rotate(-avg_angle_no_outlier, origin=center_point))
 
     return rotated_block, rotated_buildings
 
 
 counter = 0
-city_names = ["neworleans"]
+city_names = ["atlanta"]
+# orignal_plot_desc=["original boundary""original building","original"]
+# rotated_plot_desc=["rotated boundary""rotated building","rotated"]
+# normalized_plot_desc=["normalized boundary""normalized building","normalized"]
 
 for city_name in city_names:
     print("city : ", city_name)
@@ -185,42 +194,83 @@ for city_name in city_names:
             building_gdf = gpd.read_file(building_filename)
             boundary_gdf2 = copy.deepcopy(boundary_gdf)
             building_gdf2 = copy.deepcopy(building_gdf)
-            boundary_polygon = boundary_gdf.iloc[0]['geometry']
-            building_polygon = [row['geometry'] for idx, row in building_gdf.iterrows()]
-            building_polygons = []
-            building_polygons.extend(building_polygon)
-            plot_boundary_building(building_polygons, boundary_polygon)
+            plot_boundary_building(building_gdf,boundary_gdf,'orignal_plot') #plot original
 
-            building_polygons.clear()
 
-            rotated_block_gdf, rotated_buildings_gdf = align_block_to_axis(boundary_gdf2, building_gdf2)
+            utm_boundary=boundary_gdf2.to_crs(boundary_gdf2.estimate_utm_crs())
+            utm_building = building_gdf2.to_crs(building_gdf2.estimate_utm_crs()) # Project to UTM
+            rotated_boundary_gdf, rotated_buildings_gdf = align_block_to_axis(utm_boundary, utm_building) #rotate
+            plot_boundary_building(rotated_buildings_gdf,rotated_boundary_gdf,'rotated')
 
-            fig, ax = plt.subplots(figsize=(8, 8))
-            rotated_block_gdf.boundary.plot(ax=ax, color='blue', label='Rotated Block Boundary')
-            rotated_buildings_gdf.plot(ax=ax, color='red', label='Rotated Buildings')
-            ax.set_title("Aligned Building Block with Buildings")
-            ax.legend()
-            plt.show()
+            xmin, ymin, xmax, ymax = rotated_boundary_gdf.total_bounds
+            # print(xmin, ymin, xmax, ymax)
 
-            print(type(rotated_block_gdf), type(rotated_buildings_gdf))
-            min_x = min(rotated_buildings_gdf.bounds.minx.min(), rotated_block_gdf.bounds.minx.min())
-            min_y = min(rotated_buildings_gdf.bounds.miny.min(), rotated_block_gdf.bounds.miny.min())
-            max_x = max(rotated_buildings_gdf.bounds.maxx.max(), rotated_block_gdf.bounds.maxx.max())
-            max_y = max(rotated_buildings_gdf.bounds.maxy.max(), rotated_block_gdf.bounds.maxy.max())
+            width = xmax - xmin
+            height = ymax - ymin
+            max_range = max(width, height)
+            scale_factor = 1 / max_range
+            print(xmin, ymin)
+
+            assert isinstance(rotated_boundary_gdf, gpd.GeoDataFrame), "rotated_boundary_gdf is not a GeoDataFrame"
+            assert isinstance(rotated_buildings_gdf, gpd.GeoDataFrame), "utm_building is not a GeoDataFrame"
+            assert 'geometry' in rotated_boundary_gdf.columns, "rotated_boundary_gdf does not have a 'geometry' column"
+            assert 'geometry' in rotated_buildings_gdf.columns, "utm_building does not have a 'geometry' column"
+
+            rotated_boundary_gdf['geometry'] = rotated_boundary_gdf.scale(xfact=scale_factor, yfact=scale_factor, origin=(xmin,ymin))
+            rotated_boundary_gdf['geometry'] = rotated_boundary_gdf.translate(-xmin * scale_factor, -ymin * scale_factor)
+            rotated_buildings_gdf['geometry'] = rotated_buildings_gdf.scale(xfact=scale_factor, yfact=scale_factor, origin=(xmin,ymin))
+            rotated_buildings_gdf['geometry'] = rotated_buildings_gdf.translate(-xmin * scale_factor, -ymin * scale_factor)
+
+            xmin, ymin, xmax, ymax = rotated_boundary_gdf.total_bounds
+            if xmin != 0 or ymin != 0:
+                rotated_boundary_gdf['geometry'] = rotated_boundary_gdf.translate(-xmin, -ymin)
+                rotated_buildings_gdf['geometry'] = rotated_buildings_gdf.translate(-xmin, -ymin)
+                xmin, ymin, xmax, ymax = rotated_boundary_gdf.total_bounds
+
+            new_xmin, new_ymin, new_xmax, new_ymax = rotated_boundary_gdf.total_bounds
+            assert 0 <= new_xmin <= 1, "new xmin is not within the range (0, 1)"
+            assert 0 <= new_ymin <= 1, "new ymin is not within the range (0, 1)"
+            assert 0 <= new_xmax <= 1, "new xmax is not within the range (0, 1)"
+            assert 0 <= new_ymax <= 1, "new ymax is not within the range (0, 1)"
+
+            plot_boundary_building(rotated_buildings_gdf, rotated_boundary_gdf, 'normalized')
+
+            # boundary_polygon = boundary_gdf.iloc[0]['geometry']
+            # building_polygon = [row['geometry'] for idx, row in building_gdf.iterrows()]
+            # building_polygons = []
+            # building_polygons.extend(building_polygon)
+            # plot_boundary_building(building_polygons, boundary_polygon)
             #
-            # # Normalize the coordinates of the GeoSeries
-
-            scale_factor = max(max_x - min_x, max_y - min_y)
-            rotated_buildings_gdf = rotated_buildings_gdf.apply(normalize_coordinates,
-                                                                args=(min_x, min_y, scale_factor))
-            rotated_block_gdf = rotated_block_gdf.apply(normalize_coordinates, args=(min_x, min_y, scale_factor))
-
-            fig2, ax2 = plt.subplots(figsize=(8, 8))
-            rotated_block_gdf.boundary.plot(ax=ax2, color='blue', label='Rotated Block Boundary')
-            rotated_buildings_gdf.plot(ax=ax2, color='red', label='Rotated Buildings')
-            ax2.set_title("Aligned Building Block with Buildings")
-            ax2.legend()
-            plt.show()
+            # building_polygons.clear()
+            #
+            # rotated_block_gdf, rotated_buildings_gdf = align_block_to_axis(boundary_gdf2, building_gdf2)
+            #
+            # fig, ax = plt.subplots(figsize=(8, 8))
+            # rotated_block_gdf.boundary.plot(ax=ax, color='blue', label='Rotated Block Boundary')
+            # rotated_buildings_gdf.plot(ax=ax, color='red', label='Rotated Buildings')
+            # ax.set_title("Aligned Building Block with Buildings")
+            # ax.legend()
+            # plt.show()
+            #
+            # print(type(rotated_block_gdf), type(rotated_buildings_gdf))
+            # min_x = min(rotated_buildings_gdf.bounds.minx.min(), rotated_block_gdf.bounds.minx.min())
+            # min_y = min(rotated_buildings_gdf.bounds.miny.min(), rotated_block_gdf.bounds.miny.min())
+            # max_x = max(rotated_buildings_gdf.bounds.maxx.max(), rotated_block_gdf.bounds.maxx.max())
+            # max_y = max(rotated_buildings_gdf.bounds.maxy.max(), rotated_block_gdf.bounds.maxy.max())
+            # #
+            # # # Normalize the coordinates of the GeoSeries
+            #
+            # scale_factor = max(max_x - min_x, max_y - min_y)
+            # rotated_buildings_gdf = rotated_buildings_gdf.apply(normalize_coordinates,
+            #                                                     args=(min_x, min_y, scale_factor))
+            # rotated_block_gdf = rotated_block_gdf.apply(normalize_coordinates, args=(min_x, min_y, scale_factor))
+            #
+            # fig2, ax2 = plt.subplots(figsize=(8, 8))
+            # rotated_block_gdf.boundary.plot(ax=ax2, color='blue', label='Rotated Block Boundary')
+            # rotated_buildings_gdf.plot(ax=ax2, color='red', label='Rotated Buildings')
+            # ax2.set_title("Aligned Building Block with Buildings")
+            # ax2.legend()
+            # plt.show()
             counter += 1
             if counter > 10:
                 break
