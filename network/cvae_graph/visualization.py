@@ -10,10 +10,10 @@ def get_bbox_corners(x, y, w, h):
     half_h = h / 2
 
     # Calculate corners
-    top_left = (x - half_w, y - half_h)
-    top_right = (x + half_w, y - half_h)
-    bottom_left = (x - half_w, y + half_h)
-    bottom_right = (x + half_w, y + half_h)
+    top_left = [x - half_w, y - half_h]
+    top_right = [x + half_w, y - half_h]
+    bottom_left = [x - half_w, y + half_h]
+    bottom_right = [x + half_w, y + half_h]
 
     return [top_left, top_right, bottom_left, bottom_right]
 
@@ -57,6 +57,7 @@ def plot(pos, size, rot, mask, gt, idx):
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)  # Close the loop
+        print(rotated_box)
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
 
     # Set the limits of the plot
