@@ -75,7 +75,7 @@ def plot(pos, size, rot, mask, gt, graph_name):
 
     # Set the aspect of the plot to be equal
     ax1.set_aspect('equal', adjustable='box')
-
+    print('---')
     for i in range(len(pos)):
         if mask[i] == 0:
             continue
