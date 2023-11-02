@@ -4,26 +4,27 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import os
 
-
-def plot_rotated_bounding_box(x, y, w, h, theta):
-    # Calculate top-left corner coordinates from center (x, y)
-    top_left_x = x - w / 2
-    top_left_y = y - h / 2
-
+def plot(pos, size, theta, idx):
     # Create a figure and axes
     fig, ax = plt.subplots()
 
-    # Create a rectangle patch
-    rect = patches.Rectangle((0, 0), w, h, linewidth=1, edgecolor='r', facecolor='none')
+    for i in range(len(pos)):
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], theta[i] * 90
+        # Calculate top-left corner coordinates from center (x, y)
+        top_left_x = x - w / 2
+        top_left_y = y - h / 2
 
-    # Create an Affine transformation
-    t = transforms.Affine2D().rotate_deg_around(x, y, theta).translate(top_left_x, top_left_y) + ax.transData
+        # Create a rectangle patch
+        rect = patches.Rectangle((0, 0), w, h, linewidth=1, edgecolor='r', facecolor='none')
 
-    # Set the transformation to the rectangle
-    rect.set_transform(t)
+        # Create an Affine transformation
+        t = transforms.Affine2D().rotate_deg_around(x, y, theta).translate(top_left_x, top_left_y) + ax.transData
 
-    # Add the patch to the Axes
-    ax.add_patch(rect)
+        # Set the transformation to the rectangle
+        rect.set_transform(t)
+
+        # Add the patch to the Axes
+        ax.add_patch(rect)
 
     # Set the limits of the plot
     plt.xlim([-0.1, 1.1])
@@ -32,16 +33,7 @@ def plot_rotated_bounding_box(x, y, w, h, theta):
     # Set the aspect of the plot to be equal
     ax.set_aspect('equal', adjustable='box')
 
-    # Display the plot
-    plt.gca().invert_yaxis()  # Invert Y-axis to match the image coordinate system
-
-def plot(pos, size, theta, idx):
-    plt.figure(figsize=(12, 5))
-
-    plt.subplot(1, 2, 1)
-    for i in range(len(pos)):
-        plot_rotated_bounding_box(pos[i][0], pos[i][1], size[i][0], size[i][1], theta[i] * 90)
-
+    # Save the plot
     directory = "./images"  # 변경: 저장 경로를 /mnt/data/ 아래로 지정
     if not os.path.exists(directory):
         os.makedirs(directory)
