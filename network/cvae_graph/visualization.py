@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def plot(data, pos, size, theta):
+def plot(pos, size, theta):
     plt.figure(figsize=(12, 5))
 
     plt.subplot(1, 2, 1)
