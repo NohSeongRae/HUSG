@@ -65,10 +65,11 @@ street_eos_idx = n_street - 1
 n_street_sample = 64
 n_unit_sample = 8
 
-city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
-              "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
-              "sanfrancisco", "miami", "seattle", "boston", "providence",
-              "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+# city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+#               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+#               "sanfrancisco", "miami", "seattle", "boston", "providence",
+#               "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+city_names = ["atlanta"]
 
 def sort_key(filename):
     # 파일 이름에서 숫자만 추출
@@ -95,7 +96,7 @@ def process_city(city_name):
                                      'density20_building120_rotate_normalized', 'Boundaries')
 
     # Iterate over all .geojson files in the directory
-    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)):
+    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)[:50]):
         boundary_filepath = building_filepath.replace('buildings', 'boundaries')
 
         # Construct the full paths
@@ -263,6 +264,7 @@ def process_city(city_name):
                 node_feature[cur_n_street + building1[0] - 1] = np.array([1, x, y, w, h, theta])
 
                 x, y = building1[2].minimum_rotated_rectangle.exterior.xy
+                plt.fill(x, y)
 
                 for building2 in building_polygons:
                     idx1 = cur_n_street + building1[0] - 1
@@ -326,7 +328,7 @@ def process_city(city_name):
             building_filenames.append(building_filepath)
             boundary_filenames.append(boundary_filepath)
 
-            # plot_groups_with_rectangles_v7(boundary_gdf, building_gdf, unit_roads, bounding_boxs, building_polygons, adj_matrix, cur_n_street, street_position_dataset, None)
+            plot_groups_with_rectangles_v7(boundary_gdf, building_gdf, unit_roads, bounding_boxs, building_polygons, adj_matrix, cur_n_street, street_position_dataset, building_filepath)
 
     folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', city_name)
     if not os.path.exists(folder_path):

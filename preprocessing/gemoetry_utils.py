@@ -26,23 +26,22 @@ def get_near_street_idx(building_polygon, boundary_lines):
     return nearest_street_idx
 
 
-def get_angle_with_x_axis(bbox):
+def get_angle_with_x_axis(w, bbox):
     # 꼭짓점 좌표를 얻음
     coords = list(bbox.exterior.coords[:-1])
 
-    # x 좌표가 가장 0에 가까운 꼭짓점을 찾음
-    closest_point = min(coords, key=lambda coord: abs(coord[0]))
-    idx = coords.index(closest_point)
-
-    # 이전 꼭짓점을 찾음
-    prev_idx = (idx + 1) % len(coords)
-    prev_point = coords[prev_idx]
+    # w에 해당하는 선분을 찾기
+    for i in range(len(coords)):
+        side_length = np.linalg.norm(np.array(coords[i]) - np.array(coords[(i + 1) % len(coords)]))
+        if abs(side_length - w) < 1e-6:  # 부동소수점 오차를 고려
+            w_segment = (coords[i], coords[(i + 1) % len(coords)])
+            break
 
     # 두 점을 사용하여 방향 벡터를 계산
-    direction_vector = np.array(closest_point) - np.array(prev_point)
+    direction_vector = np.array(w_segment[0]) - np.array(w_segment[1])
     x_axis_vector = np.array([1, 0])
-    # plt.plot([prev_point[0], prev_point[0] + direction_vector[0]],
-    #          [prev_point[1], prev_point[1] + direction_vector[1]], 'r-', label='Vector')
+    plt.plot([w_segment[1][0], w_segment[1][0] + direction_vector[0]],
+             [w_segment[1][1], w_segment[1][1] + direction_vector[1]], 'r-')
 
     # 방향 벡터와 x축 벡터 사이의 각도를 계산
     dot_product = np.dot(direction_vector, x_axis_vector)
@@ -54,11 +53,9 @@ def get_angle_with_x_axis(bbox):
     angle_rad = np.arccos(np.clip(cosine_theta, -1.0, 1.0))
     # 라디안을 도로 변환
     angle_deg = np.degrees(angle_rad)
+    print(angle_deg)
 
-    if angle_deg > 90:
-        angle_deg = 180 - angle_deg
-
-    return angle_deg / 90
+    return angle_deg / 180
 
 def get_bbox_details(rotated_rectangle):
     # 사각형의 꼭짓점들을 얻음
@@ -73,7 +70,7 @@ def get_bbox_details(rotated_rectangle):
     # 좌하단 꼭짓점을 x, y로 선택
     x, y = rotated_rectangle.centroid.x, rotated_rectangle.centroid.y
 
-    theta = get_angle_with_x_axis(rotated_rectangle)
+    theta = get_angle_with_x_axis(w, rotated_rectangle)
 
     return x, y, w, h, theta
 
