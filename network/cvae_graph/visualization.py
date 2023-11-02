@@ -19,6 +19,11 @@ def get_bbox_corners(x, y, w, h):
 
 
 def rotate_points_around_center(points, center, theta_deg):
+    if theta_deg < 45:
+        restore_angle_deg = theta_deg
+    else:
+        restore_angle_deg = 180 - theta_deg
+
     # Convert theta from degrees to radians
     theta_rad = np.radians(theta_deg)
 
@@ -51,14 +56,11 @@ def plot(pos, size, rot, mask, gt, idx):
         if mask[i] == 0:
             continue
 
-        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], rot[i][0] * -90
-        print(x, y, w, h, theta)
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], rot[i][0] * 90
         points = get_bbox_corners(x, y, w, h)
-        print(points)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
         rotated_points = np.array(rotated_points)
-        print(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
 
@@ -73,7 +75,7 @@ def plot(pos, size, rot, mask, gt, idx):
         if mask[i] == 0:
             continue
 
-        x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], gt[i][4] * -90
+        x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], gt[i][4] * 90
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
