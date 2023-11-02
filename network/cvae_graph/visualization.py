@@ -25,7 +25,7 @@ def rotate_points_around_center(points, center, theta_deg):
     #     theta_deg = 90 - theta_deg
 
     # Convert theta from degrees to radians
-    theta_rad = np.radians(theta_deg + 90)
+    theta_rad = np.radians(theta_deg)
 
     # Create a rotation matrix
     rotation_matrix = np.array([
@@ -56,7 +56,7 @@ def plot(pos, size, rot, mask, gt, idx):
         if mask[i] == 0:
             continue
 
-        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], rot[i][0] * 90
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], rot[i][0] * 180
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
