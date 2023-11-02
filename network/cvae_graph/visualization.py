@@ -56,8 +56,7 @@ def plot(pos, size, rot, mask, gt, idx):
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
         rotated_points = np.array(rotated_points)
-        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)  # Close the loop
-        print(rotated_box)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)[0]
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
 
     # Set the limits of the plot
@@ -76,7 +75,7 @@ def plot(pos, size, rot, mask, gt, idx):
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
         rotated_points = np.array(rotated_points)
-        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)  # Close the loop
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)[0]
         ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
 
     # Set the aspect of the plot to be equal
