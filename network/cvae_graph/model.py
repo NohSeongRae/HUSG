@@ -110,6 +110,8 @@ class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8):
         super(GraphCVAE, self).__init__()
 
+        self.latent_dim = latent_dim
+
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
         self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
 
@@ -123,3 +125,9 @@ class GraphCVAE(nn.Module):
         output_pos, output_size, output_theta = self.decoder(z, edge_index, data.batch)
 
         return output_pos, output_size, output_theta, mu, log_var
+
+    def test(self, data):
+        z = torch.normal(mean=0, std=1, size=(1, self.latent_dim))
+        output_pos, output_size, output_theta = self.decoder(z, data.edge_index, data.batch)
+
+        return output_pos, output_size, output_theta
