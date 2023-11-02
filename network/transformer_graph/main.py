@@ -122,8 +122,7 @@ class Trainer:
         Returns:
         - torch.Tensor: Computed BCE loss.
         """
-        weights = (trg[:, 1:].clone() * 1) + 1
-        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), get_clipped_adj_matrix(trg[:, 1:]), reduction='none', weight=weights)
+        loss = F.binary_cross_entropy(torch.sigmoid(pred[:, :-1]), get_clipped_adj_matrix(trg[:, 1:]), reduction='none')
 
         # pad_idx에 해당하는 레이블을 무시하기 위한 mask 생성
         pad_mask = get_pad_mask(trg[:, 1:, 0], pad_idx=self.pad_idx).unsqueeze(-1).expand(-1, -1, loss.shape[2])
