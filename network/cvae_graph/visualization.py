@@ -51,7 +51,7 @@ def plot(pos, size, rot, mask, gt, idx):
         if mask[i] == 0:
             continue
 
-        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], 90 - (rot[i][0] * 90)
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], 45 - (rot[i][0] * 90)
         print(x, y, w, h, theta)
         points = get_bbox_corners(x, y, w, h)
         print(points)
@@ -73,7 +73,7 @@ def plot(pos, size, rot, mask, gt, idx):
         if mask[i] == 0:
             continue
 
-        x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (90 - gt[i][4] * 90)
+        x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (45 - gt[i][4] * 90)
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
