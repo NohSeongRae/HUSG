@@ -25,7 +25,8 @@ def rotate_points_around_center(points, center, theta_deg):
         theta_deg = theta_deg
 
     # Convert theta from degrees to radians
-    theta_rad = np.radians(theta_deg - 90)
+    print(theta_deg)
+    theta_rad = np.radians(theta_deg)
 
     # Create a rotation matrix
     rotation_matrix = np.array([
