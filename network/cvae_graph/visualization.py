@@ -15,7 +15,7 @@ def get_bbox_corners(x, y, w, h):
     bottom_left = [x - half_w, y + half_h]
     bottom_right = [x + half_w, y + half_h]
 
-    return [top_left, top_right, bottom_left, bottom_right]
+    return [top_left, top_right, bottom_right, bottom_left]
 
 
 def rotate_points_around_center(points, center, theta_deg):
