@@ -77,6 +77,5 @@ def plot(pos, size, rot, mask, gt, idx):
         os.makedirs(directory)
 
     # 이미지 파일로 저장
-    plt.gca().invert_yaxis()  # Invert Y-axis to match the image coordinate system
     save_path = os.path.join(directory, "cvae" + str(idx) + ".png")
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
