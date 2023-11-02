@@ -7,6 +7,7 @@ def plot(pos, size, theta):
 
     plt.subplot(1, 2, 1)
     for i in range(len(pos)):
+        print(pos, size, theta)
         print(pos[i], size[i], theta[i])
 
     print(1)
