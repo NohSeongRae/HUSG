@@ -49,7 +49,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, mask, gt, graph_name):
+def plot(pos, size, rot, mask, gt, idx):
     print(graph_name)
     # Create a figure and axes
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
@@ -111,5 +111,5 @@ def plot(pos, size, rot, mask, gt, graph_name):
         os.makedirs(directory)
 
     # 이미지 파일로 저장
-    save_path = os.path.join(directory, "cvae" + graph_name + ".png")
+    save_path = os.path.join(directory, "cvae" + str(idx) + ".png")
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
