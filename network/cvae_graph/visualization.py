@@ -20,10 +20,10 @@ def get_bbox_corners(x, y, w, h):
 
 def rotate_points_around_center(points, center, theta_deg):
     print(theta_deg)
-    if theta_deg < 90:
-        theta_deg = 180 - theta_deg
-    else:
-        theta_deg = theta_deg
+    # if theta_deg < 90:
+    #     theta_deg = 180 - theta_deg
+    # else:
+    #     theta_deg = theta_deg
 
     # Convert theta from degrees to radians
     theta_rad = np.radians(theta_deg)
