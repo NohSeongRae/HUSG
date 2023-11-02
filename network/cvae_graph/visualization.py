@@ -12,7 +12,7 @@ def plot(pos, size, rot, mask, gt, idx):
         if mask[i] == 0:
             continue
 
-        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], rot[i] * 0
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], rot[i] * 90
         # Calculate top-left corner coordinates from center (x, y)
         top_left_x = x - w / 2
         top_left_y = y - h / 2
@@ -40,7 +40,7 @@ def plot(pos, size, rot, mask, gt, idx):
         if mask[i] == 0:
             continue
 
-        x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], gt[i][4] * 0
+        x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], gt[i][4] * 90
         # Calculate top-left corner coordinates from center (x, y)
         top_left_x = x - w / 2
         top_left_y = y - h / 2
@@ -77,5 +77,6 @@ def plot(pos, size, rot, mask, gt, idx):
         os.makedirs(directory)
 
     # 이미지 파일로 저장
+    plt.gca().invert_yaxis()  # Invert Y-axis to match the image coordinate system
     save_path = os.path.join(directory, "cvae" + str(idx) + ".png")
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
