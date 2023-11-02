@@ -5,6 +5,7 @@ import os
 import pickle
 import glob
 
+city_name = "atlanta"
 vertexnum = 64
 
 # OBJ 파일로 메시를 저장하는 함수
@@ -26,15 +27,6 @@ def load_points_from_csv(filename):
 
 
 def normalize_coordinates(coords):
-    """
-    Normalize a list of coordinates to the range [0, 1].
-
-    Args:
-    - coords (list of lists): List of [x, y] coordinates.
-
-    Returns:
-    - normalized_coords (list of lists): Normalized coordinates.
-    """
     # Convert to numpy array for easier operations
     coords_array = np.array(coords)
 
@@ -52,7 +44,6 @@ def normalize_coordinates(coords):
     return normalized_coords
 
 square_root_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_City_Team", "5_ACAP", "ref_data")
-
 normalized_pickle_path = os.path.join(square_root_path, 'normalized_square.pickle')
 
 points_set1 = load_points_from_pickle(normalized_pickle_path)
@@ -65,18 +56,10 @@ square_obj_path = os.path.join(square_root_path, f'square_{vertexnum}.obj')
 
 save_to_obj(square_obj_path, points_set1, tri.simplices)
 
-path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_City_Team", "portland_dataset", f"Buildingcsv_{vertexnum}", "portland_buildings*.csv")
 building_pickle_path = "64_point_polygon_exteriors.pkl"
 
 with open(building_pickle_path, 'rb') as file:
     building_data = pickle.load(file)
-
-# path = "/mnt/c/Users/82103/Desktop/get_dr_py/register/milan_register_points*.csv"
-files = sorted(glob.glob(path))
-
-print(f"Found {len(files)} files.")  # 몇 개의 파일을 찾았는지 확인
-
-city_name = "atlanta"
 
 for idx, buildings in enumerate(building_data):
     folder_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_City_Team", '5_ACAP', f"buildingobj_{vertexnum}", city_name, f'{city_name}_{idx+1}')
@@ -91,15 +74,3 @@ for idx, buildings in enumerate(building_data):
             print(f"Saved {polygon_path}")  # 저장한 파일 경로 출력
         except Exception as e:
             print(f"Error processing : {e}")  # 오류 발생 시 출력
-
-# for idx, filename in enumerate(files, 1):
-#     try:
-#         points_set = load_points_from_csv(filename)
-#         # print(points_set)
-#         save_path = os.path.join("Z:", "iiixr-drive", "Projects", "2023_City_Team", "portland_dataset", "Buildingobj_64",
-#                             f"portland_buildings{idx}.obj")
-#         # save_path = f'/mnt/c/Users/82103/Desktop/get_dr_py/mesh/milan_obj{idx}.obj'
-#         save_to_obj(save_path, points_set, tri.simplices)
-#         print(f"Saved {save_path}")  # 저장한 파일 경로 출력
-#     except Exception as e:
-#         print(f"Error processing {filename}: {e}")  # 오류 발생 시 출력
