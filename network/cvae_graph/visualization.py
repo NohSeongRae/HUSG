@@ -19,10 +19,10 @@ def get_bbox_corners(x, y, w, h):
 
 
 def rotate_points_around_center(points, center, theta_deg):
-    # if theta_deg > 90:
-    #     theta_deg = theta_deg - 90
-    # else:
-    #     theta_deg = theta_deg
+    if theta_deg > 90:
+        theta_deg = theta_deg - 90
+    else:
+        theta_deg = theta_deg
 
     # Convert theta from degrees to radians
     print(theta_deg)
@@ -52,7 +52,7 @@ def rotate_points_around_center(points, center, theta_deg):
 def plot(pos, size, rot, mask, gt, graph_name):
     # Create a figure and axes
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-    rotation_scale = -180
+    rotation_scale = 180
 
     for i in range(len(pos)):
         if mask[i] == 0:
