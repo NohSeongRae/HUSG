@@ -53,7 +53,7 @@ def plot(pos, size, rot, mask, gt, graph_name):
     print(graph_name)
     # Create a figure and axes
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-    rotation_scale = 1
+    rotation_scale = 180
 
     for i in range(len(pos)):
         if mask[i] == 0:
