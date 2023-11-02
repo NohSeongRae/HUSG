@@ -4,7 +4,7 @@ import csv
 
 # city_name = 'milan'
 
-city_list = ['nottingham', 'paris', 'philadelphia', 'phoenix', 'portland', 'richmond', 'saintpaul', 'sanfrancisco']
+city_list = ['portland']
 
 def normalize(value, min_value, range_value):
     return (value - min_value) / range_value
@@ -12,54 +12,57 @@ def normalize(value, min_value, range_value):
 for idx in range(len(city_list)):
     city_name = city_list[idx]
 
-    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries')
+    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'density20_building120_rotate_normalized', 'Buildings')
     files = os.listdir(dir_path)
     filenum = len(files)
 
     j = 0
 
     for i in range(1, filenum+1):
-        test_boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundaries',
-                                        f'{city_name}_boundaries{i}.geojson')
+        test_boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'density20_building120_rotate_normalized',
+                                              'Buildings',
+                                        f'{city_name}_buildings{i}.geojson')
 
         j +=1
-        with open(test_boundary_filename, "r") as f:
-            geojson_boundary = json.load(f)
 
-        coordinates = []
+        if os.path.exists(test_boundary_filename):
 
-        for feature in geojson_boundary['features']:
-            coordinates.append(feature['geometry']['coordinates'][0])
+            with open(test_boundary_filename, "r") as f:
+                geojson_boundary = json.load(f)
 
-        coordinates = coordinates[0]
+            coordinates = []
 
-        # x, y 좌표의 최소, 최대값 찾기
-        x_values = [coord[0] for coord in coordinates]
-        y_values = [coord[1] for coord in coordinates]
+            for feature in geojson_boundary['features']:
+                coordinates.append(feature['geometry']['coordinates'][0])
 
-        min_x, max_x = min(x_values), max(x_values)
-        min_y, max_y = min(y_values), max(y_values)
+            coordinates = coordinates[0]
 
-        # x, y의 범위 계산
-        range_x = max_x - min_x
-        range_y = max_y - min_y
+            # x, y 좌표의 최소, 최대값 찾기
+            x_values = [coord[0] for coord in coordinates]
+            y_values = [coord[1] for coord in coordinates]
 
-        # 가장 큰 범위 선택
-        max_range = max(range_x, range_y)
+            min_x, max_x = min(x_values), max(x_values)
+            min_y, max_y = min(y_values), max(y_values)
 
-        # 좌표 데이터 정규화
-        normalized_coordinates = [[normalize(x, min_x, max_range), normalize(y, min_y, max_range)] for x, y in coordinates]
+            # x, y의 범위 계산
+            range_x = max_x - min_x
+            range_y = max_y - min_y
 
-        csv_folder = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundarycsv')
+            # 가장 큰 범위 선택
+            max_range = max(range_x, range_y)
 
-        if not os.path.exists(csv_folder):
-            os.makedirs(csv_folder)
+            # 좌표 데이터 정규화
+            normalized_coordinates = [[normalize(x, min_x, max_range), normalize(y, min_y, max_range)] for x, y in coordinates]
 
-        csv_boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundarycsv',
-                                        f'{city_name}_boundaries{j}.csv')
+            csv_folder = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildingcsv')
 
-        with open(csv_boundary_filename, "w", newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerows(normalized_coordinates[:-1])
+            if not os.path.exists(csv_folder):
+                os.makedirs(csv_folder)
 
-    print(f"{city_name} done")
+            csv_boundary_filename = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildingcsv',
+                                            f'{city_name}_buildings{j}.csv')
+
+            with open(csv_boundary_filename, "w", newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerows(normalized_coordinates[:-1])
+

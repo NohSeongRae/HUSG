@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import os
 
-city_list = ['littlerock', 'manchester', 'milan', 'minneapolis', 'nottingham', 'paris', 'philadelphia', 'phoenix', 'portland', 'richmond', 'saintpaul', 'sanfrancisco']
+city_list = ['portland']
 
-pointnum = 596
+pointnum = 64
 
 def calculate_edge_length(point1, point2):
     return np.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
@@ -42,9 +42,9 @@ for idx in range(len(city_list)):
     city_name = city_list[idx]
 
     # Specify the directory path
-    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Boundarycsv')
+    dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'Buildingcsv')
 
-    output_dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'Boundarycsv_{pointnum}')
+    output_dir = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', f'Buildingcsv_{pointnum}')
 
     # Create the 'distribute' directory if it doesn't exist
     if not os.path.exists(output_dir):
