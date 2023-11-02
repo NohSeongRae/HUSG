@@ -73,7 +73,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path):
 
             plot(output_pos.detach().cpu().numpy(),
                  output_size.detach().cpu().numpy(),
-                 output_theta.detach().cpu().numpy()[0])
+                 output_theta.detach().cpu().numpy())
 
 if __name__ == '__main__':
     # Set the argparse
