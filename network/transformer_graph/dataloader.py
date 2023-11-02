@@ -27,12 +27,13 @@ class GraphDataset(Dataset):
         self.edge_index_sequences = self.full_dataset['edge_index_sequences']
         self.cur_n_streets = self.full_dataset['cur_n_streets']
 
-        if torch.distributed.get_rank() == 0:
-            print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
-            print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
-            print('street_index_sequences shape: ', self.street_index_sequences.shape)
-            print('adj_matrix_sequences shape: ', self.edge_index_sequences.shape)
-            print('cur_n_streets shape: ', self.cur_n_streets.shape)
+        if data_type is not 'test':
+            if torch.distributed.get_rank() == 0:
+                print('unit_position_datasets shape: ', self.unit_position_datasets.shape)
+                print('street_unit_position_datasets shape: ', self.street_unit_position_datasets.shape)
+                print('street_index_sequences shape: ', self.street_index_sequences.shape)
+                print('adj_matrix_sequences shape: ', self.edge_index_sequences.shape)
+                print('cur_n_streets shape: ', self.cur_n_streets.shape)
 
     def __getitem__(self, index):
         """
