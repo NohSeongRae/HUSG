@@ -35,6 +35,7 @@ def get_bbox_details(rotated_rectangle):
     dx = x[1] - x[0]
     dy = y[1] - y[0]
     theta = math.degrees(math.atan2(dy, dx))
+    theta = theta / 180
 
     # 좌하단 꼭짓점을 x, y로 선택
     x, y = rotated_rectangle.centroid.x, rotated_rectangle.centroid.y
