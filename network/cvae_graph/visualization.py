@@ -4,12 +4,12 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import os
 
-def plot(pos, size, theta, idx):
+def plot(pos, size, rot, idx):
     # Create a figure and axes
     fig, ax = plt.subplots()
 
     for i in range(len(pos)):
-        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], theta[i] * 90
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], rot[i] * 90
         # Calculate top-left corner coordinates from center (x, y)
         top_left_x = x - w / 2
         top_left_y = y - h / 2
