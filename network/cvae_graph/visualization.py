@@ -4,6 +4,45 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 import os
 
+def get_bbox_corners(x, y, w, h):
+    # Calculate half width and half height
+    half_w = w / 2
+    half_h = h / 2
+
+    # Calculate corners
+    top_left = (x - half_w, y - half_h)
+    top_right = (x + half_w, y - half_h)
+    bottom_left = (x - half_w, y + half_h)
+    bottom_right = (x + half_w, y + half_h)
+
+    return [top_left, top_right, bottom_left, bottom_right]
+
+
+def rotate_points_around_center(points, center, theta_deg):
+    # Convert theta from degrees to radians
+    theta_rad = np.radians(theta_deg)
+
+    # Create a rotation matrix
+    rotation_matrix = np.array([
+        [np.cos(theta_rad), -np.sin(theta_rad)],
+        [np.sin(theta_rad), np.cos(theta_rad)]
+    ])
+
+    # Convert points and center to numpy arrays
+    points = np.array(points)
+    center = np.array(center)
+
+    # Translate points so that center is at the origin
+    translated_points = points - center
+
+    # Rotate points
+    rotated_points = np.dot(translated_points, rotation_matrix.T)
+
+    # Translate points back
+    rotated_points = rotated_points + center
+
+    return rotated_points
+
 def plot(pos, size, rot, mask, gt, idx):
     # Create a figure and axes
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
@@ -13,21 +52,12 @@ def plot(pos, size, rot, mask, gt, idx):
             continue
 
         x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], rot[i] * 90
-        # Calculate top-left corner coordinates from center (x, y)
-        top_left_x = x - w / 2
-        top_left_y = y - h / 2
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
 
-        # Create a rectangle patch
-        rect = patches.Rectangle((0, 0), w, h, linewidth=1, edgecolor='r', facecolor='none')
-
-        # Create an Affine transformation
-        t = transforms.Affine2D().rotate_deg_around(w/2, h/2, theta).translate(top_left_x, top_left_y) + ax1.transData
-
-        # Set the transformation to the rectangle
-        rect.set_transform(t)
-
-        # Add the patch to the Axes
-        ax1.add_patch(rect)
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)  # Close the loop
+        ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
 
     # Set the limits of the plot
     plt.xlim([-0.1, 1.1])
@@ -41,21 +71,12 @@ def plot(pos, size, rot, mask, gt, idx):
             continue
 
         x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], gt[i][4] * 90
-        # Calculate top-left corner coordinates from center (x, y)
-        top_left_x = x - w / 2
-        top_left_y = y - h / 2
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
 
-        # Create a rectangle patch
-        rect = patches.Rectangle((0, 0), w, h, linewidth=1, edgecolor='r', facecolor='none')
-
-        # Create an Affine transformation
-        t = transforms.Affine2D().rotate_deg_around(w/2, h/2, theta).translate(top_left_x, top_left_y) + ax2.transData
-
-        # Set the transformation to the rectangle
-        rect.set_transform(t)
-
-        # Add the patch to the Axes
-        ax2.add_patch(rect)
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)  # Close the loop
+        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
 
     # Set the aspect of the plot to be equal
     ax2.set_aspect('equal', adjustable='box')
