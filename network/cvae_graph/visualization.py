@@ -21,7 +21,7 @@ def plot(pos, size, rot, mask, gt, idx):
         rect = patches.Rectangle((0, 0), w, h, linewidth=1, edgecolor='r', facecolor='none')
 
         # Create an Affine transformation
-        t = transforms.Affine2D().rotate_deg_around(x, y, theta).translate(top_left_x, top_left_y) + ax.transData
+        t = transforms.Affine2D().rotate_deg_around(x, y, theta).translate(top_left_x, top_left_y) + ax1.transData
 
         # Set the transformation to the rectangle
         rect.set_transform(t)
@@ -49,7 +49,7 @@ def plot(pos, size, rot, mask, gt, idx):
         rect = patches.Rectangle((0, 0), w, h, linewidth=1, edgecolor='r', facecolor='none')
 
         # Create an Affine transformation
-        t = transforms.Affine2D().rotate_deg_around(x, y, theta).translate(top_left_x, top_left_y) + ax.transData
+        t = transforms.Affine2D().rotate_deg_around(x, y, theta).translate(top_left_x, top_left_y) + ax2.transData
 
         # Set the transformation to the rectangle
         rect.set_transform(t)
