@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch_geometric.loader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torch.distributed as dist
 
