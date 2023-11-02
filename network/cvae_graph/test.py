@@ -56,7 +56,6 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path):
     cvae.eval()
     with torch.no_grad():
         for idx, data in enumerate(tqdm(test_dataloader)):
-            graph_name = data[1][0]
             # Get the source and target sequences from the batch
             data = data[0].to(device=device)
             output_pos, output_size, output_theta = cvae.test(data)
