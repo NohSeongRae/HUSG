@@ -87,7 +87,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_head", type=int, default=8, help="Dimension of the model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
-    parser.add_argument("--save_dir_path", type=str, default="default_path", help="save dir path")
+    parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
 
     opt = parser.parse_args()
 
