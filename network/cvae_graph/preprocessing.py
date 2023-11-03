@@ -52,13 +52,10 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             for node in graph.nodes():
                 graph.nodes[node]['street_feature'] = zeros[node]
 
-            print(node_features[idx])
             zeros = np.zeros((graph.number_of_nodes(), 5))
             for i in range(len(node_features[idx])):
                 if node_features[idx][i, 0] == 1:
                     node_features[idx][i, 5] = (node_features[idx][i, 5] + 1) / 2
-            print(node_features[idx])
-            print('---')
             building_feature = node_features[idx][:, 1:]
             zeros[:len(building_feature)] = building_feature
 
