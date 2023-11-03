@@ -65,7 +65,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 b.append(node_features[idx][i, 2])
                 c.append(node_features[idx][i, 3])
                 d.append(node_features[idx][i, 4])
-                f.append(node_features[idx][i, 5])
+                e.append(node_features[idx][i, 5])
             building_feature = node_features[idx][:, 1:]
             zeros[:len(building_feature)] = building_feature
 
