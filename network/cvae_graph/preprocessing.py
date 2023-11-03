@@ -24,7 +24,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     dataset_names = [
         'street_unit_position_datasets',
         'adj_matrices',
-        'node_features'
+        'node_features',
+        'insidemask'
     ]
 
     graphs = []
@@ -42,8 +43,14 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         with open(filepath, 'rb') as f:
             node_features = pickle.load(f)
 
+        filepath = dataset_path + '/' + city_name + '/' + dataset_names[3] + '.pkl'
+        with open(filepath, 'rb') as f:
+            inside_masks = pickle.load(f)
+
         for idx in range(len(street_unit_position_datasets)):
             graph = nx.DiGraph(adj_matrices[idx])
+
+            graph['condition'] = inside_masks[idx]
 
             zeros = np.zeros((graph.number_of_nodes(), d_street, 2))
             street_feature = np.unique(street_unit_position_datasets[idx], axis=0)

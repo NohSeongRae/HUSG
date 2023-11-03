@@ -4,6 +4,37 @@ import torch.nn.functional as F
 import torch_geometric
 from torch_geometric.utils import degree
 
+class BoundaryMaskEncoder(nn.Module):
+    def __init__(self, image_size, inner_channel, bottleneck):
+        super(BoundaryMaskEncoder, self).__init__()
+
+        self.image_size = image_size
+        self.inner_channel = inner_channel
+
+        self.cnn_encoder = nn.Sequential(
+            nn.Conv2d(2, int(self.inner_channel / 8), 3, stride=1, padding=1),  # b, 16, 10, 10
+            nn.ReLU(True),
+            nn.MaxPool2d(2, stride=2),  # b, 16, 5, 5
+            nn.Conv2d(int(self.inner_channel / 8), int(self.inner_channel / 4), 3, stride=1, padding=1),  # b, 8, 3, 3
+            nn.ReLU(True),
+            nn.MaxPool2d(2, stride=2),  # b, 8, 2, 2
+            nn.Conv2d(int(self.inner_channel / 4), int(self.inner_channel / 2), 3, stride=1, padding=1),  # b, 8, 3, 3
+            nn.ReLU(True),
+            nn.MaxPool2d(2, stride=2),  # b, 8, 2, 2
+            nn.Conv2d(int(self.inner_channel / 2), int(self.inner_channel), 3, stride=1, padding=1),  # b, 8, 3, 3
+            nn.ReLU(True),
+            nn.MaxPool2d(2, stride=2)  # b, 8, 2, 2
+        )
+
+        channel_num = int((image_size / 2**4)**2 * inner_channel)
+        self.linear = nn.Linear(channel_num, bottleneck)
+
+    def encode(self, mask):
+        mask = self.cnn_encoder(mask)
+        mask = torch.flatten(mask, 1)
+        mask = self.linear(mask)
+        return mask
+
 class GraphEncoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head):
         super(GraphEncoder, self).__init__()
@@ -52,10 +83,10 @@ class GraphEncoder(nn.Module):
 
 
 class GraphDecoder(nn.Module):
-    def __init__(self, feature_dim, latent_dim, n_head):
+    def __init__(self, feature_dim, latent_dim, n_head, bottleneck):
         super(GraphDecoder, self).__init__()
 
-        self.dec_feature_init = nn.Linear(latent_dim, feature_dim)
+        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
 
         self.convlayer = torch_geometric.nn.GATConv
         self.global_pool = torch_geometric.nn.global_max_pool
@@ -107,13 +138,15 @@ class GraphDecoder(nn.Module):
         return one_hot_order
 
 class GraphCVAE(nn.Module):
-    def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8):
+    def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
+                 image_size=64, inner_channel=80, bottleneck=128):
         super(GraphCVAE, self).__init__()
 
         self.latent_dim = latent_dim
 
+        self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel, bottleneck=bottleneck)
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
-        self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
+        self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head, bottleneck=bottleneck)
 
     def reparameterize(self, mu, logvar):
         return (torch.exp(0.5 * logvar)) * (torch.randn_like(torch.exp(0.5 * logvar))) + mu
