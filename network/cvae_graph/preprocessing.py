@@ -55,7 +55,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 for y, x in coords:
                     image[y, x] = pixel_value
             graph.graph['condition'] = image
-            print(inside_masks[idx])
+            print(image)
 
             zeros = np.zeros((graph.number_of_nodes(), d_street, 2))
             street_feature = np.unique(street_unit_position_datasets[idx], axis=0)
