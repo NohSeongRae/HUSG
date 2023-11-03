@@ -12,7 +12,7 @@ class BoundaryMaskEncoder(nn.Module):
         self.inner_channel = inner_channel
 
         self.cnn_encoder = nn.Sequential(
-            nn.Conv2d(2, int(self.inner_channel / 8), 3, stride=1, padding=1),  # b, 16, 10, 10
+            nn.Conv2d(1, int(self.inner_channel / 8), 3, stride=1, padding=1),  # b, 16, 10, 10
             nn.ReLU(True),
             nn.MaxPool2d(2, stride=2),  # b, 16, 5, 5
             nn.Conv2d(int(self.inner_channel / 8), int(self.inner_channel / 4), 3, stride=1, padding=1),  # b, 8, 3, 3
@@ -29,7 +29,7 @@ class BoundaryMaskEncoder(nn.Module):
         channel_num = int((image_size / 2**4)**2 * inner_channel)
         self.linear = nn.Linear(channel_num, bottleneck)
 
-    def encode(self, mask):
+    def forward(self, mask):
         mask = self.cnn_encoder(mask)
         mask = torch.flatten(mask, 1)
         mask = self.linear(mask)
@@ -104,7 +104,8 @@ class GraphDecoder(nn.Module):
         self.dec_theta = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_theta = nn.Linear(feature_dim, 1)
 
-    def forward(self, z, edge_index, batch):
+    def forward(self, z, condition, edge_index, batch):
+        z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
 
@@ -155,7 +156,8 @@ class GraphCVAE(nn.Module):
         edge_index = data.edge_index
         mu, log_var = self.encoder(data, edge_index)
         z = self.reparameterize(mu, log_var)
-        output_pos, output_size, output_theta = self.decoder(z, edge_index, data.batch)
+        condition = self.condition_encoder(data.condition)
+        output_pos, output_size, output_theta = self.decoder(z, condition, edge_index, data.batch)
 
         return output_pos, output_size, output_theta, mu, log_var
 

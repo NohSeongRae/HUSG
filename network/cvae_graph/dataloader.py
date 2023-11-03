@@ -29,7 +29,7 @@ class GraphDataset(Dataset):
                                     dtype=torch.float)
         building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                       dtype=torch.float)
-        condition = torch.tensor(np.array(graph['condition']), dtype=torch.float)
+        condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float)
 
         edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
         edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
