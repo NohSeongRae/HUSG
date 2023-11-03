@@ -19,7 +19,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
                   "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
                   "sanfrancisco", "miami", "seattle", "boston", "providence",
-                  "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+                  "neworleans", "denver", "pittsburgh", "washington"]
 
     dataset_names = [
         'street_unit_position_datasets',
