@@ -24,8 +24,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     dataset_names = [
         'street_unit_position_datasets',
         'adj_matrices',
-        'node_features',
-        'building_filenames'
+        'node_features'
     ]
 
     graphs = []
@@ -43,10 +42,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         with open(filepath, 'rb') as f:
             node_features = pickle.load(f)
 
-        filepath = dataset_path + '/' + city_name + '/' + dataset_names[3] + '.pkl'
-        with open(filepath, 'rb') as f:
-            file_name = pickle.load(f)
-
         for idx in range(len(street_unit_position_datasets)):
             graph = nx.DiGraph(adj_matrices[idx])
 
@@ -57,14 +52,10 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             for node in graph.nodes():
                 graph.nodes[node]['street_feature'] = zeros[node]
 
-            building_count = 0
             zeros = np.zeros((graph.number_of_nodes(), 5))
             for i in range(len(node_features[idx])):
                 if node_features[idx][i, 0] == 1:
                     node_features[idx][i, 5] = (node_features[idx][i, 5] + 1) / 2
-                    building_count += 1
-
-            print(file_name[idx], building_count)
             building_feature = node_features[idx][:, 1:]
             zeros[:len(building_feature)] = building_feature
 
