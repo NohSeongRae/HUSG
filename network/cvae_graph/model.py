@@ -30,6 +30,7 @@ class BoundaryMaskEncoder(nn.Module):
         self.linear = nn.Linear(channel_num, bottleneck)
 
     def forward(self, mask):
+        mask = mask.view(-1, 1, self.image_size, self.image_size)
         mask = self.cnn_encoder(mask)
         mask = torch.flatten(mask, 1)
         mask = self.linear(mask)
