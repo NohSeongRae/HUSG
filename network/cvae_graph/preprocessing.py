@@ -28,6 +28,11 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     ]
 
     graphs = []
+    a = []
+    b = []
+    c = []
+    d = []
+    e = []
 
     for city_name in tqdm(city_names):
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[0] + '.pkl'
@@ -56,6 +61,11 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             for i in range(len(node_features[idx])):
                 if node_features[idx][i, 0] == 1:
                     node_features[idx][i, 5] = (node_features[idx][i, 5] + 1) / 2
+                a.append(node_features[idx][i, 1])
+                b.append(node_features[idx][i, 2])
+                c.append(node_features[idx][i, 3])
+                d.append(node_features[idx][i, 4])
+                f.append(node_features[idx][i, 5])
             building_feature = node_features[idx][:, 1:]
             zeros[:len(building_feature)] = building_feature
 
@@ -76,6 +86,12 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 graph.nodes[node]['building_masks'] = zeros[node]
 
             graphs.append(graph)
+
+    print(np.array(sorted(a)))
+    print(np.array(sorted(b)))
+    print(np.array(sorted(c)))
+    print(np.array(sorted(d)))
+    print(np.array(sorted(e)))
 
     random.shuffle(graphs)
 
