@@ -28,11 +28,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     ]
 
     graphs = []
-    a = []
-    b = []
-    c = []
-    d = []
-    e = []
 
     for city_name in tqdm(city_names):
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[0] + '.pkl'
@@ -66,12 +61,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
             if np.any((zeros[:, :2] < 0) | (zeros[:, :2] > 1)):
                 continue
-            for i in range(len(node_features[idx])):
-                a.append(node_features[idx][i, 1])
-                b.append(node_features[idx][i, 2])
-                c.append(node_features[idx][i, 3])
-                d.append(node_features[idx][i, 4])
-                e.append(node_features[idx][i, 5])
 
             for node in graph.nodes():
                 graph.nodes[node]['building_feature'] = zeros[node]
@@ -90,12 +79,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 graph.nodes[node]['building_masks'] = zeros[node]
 
             graphs.append(graph)
-
-    print(np.array(sorted(a)))
-    print(np.array(sorted(b)))
-    print(np.array(sorted(c)))
-    print(np.array(sorted(d)))
-    print(np.array(sorted(e)))
 
     random.shuffle(graphs)
 
@@ -132,8 +115,15 @@ if __name__ == '__main__':
     parser.add_argument("--n_building", type=int, default=120, help="binary classification for building existence.")
     parser.add_argument("--n_boundary", type=int, default=250, help="Number of boundary or token.")
     parser.add_argument("--n_street", type=int, default=60, help="Number of boundary or token.")
+    parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
 
     opt = parser.parse_args()
+
+    # Set the random seed for reproducibility
+    random.seed(opt.seed)
+    np.random.seed(opt.seed)
+    torch.manual_seed(opt.seed)
+    torch.cuda.manual_seed_all(opt.seed)
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
