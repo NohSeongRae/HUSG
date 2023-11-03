@@ -38,7 +38,7 @@ class GraphDataset(Dataset):
         data = Data(street_feature=street_feature, building_feature=building_feature, street_mask=street_masks,
                     building_mask=building_masks, edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
-        return [data, graph_names]
+        return data
 
     def len(self):
         return len(self.graphs)
