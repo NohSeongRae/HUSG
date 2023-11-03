@@ -65,6 +65,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             zeros[:len(building_feature)] = building_feature
 
             if np.any((zeros < 0) | (zeros > 1)):
+                print(zeros)
                 continue
             for i in range(len(node_features[idx])):
                 a.append(node_features[idx][i, 1])
