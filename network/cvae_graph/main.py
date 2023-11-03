@@ -139,6 +139,8 @@ class Trainer:
                 # Get the model's predictions
                 data = data.to(device=self.device)
                 output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
+                print(output_pos, output_size, output_theta)
+                print('---')
 
                 # Compute the losses
                 loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2], data.building_mask.detach())
