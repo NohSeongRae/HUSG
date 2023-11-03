@@ -50,7 +50,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         for idx in range(len(street_unit_position_datasets)):
             graph = nx.DiGraph(adj_matrices[idx])
 
-            graph['condition'] = inside_masks[idx]
+            graph.graph['condition'] = inside_masks[idx]
 
             zeros = np.zeros((graph.number_of_nodes(), d_street, 2))
             street_feature = np.unique(street_unit_position_datasets[idx], axis=0)
