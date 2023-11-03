@@ -54,9 +54,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             for pixel_value, coords in inside_masks[idx].items():
                 for y, x in coords:
                     image[y, x] = pixel_value
-                    print(y, x, pixel_value)
             graph.graph['condition'] = image
-            print(image)
 
             zeros = np.zeros((graph.number_of_nodes(), d_street, 2))
             street_feature = np.unique(street_unit_position_datasets[idx], axis=0)
@@ -97,7 +95,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
     total_size = len(graphs)
 
-    for data_type in ['train', 'val', 'test']:
+    for data_type in tqdm(['train', 'val', 'test']):
         if data_type == 'train':
             start_index = 0
             end_index = int(total_size * train_ratio)
