@@ -56,7 +56,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             zeros = np.zeros((graph.number_of_nodes(), 5))
             for i in range(len(node_features[idx])):
                 if node_features[idx][i, 0] == 1:
-                    node_features[idx][i, 4] = (node_features[idx][i, 4] + 1) / 2
+                    node_features[idx][i, 5] = (node_features[idx][i, 5] + 1) / 2
             print(node_features[idx])
             print('---')
             building_feature = node_features[idx][:, 1:]
