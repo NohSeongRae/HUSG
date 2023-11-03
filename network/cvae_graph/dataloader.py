@@ -29,11 +29,10 @@ class GraphDataset(Dataset):
                                     dtype=torch.float)
         building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                       dtype=torch.float)
-        graph_names = graph.name
 
         edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
         edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
-        print(street_feature)
+        print(building_feature)
         # PyG 데이터 객체를 생성합니다.
         data = Data(street_feature=street_feature, building_feature=building_feature, street_mask=street_masks,
                     building_mask=building_masks, edge_index=edge_index, num_nodes=graph.number_of_nodes())
