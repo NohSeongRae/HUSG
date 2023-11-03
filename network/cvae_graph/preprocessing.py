@@ -54,6 +54,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             for pixel_value, coords in inside_masks[idx].items():
                 for y, x in coords:
                     image[y, x] = pixel_value
+                    print(y, x, pixel_value)
             graph.graph['condition'] = image
             print(image)
 
