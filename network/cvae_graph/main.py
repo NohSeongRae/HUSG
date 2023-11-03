@@ -23,7 +23,8 @@ import wandb
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
-                 val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head):
+                 val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
+                 pos_weight, size_weight, theta_weight, kl_weight):
         """
         Initialize the trainer with the specified parameters.
 
@@ -51,6 +52,10 @@ class Trainer:
         self.d_feature = d_feature
         self.d_latent = d_latent
         self.n_head = n_head
+        self.pos_weight = pos_weight
+        self.size_weight = size_weight
+        self.theta_weight = theta_weight
+        self.kl_weight = kl_weight
 
         print('local_rank', self.local_rank)
 
@@ -94,21 +99,21 @@ class Trainer:
     def recon_pos_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
         recon_loss = recon_loss * mask
-        return recon_loss.sum() / mask.sum()
+        return recon_loss.sum() / mask.sum() * self.pos_weight
 
     def recon_size_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
         recon_loss = recon_loss * mask
-        return recon_loss.sum() / mask.sum()
+        return recon_loss.sum() / mask.sum() * self.size_weight
 
     def recon_theta_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
         recon_loss = recon_loss * mask
-        return recon_loss.sum() / mask.sum()
+        return recon_loss.sum() / mask.sum() * self.theta_weight
 
     def kl_loss(self, mu, log_var):
         kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
-        return kl_loss
+        return kl_loss * self.kl_weight
 
     def train(self):
         """Training loop for the cvae model."""
@@ -263,6 +268,10 @@ if __name__ == '__main__':
     parser.add_argument("--local-rank", type=int)
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
     parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
+    parser.add_argument("--pos_weight", type=float, default=4.0, help="save dir path")
+    parser.add_argument("--size_weight", type=float, default=4.0, help="save dir path")
+    parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
+    parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
 
     opt = parser.parse_args()
 
@@ -301,6 +310,8 @@ if __name__ == '__main__':
                       use_tensorboard=opt.use_tensorboard,
                       use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
-                      local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr)
+                      local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
+                      pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
+                      kl_weight=opt.kl_weight)
 
     trainer.train()
