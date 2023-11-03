@@ -139,8 +139,6 @@ class Trainer:
                 # Get the model's predictions
                 data = data.to(device=self.device)
                 output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
-                print(output_pos, output_size, output_theta)
-                print('---')
 
                 # Compute the losses
                 loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2], data.building_mask.detach())
@@ -148,6 +146,10 @@ class Trainer:
                 loss_theta = self.recon_theta_loss(output_theta, data.building_feature.detach()[:, 4:], data.building_mask.detach())
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_total = loss_pos + loss_size + loss_theta + loss_kl
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Pos: {loss_pos:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Size: {loss_size:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Theta: {loss_theta:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl:.4f}")
 
                 # Backpropagation and optimization step
                 loss_total.backward()
