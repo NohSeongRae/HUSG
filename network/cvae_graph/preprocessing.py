@@ -51,6 +51,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
             for node in graph.nodes():
                 graph.nodes[node]['street_feature'] = zeros[node]
+            print(zeros)
 
             zeros = np.zeros((graph.number_of_nodes(), 5))
             for i in range(len(node_features[idx])):
@@ -61,12 +62,14 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
             for node in graph.nodes():
                 graph.nodes[node]['building_feature'] = zeros[node]
+            print(zeros)
 
             zeros = np.zeros((graph.number_of_nodes(), 1))
             zeros[:len(street_feature)] = 1
 
             for node in graph.nodes():
                 graph.nodes[node]['street_masks'] = zeros[node]
+            print(zeros)
 
             zeros = np.zeros((graph.number_of_nodes(), 1))
             building_masks = node_features[idx][:, :1]
@@ -74,6 +77,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
             for node in graph.nodes():
                 graph.nodes[node]['building_masks'] = zeros[node]
+            print(zeros)
 
             graphs.append(graph)
 
