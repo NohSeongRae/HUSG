@@ -118,19 +118,19 @@ class Trainer:
         return kl_loss * self.kl_weight
 
     def distance_loss(self, pred, trg, mask, edge_index):
-        pred = pred * mask
-        trg = trg * mask
+        # edge_index에서 선택된 노드들로만 구성된 엣지를 찾습니다.
+        mask = (mask[edge_index[0]] == 1) & (mask[edge_index[1]] == 1)
+        selected_edge_index = edge_index[:, mask]
 
         # edge_index에서 시작 노드와 끝 노드의 인덱스를 가져옵니다.
-        start_nodes, end_nodes = edge_index
+        start_nodes, end_nodes = selected_edge_index
 
         # 실제 좌표와 목표 좌표를 사용하여 거리를 계산합니다.
         actual_distances = torch.norm(pred[start_nodes] - pred[end_nodes], dim=-1)
         target_distances = torch.norm(trg[start_nodes] - trg[end_nodes], dim=-1)
 
         # 거리 차이의 제곱을 계산합니다.
-        loss = torch.sum((actual_distances - target_distances) ** 2)
-        print(len(start_nodes), mask.sum())
+        loss = torch.sum(torch.abs(actual_distances - target_distances))
 
         # 배치의 평균 손실을 반환합니다.
         return loss / len(start_nodes) * self.distance_weight
