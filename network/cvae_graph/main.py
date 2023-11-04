@@ -138,12 +138,18 @@ class Trainer:
         pred *= mask
         trg *= mask
 
-        # DistanceLossLayer를 초기화합니다.
-        distance_loss_layer = DistanceLossLayer()
-        # 손실을 계산합니다.
-        loss = distance_loss_layer(edge_index, pred, trg)
+        # edge_index에서 시작 노드와 끝 노드의 인덱스를 가져옵니다.
+        start_nodes, end_nodes = edge_index
+
+        # 실제 좌표와 목표 좌표를 사용하여 거리를 계산합니다.
+        actual_distances = torch.norm(pred[start_nodes] - pred[end_nodes], dim=-1)
+        target_distances = torch.norm(trg[start_nodes] - trg[end_nodes], dim=-1)
+
+        # 거리 차이의 제곱을 계산합니다.
+        loss = torch.sum((actual_distances - target_distances) ** 2)
+
         # 배치의 평균 손실을 반환합니다.
-        return loss.mean()
+        return loss / len(start_nodes)
 
     def train(self):
         """Training loop for the cvae model."""
