@@ -130,9 +130,10 @@ class Trainer:
 
         # 거리 차이의 제곱을 계산합니다.
         loss = torch.sum(torch.sqrt((actual_distances - target_distances) ** 2))
+        print(len(start_nodes), mask.sum())
 
         # 배치의 평균 손실을 반환합니다.
-        return loss / mask.sum() * self.distance_weight
+        return loss / len(start_nodes) * self.distance_weight
 
     def train(self):
         """Training loop for the cvae model."""
