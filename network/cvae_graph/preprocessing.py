@@ -71,7 +71,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                     node_features[idx][i, 5] = (node_features[idx][i, 5] + 1) / 2
                     node_features[idx][i, 1] += move_vector[idx][0]
                     node_features[idx][i, 2] += move_vector[idx][1]
-            print(move_vector[idx][1], move_vector[idx][0])
+
             building_feature = node_features[idx][:, 1:]
             zeros[:len(building_feature)] = building_feature
 
