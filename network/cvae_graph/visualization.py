@@ -51,7 +51,7 @@ def rotate_points_around_center(points, center, theta_deg):
 def plot(pos, size, rot, building_exist_mask, gt, condition, idx):
     # Create a figure and axes
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-    rotation_scale = 0
+    rotation_scale = 45
 
     ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
     ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
