@@ -179,6 +179,7 @@ class GraphTransformer(nn.Module):
         is_building_tensor = is_building_tensor < n_street_node.unsqueeze(-1).expand(-1, trg_adj_seq.shape[1])
 
         n_building_node = n_node - n_street_node
+        n_building_node = n_building_node.reshape(-1, 1)
 
         dec_output = self.decoder(trg_adj_seq, enc_output, is_building_tensor, n_building_node,
                                   trg_global_mask, trg_street_mask, trg_local_mask, src_global_mask)
