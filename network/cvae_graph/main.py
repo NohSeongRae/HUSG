@@ -175,7 +175,7 @@ class Trainer:
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_distance = self.distance_loss(output_pos, data.building_feature.detach()[:, :2],
                                                    data.building_mask.detach(), data.edge_index.detach())
-
+                print(loss_distance)
                 loss_total = loss_pos + loss_size + loss_theta + loss_kl + loss_distance
 
                 # Backpropagation and optimization step
