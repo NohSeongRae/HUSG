@@ -164,6 +164,7 @@ class GraphCVAE(nn.Module):
 
     def test(self, data):
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
-        output_pos, output_size, output_theta = self.decoder(z, data.edge_index, data.batch)
+        condition = self.condition_encoder(data.condition)
+        output_pos, output_size, output_theta = self.decoder(z, condition, data.edge_index, data.batch)
 
         return output_pos, output_size, output_theta

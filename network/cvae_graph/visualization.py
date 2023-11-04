@@ -48,13 +48,16 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, mask, gt, idx):
+def plot(pos, size, rot, building_exist_mask, condition, gt, idx):
     # Create a figure and axes
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
     rotation_scale = 180
 
+    ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
+    ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
+
     for i in range(len(pos)):
-        if mask[i] == 0:
+        if building_exist_mask[i] == 0:
             continue
 
         x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale
@@ -75,7 +78,7 @@ def plot(pos, size, rot, mask, gt, idx):
     ax1.set_aspect('equal', adjustable='box')
 
     for i in range(len(pos)):
-        if mask[i] == 0:
+        if building_exist_mask[i] == 0:
             continue
 
         x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (gt[i][4] * 2 - 1) * rotation_scale

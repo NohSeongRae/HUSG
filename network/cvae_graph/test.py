@@ -76,6 +76,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path):
                  output_theta.detach().cpu().numpy(),
                  data.building_mask.detach().cpu().numpy(),
                  data.building_feature.detach().cpu().numpy(),
+                 data.condition.detach().cpu().numpy(),
                  idx + 1)
 
 if __name__ == '__main__':
