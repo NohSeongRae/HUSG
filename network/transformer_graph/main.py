@@ -287,7 +287,7 @@ if __name__ == '__main__':
     parser.add_argument("--use_global_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_street_attn", type=bool, default=True, help="Use checkpoint index.")
     parser.add_argument("--use_local_attn", type=bool, default=True, help="Use checkpoint index.")
-    parser.add_argument("--local-rank", type=int)
+    parser.add_argument("--local_rank", type=int)
     parser.add_argument("--save_dir_path", type=str, default="transformer_graph", help="save dir path")
     parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
 
