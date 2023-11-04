@@ -3,11 +3,8 @@ import os
 import argparse
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
-from torch_geometric.utils import to_dense_adj
-from torch_geometric.nn import MessagePassing
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
 from transformers.optimization import AdamW, get_cosine_schedule_with_warmup
@@ -23,26 +20,11 @@ from dataloader import GraphDataset
 
 import wandb
 
-class DistanceLossLayer(MessagePassing):
-    def __init__(self):
-        super(DistanceLossLayer, self).__init__(aggr='add')  # 'add' aggregation
-
-    def forward(self, edge_index, pos, target_pos):
-        # edge_index에 따라 거리를 계산하고 손실을 집계합니다.
-        return self.propagate(edge_index, size=(pos.size(0), pos.size(0)), pos=pos, target_pos=target_pos)
-
-    def message(self, pos_i, pos_j, target_pos_i, target_pos_j):
-        # 노드 쌍 간의 목표 거리 차이를 계산합니다.
-        target_distance_diff = torch.norm(target_pos_i - target_pos_j, p=2, dim=-1)
-        # 노드 쌍 간의 실제 거리 차이를 계산합니다.
-        actual_distance_diff = torch.norm(pos_i - pos_j, p=2, dim=-1)
-        # 거리 차이의 제곱을 반환합니다.
-        return (target_distance_diff - actual_distance_diff) ** 2
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
-                 pos_weight, size_weight, theta_weight, kl_weight):
+                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight):
         """
         Initialize the trainer with the specified parameters.
 
@@ -74,6 +56,7 @@ class Trainer:
         self.size_weight = size_weight
         self.theta_weight = theta_weight
         self.kl_weight = kl_weight
+        self.distance_weight = distance_weight
 
         print('local_rank', self.local_rank)
 
@@ -146,10 +129,10 @@ class Trainer:
         target_distances = torch.norm(trg[start_nodes] - trg[end_nodes], dim=-1)
 
         # 거리 차이의 제곱을 계산합니다.
-        loss = torch.sum((actual_distances - target_distances) ** 2)
+        loss = torch.sum(torch.sqrt((actual_distances - target_distances) ** 2))
 
         # 배치의 평균 손실을 반환합니다.
-        return loss / mask.sum()
+        return loss / mask.sum() * self.distance_weight
 
     def train(self):
         """Training loop for the cvae model."""
@@ -171,6 +154,7 @@ class Trainer:
             total_size_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
             total_theta_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
             total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+            total_distance_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
             # Iterate over batches
             for data in tqdm(self.train_dataloader):
@@ -191,8 +175,8 @@ class Trainer:
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_distance = self.distance_loss(output_pos, data.building_feature.detach()[:, :2],
                                                    data.building_mask.detach(), data.edge_index.detach())
-                print(loss_distance)
-                loss_total = loss_pos + loss_size + loss_theta + loss_kl
+
+                loss_total = loss_pos + loss_size + loss_theta + loss_kl + loss_distance
 
                 # Backpropagation and optimization step
                 loss_total.backward()
@@ -204,10 +188,12 @@ class Trainer:
                 dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_distance, op=dist.ReduceOp.SUM)
                 total_pos_loss += loss_pos
                 total_size_loss += loss_size
                 total_theta_loss += loss_theta
                 total_kl_loss += loss_kl
+                total_distance_loss += loss_distance
 
                 # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
             if self.local_rank == 0:
@@ -215,16 +201,19 @@ class Trainer:
                 loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_theta_mean = total_theta_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_distance_mean = total_distance_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Pos: {loss_pos_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Size: {loss_size_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Theta: {loss_theta_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Distance: {loss_distance_mean:.4f}")
 
                 if self.use_tensorboard:
                     wandb.log({"Train pos loss": loss_pos_mean}, step=epoch + 1)
                     wandb.log({"Train size loss": loss_size_mean}, step=epoch + 1)
                     wandb.log({"Train theta loss": loss_theta_mean}, step=epoch + 1)
                     wandb.log({"Train kl loss": loss_kl_mean}, step=epoch + 1)
+                    wandb.log({"Train distance loss": loss_distance_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.cvae.module.eval()
@@ -232,6 +221,7 @@ class Trainer:
                 total_size_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
                 total_theta_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
                 total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_distance_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
                 with torch.no_grad():
                     # Iterate over batches
@@ -246,16 +236,20 @@ class Trainer:
                         loss_theta = self.recon_theta_loss(output_theta, data.building_feature[:, 4:],
                                                            data.building_mask)
                         loss_kl = self.kl_loss(mu, log_var)
+                        loss_distance = self.distance_loss(output_pos, data.building_feature[:, :2],
+                                                           data.building_mask, data.edge_index)
 
                         # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
                         dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_distance, op=dist.ReduceOp.SUM)
                         total_pos_loss += loss_pos
                         total_size_loss += loss_size
                         total_theta_loss += loss_theta
                         total_kl_loss += loss_kl
+                        total_distance_loss += loss_distance
 
                         # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
                     if self.local_rank == 0:
@@ -263,16 +257,21 @@ class Trainer:
                         loss_size_mean = total_size_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_theta_mean = total_theta_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_distance_mean = total_distance_loss.item() / (
+                                    len(self.val_dataloader) * dist.get_world_size())
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Pos: {loss_pos_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Size: {loss_size_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Theta: {loss_theta_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss KL: {loss_kl_mean:.4f}")
+                        print(
+                            f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Distance: {loss_distance_mean:.4f}")
 
                         if self.use_tensorboard:
                             wandb.log({"Validation pos loss": loss_pos_mean}, step=epoch + 1)
                             wandb.log({"Validation size loss": loss_size_mean}, step=epoch + 1)
                             wandb.log({"Validation theta loss": loss_theta_mean}, step=epoch + 1)
                             wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
+                            wandb.log({"Validation distance loss": loss_distance_mean}, step=epoch + 1)
 
                 self.cvae.module.train()
 
@@ -315,6 +314,7 @@ if __name__ == '__main__':
     parser.add_argument("--size_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
+    parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
 
     opt = parser.parse_args()
 
@@ -355,6 +355,6 @@ if __name__ == '__main__':
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
                       pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
-                      kl_weight=opt.kl_weight)
+                      kl_weight=opt.kl_weight, distance_weight=opt.distance_weight)
 
     trainer.train()
