@@ -189,7 +189,7 @@ class Trainer:
                 total_loss += loss
 
                 # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
-            if self.local_rank == 0:
+            if self.local_rank == 1:
                 loss_mean = total_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss BCE: {loss_mean:.4f}")
 
@@ -235,7 +235,7 @@ class Trainer:
                         total_val_loss += loss
 
                         # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 추가된 부분
-                    if self.local_rank == 0:
+                    if self.local_rank == 1:
                         val_loss_mean = total_val_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss BCE: {val_loss_mean:.4f}")
 
@@ -252,7 +252,7 @@ class Trainer:
                     'optimizer_state_dict': self.optimizer.state_dict(),
                 }
 
-                if self.local_rank == 0:
+                if self.local_rank == 1:
                     save_path = os.path.join("./models", self.save_dir_path)
                     if not os.path.exists(save_path):
                         os.makedirs(save_path)
@@ -294,7 +294,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
-    if opt.local_rank == 0:
+    if opt.local_rank == 1:
         for arg in vars(opt):
             print(f"{arg}: {getattr(opt, arg)}")
 
@@ -314,7 +314,7 @@ if __name__ == '__main__':
         else:
             dist.init_process_group("nccl")
 
-    if opt.local_rank == 0:
+    if opt.local_rank == 1:
         wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
         wandb.init(project='transformer_graph')
         # 실행 이름 설정
