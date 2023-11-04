@@ -66,9 +66,7 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx):
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-        original_box = np.concatenate((points, [points[0]]), axis=0)
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
-        # ax1.plot(original_box[:, 0], original_box[:, 1], 'b-', label='Rotated Box')
 
     # Set the limits of the plot
     plt.xlim([-0.1, 1.1])
@@ -82,15 +80,12 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx):
             continue
 
         x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (gt[i][4] * 2 - 1) * rotation_scale
-        print(idx, i, (gt[i][4] * 2 - 1) * rotation_scale)
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-        original_box = np.concatenate((points, [points[0]]), axis=0)
         ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
-        # ax2.plot(original_box[:, 0], original_box[:, 1], 'b-', label='Rotated Box')
 
 
     # Set the aspect of the plot to be equal
