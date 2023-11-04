@@ -204,13 +204,14 @@ class Trainer:
                     # Iterate over batches
                     for data in tqdm(self.val_dataloader):
                         # Get the source and target sequences from the batch
-                        src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street = data
+                        src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street, cur_n_node = data
                         gt_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
                         src_unit_seq = src_unit_seq.to(device=self.device, dtype=torch.float32)
                         src_street_seq = src_street_seq.to(device=self.device, dtype=torch.float32)
                         street_index_seq = street_index_seq.to(device=self.device, dtype=torch.long)
                         trg_adj_seq = trg_adj_seq.to(device=self.device, dtype=torch.float32)
                         cur_n_street = cur_n_street.to(device=self.device, dtype=torch.long)
+                        cur_n_node = cur_n_node.to(device=self.device)
 
                         # Greedy Search로 시퀀스 생성
                         decoder_input = trg_adj_seq[:, :cur_n_street[0] + 1]  # 시작 토큰만 포함
@@ -220,7 +221,7 @@ class Trainer:
 
                         for t in range(cur_n_street[0], gt_adj_seq.shape[1] - 1):  # 임의의 제한값
                             output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, decoder_input,
-                                                 cur_n_street)
+                                                      cur_n_street, cur_n_node)
                             output_storage[:, t] = output[:, t].detach()
                             next_token = (torch.sigmoid(output) > 0.5).long()[:, t].unsqueeze(-2)
                             decoder_input = torch.cat([decoder_input, next_token], dim=1)
