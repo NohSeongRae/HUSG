@@ -75,7 +75,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         max_edge_length = max(max_edge_length, edge_index.size(1))
                         all_edge_index_sequences.append(edge_index.numpy())
                         all_cur_n_node.append(len(data))
-                        print(len(data), data)
 
     for i in range(len(all_edge_index_sequences)):
         padded_edge_index = np.pad(all_edge_index_sequences[i],
@@ -89,7 +88,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         'street_unit_position_datasets': np.array(all_street_unit_position_datasets),
         'street_index_sequences': np.array(all_street_index_sequences),
         'edge_index_sequences': np.array(all_edge_index_sequences),
-        'cur_n_streets': np.array(all_cur_n_street)
+        'cur_n_streets': np.array(all_cur_n_street),
+        'cur_n_nodes': np.array(all_cur_n_node)
     }
 
     # Shuffle the dataset
@@ -118,7 +118,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                  street_unit_position_datasets=full_dataset['street_unit_position_datasets'][start_index:end_index],
                  street_index_sequences=full_dataset['street_index_sequences'][start_index:end_index],
                  edge_index_sequences=full_dataset['edge_index_sequences'][start_index:end_index],  # 수정된 부분
-                 cur_n_streets=full_dataset['cur_n_streets'][start_index:end_index])
+                 cur_n_streets=full_dataset['cur_n_streets'][start_index:end_index],
+                 cur_n_nodes=full_dataset['cur_n_nodes'][start_index:end_index])
 
 if __name__ == '__main__':
     # Set the argparse

@@ -113,6 +113,7 @@ class GraphDecoder(nn.Module):
         super(GraphDecoder, self).__init__()
 
         self.type_emb = nn.Embedding(2, d_model)
+        self.count_emb = nn.Embedding(n_building + n_street, d_model)
         self.node_enc = nn.Linear(n_building + n_street, d_model)
         self.pos_enc = PositionalEncoding(d_model, n_building=n_building + n_street)
         self.dropout = nn.Dropout(dropout)
@@ -123,8 +124,8 @@ class GraphDecoder(nn.Module):
         ])
         self.d_model = d_model
 
-    def forward(self, dec_input, enc_output, is_building_tensor, global_mask, street_mask, local_mask, enc_mask):
-        dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor.long()) + self.pos_enc(dec_input)
+    def forward(self, dec_input, enc_output, is_building_tensor, n_building_node, global_mask, street_mask, local_mask, enc_mask):
+        dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor.long()) + self.pos_enc(dec_input) + self.count_emb(n_building_node)
         dec_output = self.dropout(dec_output)
 
         for dec_layer in self.layer_stack:
@@ -157,7 +158,7 @@ class GraphTransformer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.adj_fc = nn.Linear(d_model, n_building + n_street)
 
-    def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, n_street_node):
+    def forward(self, src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, n_street_node, n_node):
         src_global_mask = get_pad_mask(street_index_seq, pad_idx=0).unsqueeze(-2)
         src_street_mask = get_src_street_mask(street_index_seq) & src_global_mask
         src_local_mask = get_src_local_mask(street_index_seq) & src_global_mask
@@ -177,7 +178,9 @@ class GraphTransformer(nn.Module):
         is_building_tensor = is_building_tensor.unsqueeze(0).expand(trg_adj_seq.shape[0], -1)
         is_building_tensor = is_building_tensor < n_street_node.unsqueeze(-1).expand(-1, trg_adj_seq.shape[1])
 
-        dec_output = self.decoder(trg_adj_seq, enc_output, is_building_tensor,
+        n_building_node = n_node - n_street_node
+
+        dec_output = self.decoder(trg_adj_seq, enc_output, is_building_tensor, n_building_node,
                                   trg_global_mask, trg_street_mask, trg_local_mask, src_global_mask)
 
         output = self.dropout(dec_output)

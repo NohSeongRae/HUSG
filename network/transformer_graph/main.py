@@ -162,16 +162,18 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 # Get the source and target sequences from the batch
-                src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street = data
+                src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street, cur_n_node = data
                 gt_adj_seq = trg_adj_seq.to(device=self.device)
                 src_unit_seq = src_unit_seq.to(device=self.device)
                 src_street_seq = src_street_seq.to(device=self.device)
                 street_index_seq = street_index_seq.to(device=self.device)
                 trg_adj_seq = trg_adj_seq.to(device=self.device)
                 cur_n_street = cur_n_street.to(device=self.device)
+                cur_n_node = cur_n_node.to(device=self.device)
 
                 # Get the model's predictions
-                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq, cur_n_street)
+                output = self.transformer(src_unit_seq, src_street_seq, street_index_seq, trg_adj_seq,
+                                          cur_n_street, cur_n_node)
 
                 # Compute the losses
                 loss = self.cross_entropy_loss(output, gt_adj_seq.detach())

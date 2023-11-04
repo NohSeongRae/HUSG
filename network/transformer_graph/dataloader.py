@@ -26,6 +26,7 @@ class GraphDataset(Dataset):
         self.street_index_sequences = self.full_dataset['street_index_sequences']
         self.edge_index_sequences = self.full_dataset['edge_index_sequences']
         self.cur_n_streets = self.full_dataset['cur_n_streets']
+        self.cur_n_nodes = self.full_dataset['cur_n_nodes']
 
         if data_type is not 'test':
             if torch.distributed.get_rank() == 0:
@@ -34,6 +35,7 @@ class GraphDataset(Dataset):
                 print('street_index_sequences shape: ', self.street_index_sequences.shape)
                 print('adj_matrix_sequences shape: ', self.edge_index_sequences.shape)
                 print('cur_n_streets shape: ', self.cur_n_streets.shape)
+                print('cur_n_nodes shape: ', self.cur_n_nodes.shape)
 
     def __getitem__(self, index):
         """
@@ -46,6 +48,7 @@ class GraphDataset(Dataset):
         unit_position_dataset = torch.tensor(self.unit_position_datasets[index], dtype=torch.float32)
         street_index_sequence = torch.tensor(self.street_index_sequences[index], dtype=torch.long)
         cur_n_street = torch.tensor(self.cur_n_streets[index], dtype=torch.long)
+        cur_n_node = torch.tensor(self.cur_n_nodes[index], dtype=torch.long)
         edge_index_sequence = torch.tensor(self.edge_index_sequences[index], dtype=torch.long)
         adj_matrix = to_dense_adj(edge_index_sequence)[0].numpy()
         adj_matrix[adj_matrix > 1] = 1
@@ -70,7 +73,8 @@ class GraphDataset(Dataset):
         zeros[adj_matrix.shape[0] + 1] = 3
         zeros[adj_matrix.shape[0] + 2:] = 4
         adj_matrix_sequence = torch.tensor(zeros, dtype=torch.float32)
-        return unit_position_dataset, street_position_dataset, street_index_sequence, adj_matrix_sequence, cur_n_street
+        return unit_position_dataset, street_position_dataset, street_index_sequence, adj_matrix_sequence, \
+               cur_n_street, cur_n_node
 
 
     def __len__(self):
