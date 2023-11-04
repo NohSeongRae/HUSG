@@ -29,17 +29,27 @@ def get_bbox_details(rotated_rectangle):
     # 사각형의 꼭짓점들을 얻음
     x, y = rotated_rectangle.exterior.coords.xy
 
-    w = math.sqrt((x[1] - x[0]) ** 2 + (y[1] - y[0]) ** 2)
-    h = math.sqrt((x[2] - x[1]) ** 2 + (y[2] - y[1]) ** 2)
+    min_angle = 999
+    min_idx = -1
+    for i in range(len(x) - 1):
+        dx = x[(i+1) % (len(x)-1)] - x[i]
+        dy = y[(i+1) % (len(y)-1)] - y[i]
+        angle = math.degrees(math.atan2(dy, dx))
+        if min_angle > abs(angle):
+            min_angle = abs(angle)
+            min_idx = i
 
-    dx = x[1] - x[0]
-    dy = y[1] - y[0]
+    idx = min_idx
+    w = math.sqrt((x[(idx + 1) % (len(y)-1)] - x[idx]) ** 2 + (y[(idx + 1) % (len(y)-1)] - y[idx]) ** 2)
+    h = math.sqrt((x[(idx + 2) % (len(y)-1)] - x[(idx + 1) % (len(y)-1)]) ** 2 + (y[(idx + 2) % (len(y)-1)] - y[(idx + 1) % (len(y)-1)]) ** 2)
+
+    dx = x[idx + 1] - x[idx]
+    dy = y[idx + 1] - y[idx]
     theta = math.degrees(math.atan2(dy, dx))
     theta = theta / 180
 
     # 좌하단 꼭짓점을 x, y로 선택
     x, y = rotated_rectangle.centroid.x, rotated_rectangle.centroid.y
-
     return x, y, w, h, theta
 
 def is_building_between(b1, b2, buildings):

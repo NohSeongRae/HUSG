@@ -59,15 +59,15 @@ def plot_groups_with_rectangles_v7(block_gdf, buildings_gdf, unit_roads, boundin
     #
     #             plt.plot([node_i.x, node_j.x], [node_i.y, node_j.y])
 
-    if file_name is not None:
-        city_name = extract_before_underscore(file_name)
-        folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'preprocessed_image')
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+    # if file_name is not None:
+    #     city_name = extract_before_underscore(file_name)
+    #     folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', f'{city_name}_dataset', 'preprocessed_image')
+    #     if not os.path.exists(folder_path):
+    #         os.makedirs(folder_path)
+    #
+    #     image_filename = os.path.join(folder_path, f'{file_name}.png')
+    #
+    #     plt.savefig(image_filename)
+    #     plt.clf()
 
-        image_filename = os.path.join(folder_path, f'{file_name}.png')
-
-        plt.savefig(image_filename)
-        plt.clf()
-
-    # plt.show()
+    plt.show()

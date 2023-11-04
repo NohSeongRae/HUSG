@@ -96,7 +96,7 @@ def process_city(city_name):
                                      'density20_building120_rotate_normalized', 'Boundaries')
 
     # Iterate over all .geojson files in the directory
-    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)[:50]):
+    for building_filepath in tqdm(sorted([f for f in os.listdir(building_dir_path) if f.endswith('.geojson')], key=sort_key)[:100]):
         boundary_filepath = building_filepath.replace('buildings', 'boundaries')
 
         # Construct the full paths
@@ -328,9 +328,9 @@ def process_city(city_name):
             building_filenames.append(building_filepath)
             boundary_filenames.append(boundary_filepath)
 
-            plot_groups_with_rectangles_v7(boundary_gdf, building_gdf, unit_roads, bounding_boxs, building_polygons, adj_matrix, cur_n_street, street_position_dataset, building_filepath)
+            # plot_groups_with_rectangles_v7(boundary_gdf, building_gdf, unit_roads, bounding_boxs, building_polygons, adj_matrix, cur_n_street, street_position_dataset, building_filepath)
 
-    folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset', city_name)
+    folder_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'test_dataset', city_name)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
 
