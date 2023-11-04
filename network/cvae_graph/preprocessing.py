@@ -16,11 +16,11 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     # dataset_path = 'Z:/iiixr-drive/Projects/2023_City_Team/2_transformer/train_dataset'
     # dataset_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset')
 
-    # city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
-    #               "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
-    #               "sanfrancisco", "miami", "seattle", "boston", "providence",
-    #               "neworleans", "denver", "pittsburgh", "washington"]
-    city_names = ["atlanta"]
+    city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+                  "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+                  "sanfrancisco", "miami", "seattle", "boston", "providence",
+                  "neworleans", "denver", "pittsburgh", "washington"]
+    # city_names = ["atlanta"]
 
     dataset_names = [
         'street_unit_position_datasets',
