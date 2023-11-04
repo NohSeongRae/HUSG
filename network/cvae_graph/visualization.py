@@ -82,6 +82,7 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx):
             continue
 
         x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (gt[i][4] * 2 - 1) * rotation_scale
+        print(idx, i, (gt[i][4] * 2 - 1) * rotation_scale)
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
