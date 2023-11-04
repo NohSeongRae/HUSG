@@ -69,7 +69,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             for i in range(len(node_features[idx])):
                 if node_features[idx][i, 0] == 1:
                     node_features[idx][i, 5] = (node_features[idx][i, 5] * 180 / 45 + 1) / 2
-                    print(node_features[idx][i, 5])
                     node_features[idx][i, 1] += move_vector[idx][0]
                     node_features[idx][i, 2] += move_vector[idx][1]
 
