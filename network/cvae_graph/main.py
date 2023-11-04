@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
+from torch_geometric.utils import to_dense_adj
+from torch_geometric.nn import MessagePassing
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
 from transformers.optimization import AdamW, get_cosine_schedule_with_warmup
@@ -20,6 +22,22 @@ from model import GraphCVAE
 from dataloader import GraphDataset
 
 import wandb
+
+class DistanceLossLayer(MessagePassing):
+    def __init__(self):
+        super(DistanceLossLayer, self).__init__(aggr='add')  # 'add' aggregation
+
+    def forward(self, edge_index, pos, target_pos):
+        # edge_index에 따라 거리를 계산하고 손실을 집계합니다.
+        return self.propagate(edge_index, size=(pos.size(0), pos.size(0)), pos=pos, target_pos=target_pos)
+
+    def message(self, pos_i, pos_j, target_pos_i, target_pos_j):
+        # 노드 쌍 간의 목표 거리 차이를 계산합니다.
+        target_distance_diff = torch.norm(target_pos_i - target_pos_j, p=2, dim=-1)
+        # 노드 쌍 간의 실제 거리 차이를 계산합니다.
+        actual_distance_diff = torch.norm(pos_i - pos_j, p=2, dim=-1)
+        # 거리 차이의 제곱을 반환합니다.
+        return (target_distance_diff - actual_distance_diff) ** 2
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
@@ -87,7 +105,8 @@ class Trainer:
             {'params': [p for n, p in param_optimizer if any(
                 nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
-        self.optimizer = AdamW(optimizer_grouped_parameters, lr=self.lr, correct_bias=False, no_deprecation_warning=True)
+        self.optimizer = AdamW(optimizer_grouped_parameters, lr=self.lr, correct_bias=False,
+                               no_deprecation_warning=True)
 
         # scheduler
         data_len = len(self.train_dataloader)
@@ -114,6 +133,17 @@ class Trainer:
     def kl_loss(self, mu, log_var):
         kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
         return kl_loss * self.kl_weight
+
+    def distance_loss(self, pred, trg, mask, edge_index):
+        pred *= mask
+        trg *= mask
+
+        # DistanceLossLayer를 초기화합니다.
+        distance_loss_layer = DistanceLossLayer()
+        # 손실을 계산합니다.
+        loss = distance_loss_layer(edge_index, pred, trg)
+        # 배치의 평균 손실을 반환합니다.
+        return loss.mean()
 
     def train(self):
         """Training loop for the cvae model."""
@@ -146,10 +176,16 @@ class Trainer:
                 output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
                 # Compute the losses
-                loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2], data.building_mask.detach())
-                loss_size = self.recon_size_loss(output_size, data.building_feature.detach()[:, 2:4], data.building_mask.detach())
-                loss_theta = self.recon_theta_loss(output_theta, data.building_feature.detach()[:, 4:], data.building_mask.detach())
+                loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2],
+                                               data.building_mask.detach())
+                loss_size = self.recon_size_loss(output_size, data.building_feature.detach()[:, 2:4],
+                                                 data.building_mask.detach())
+                loss_theta = self.recon_theta_loss(output_theta, data.building_feature.detach()[:, 4:],
+                                                   data.building_mask.detach())
                 loss_kl = self.kl_loss(mu, log_var)
+                loss_distance = self.distance_loss(output_pos, data.building_feature.detach()[:, :2],
+                                                   data.building_mask.detach(), data.edge_index.detach())
+                print(loss_distance)
                 loss_total = loss_pos + loss_size + loss_theta + loss_kl
 
                 # Backpropagation and optimization step
@@ -199,9 +235,10 @@ class Trainer:
                         output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
                         # Compute the losses using the generated sequence
-                        loss_pos = self.recon_pos_loss(output_pos, data.building_feature[:, :2],data.building_mask)
-                        loss_size = self.recon_size_loss(output_size, data.building_feature[:, 2:4],data.building_mask)
-                        loss_theta = self.recon_theta_loss(output_theta, data.building_feature[:, 4:],data.building_mask)
+                        loss_pos = self.recon_pos_loss(output_pos, data.building_feature[:, :2], data.building_mask)
+                        loss_size = self.recon_size_loss(output_size, data.building_feature[:, 2:4], data.building_mask)
+                        loss_theta = self.recon_theta_loss(output_theta, data.building_feature[:, 4:],
+                                                           data.building_mask)
                         loss_kl = self.kl_loss(mu, log_var)
 
                         # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
