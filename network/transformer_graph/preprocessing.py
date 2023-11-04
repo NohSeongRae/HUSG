@@ -4,6 +4,7 @@ import pickle
 from tqdm import tqdm
 import argparse
 import os
+import random
 from torch_geometric.utils import dense_to_sparse, to_dense_adj
 
 def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
@@ -15,7 +16,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
                   "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
                   "sanfrancisco", "miami", "seattle", "boston", "providence",
-                  "neworleans", "denver", "pittsburgh", "tampa", "washington"]
+                  "neworleans", "denver", "pittsburgh", "washington"]
     # city_names = ["atlanta", "boston", "dallas", "denver", "houston", "lasvegas",
     #               "littlerock", "miami", "neworleans"]
     dataset_names = [
@@ -30,6 +31,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     all_street_index_sequences = []
     all_edge_index_sequences = []
     all_cur_n_street = []
+    all_cur_n_node = []
     max_edge_length = 0
 
     for city_name in tqdm(city_names):
@@ -61,7 +63,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         data = zeros
                         all_unit_position_datasets.append(data)
 
-
                     elif dataset_name == 'street_unit_position_datasets':
                         zeros = np.zeros((n_street, d_street, 2))
                         data = np.unique(data, axis=0)
@@ -73,6 +74,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         edge_index, _ = dense_to_sparse(torch.tensor(data, dtype=torch.float32))
                         max_edge_length = max(max_edge_length, edge_index.size(1))
                         all_edge_index_sequences.append(edge_index.numpy())
+                        all_cur_n_node.append(len(data))
+                        print(len(data), data)
 
     for i in range(len(all_edge_index_sequences)):
         padded_edge_index = np.pad(all_edge_index_sequences[i],
@@ -130,8 +133,14 @@ if __name__ == '__main__':
     parser.add_argument("--n_building", type=int, default=120, help="binary classification for building existence.")
     parser.add_argument("--n_boundary", type=int, default=250, help="Number of boundary or token.")
     parser.add_argument("--n_street", type=int, default=60, help="Number of boundary or token.")
+    parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
 
     opt = parser.parse_args()
+
+    random.seed(opt.seed)
+    np.random.seed(opt.seed)
+    torch.manual_seed(opt.seed)
+    torch.cuda.manual_seed_all(opt.seed)
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
