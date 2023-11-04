@@ -135,8 +135,8 @@ class Trainer:
         return kl_loss * self.kl_weight
 
     def distance_loss(self, pred, trg, mask, edge_index):
-        pred *= mask
-        trg *= mask
+        pred = pred * mask
+        trg = trg * mask
 
         # edge_index에서 시작 노드와 끝 노드의 인덱스를 가져옵니다.
         start_nodes, end_nodes = edge_index
@@ -149,7 +149,7 @@ class Trainer:
         loss = torch.sum((actual_distances - target_distances) ** 2)
 
         # 배치의 평균 손실을 반환합니다.
-        return loss / len(start_nodes)
+        return loss / mask.sum()
 
     def train(self):
         """Training loop for the cvae model."""
