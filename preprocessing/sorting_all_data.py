@@ -9,21 +9,28 @@ city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
               "neworleans", "denver", "pittsburgh", "washington"]
 
 for city_name in city_names:
+    print(city_name)
+    # if all dataset
     # load_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'new_dataset', 'train_dataset',
     #                              f'{city_name}')
     # save_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'new_dataset', 'sorted_train_dataset',
     #                              f'{city_name}')
-    load_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'new_dataset', 'fix_node_feature_dataset',
+    # if fix dataset
+    # load_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'new_dataset', 'fix_node_feature_dataset',
+    #                              f'{city_name}')
+    # save_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'new_dataset', 'sorted_fix_node_feature_dataset',
+    #                              f'{city_name}')
+    load_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'sorted_dataset',
                                  f'{city_name}')
-    save_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'new_dataset', 'sorted_fix_node_feature_dataset',
+    save_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'int_sorted_dataset',
                                  f'{city_name}')
 
     # 파일 이름을 정의합니다.
-    # file_names = ["adj_matrices.pkl", "boundary_filenames.pkl", "building_exist_sequences.pkl",
-    #               "building_filenames.pkl", "building_polygons.pkl",
-    #               "node_features.pkl", "street_index_sequences.pkl", "street_unit_position_datasets.pkl",
-    #               "unit_coords_datasets.pkl", "unit_position_datasets.pkl"]
-    file_names = ["building_filenames.pkl", "node_features.pkl"]
+    file_names = ["adj_matrices.pkl", "boundary_filenames.pkl", "building_exist_sequences.pkl",
+                  "building_filenames.pkl", "building_polygons.pkl",
+                  "node_features.pkl", "street_index_sequences.pkl", "street_unit_position_datasets.pkl",
+                  "unit_coords_datasets.pkl", "unit_position_datasets.pkl"]
+    # file_names = ["building_filenames.pkl", "node_features.pkl"]
 
     # 파일로부터 데이터를 불러옵니다.
     lists = []
@@ -43,8 +50,14 @@ for city_name in city_names:
         print("All lists have the same length.")
 
     # 4번째 리스트를 기준으로 정렬 순서를 얻습니다.
-    sort_idx = 0
-    sort_order = sorted(range(len(lists[sort_idx])), key=lambda k: lists[sort_idx][k])
+    sort_idx = 3
+    extracted_numbers = []
+    for file_path in lists[sort_idx]:
+        split_path = file_path.split('/')
+        last_element = split_path[-1]
+        number = int(''.join(filter(str.isdigit, last_element)))
+        extracted_numbers.append(number)
+    sort_order = sorted(range(len(extracted_numbers)), key=lambda k: extracted_numbers[k])
 
     # 각 리스트를 동일한 순서로 정렬합니다.
     sorted_lists = [[lst[i] for i in sort_order] for lst in lists]
