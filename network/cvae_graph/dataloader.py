@@ -41,7 +41,7 @@ class GraphDataset(Dataset):
                 condition_edge_index = torch.tensor(np.vstack((condition_edge_index.row, condition_edge_index.col)),
                                                     dtype=torch.long)
                 condition_street_feature = torch.tensor(
-                    np.array([condition_graph.nodes[node]['chunk_features'] for node in condition_graph.nodes()]),
+                    np.array([condition_graph.nodes[node]['street_feature'] for node in condition_graph.nodes()]),
                     dtype=torch.float)
 
                 condition = Data(condition_street_feature=condition_street_feature,
