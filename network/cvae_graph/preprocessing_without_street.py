@@ -57,12 +57,12 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             street_feature = np.unique(street_unit_position_datasets[idx], axis=0)
             n_street_node = len(street_feature)
 
-            adj_matrices[idx] = adj_matrices[idx, n_street_node + 1:, n_street_node + 1:]
+            adj_matrices[idx] = adj_matrices[idx][n_street_node + 1:][n_street_node + 1:]
+            print(adj_matrices[idx])
             graph = nx.DiGraph(adj_matrices[idx])
 
             graph.graph['condition'] = inside_masks[idx]
 
-            zeros = np.zeros((graph.number_of_nodes(), 5))
             for i in range(len(node_features[idx])):
                 if node_features[idx][i, 0] == 1:
                     node_features[idx][i, 5] = (node_features[idx][i, 5] * 180 / 45 + 1) / 2
