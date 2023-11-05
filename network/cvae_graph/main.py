@@ -24,7 +24,8 @@ import wandb
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
-                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight, only_building_graph, condition_type):
+                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight, only_building_graph,
+                 condition_type):
         """
         Initialize the trainer with the specified parameters.
 
@@ -287,7 +288,7 @@ class Trainer:
                         loss_theta_mean = total_theta_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_distance_mean = total_distance_loss.item() / (
-                                    len(self.val_dataloader) * dist.get_world_size())
+                                len(self.val_dataloader) * dist.get_world_size())
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Pos: {loss_pos_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Size: {loss_size_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Theta: {loss_theta_mean:.4f}")
@@ -348,6 +349,9 @@ if __name__ == '__main__':
     parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
 
     opt = parser.parse_args()
+
+    # change save dir path
+    opt.save_dir_path = f'{opt.save_dir_path}_condition_type_{opt.condition_type}'
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     if opt.local_rank == 0:

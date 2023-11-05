@@ -41,16 +41,16 @@ def kl_loss(mu, log_var):
     return kl_loss
 
 
-def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_building_graph):
+def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_building_graph, condition_type):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     # Subsequent initializations will use the already loaded full dataset
-    test_dataset = GraphDataset(data_type='test', only_building_graph=only_building_graph)
+    test_dataset = GraphDataset(data_type='test', only_building_graph=only_building_graph, condition_type=condition_type)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
     cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
-                     only_building_graph=only_building_graph).to(device=device)
+                     only_building_graph=only_building_graph, condition_type=condition_type).to(device=device)
 
     checkpoint = torch.load("./models/" + save_dir_path + "/epoch_" + str(checkpoint_epoch) + ".pth")
     cvae.load_state_dict(checkpoint['model_state_dict'])
@@ -105,8 +105,12 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
     parser.add_argument("--only_building_graph", type=bool, default=True, help="save dir path")
+    parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
 
     opt = parser.parse_args()
+
+    # change save dir path
+    opt.save_dir_path = f'{opt.save_dir_path}_condition_type_{opt.condition_type}'
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
@@ -120,4 +124,4 @@ if __name__ == '__main__':
 
     test(d_feature=opt.d_feature, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
          checkpoint_epoch=opt.checkpoint_epoch, save_dir_path=opt.save_dir_path,
-         only_building_graph=opt.only_building_graph)
+         only_building_graph=opt.only_building_graph, condition_type=condition_type)
