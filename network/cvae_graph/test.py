@@ -40,15 +40,17 @@ def kl_loss(mu, log_var):
     kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
     return kl_loss
 
-def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path):
+
+def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_building_graph):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     # Subsequent initializations will use the already loaded full dataset
-    test_dataset = GraphDataset(data_type='test')
+    test_dataset = GraphDataset(data_type='test', only_building_graph=only_building_graph)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
-    cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head).to(device=device)
+    cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
+                     only_building_graph=only_building_graph).to(device=device)
 
     checkpoint = torch.load("./models/" + save_dir_path + "/epoch_" + str(checkpoint_epoch) + ".pth")
     cvae.load_state_dict(checkpoint['model_state_dict'])
@@ -79,6 +81,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path):
                  data.condition.detach().cpu().numpy(),
                  idx + 1)
 
+
 if __name__ == '__main__':
     # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
@@ -91,6 +94,7 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
+    parser.add_argument("--only_building_graph", type=bool, default=True, help="save dir path")
 
     opt = parser.parse_args()
 
@@ -105,4 +109,5 @@ if __name__ == '__main__':
     torch.cuda.manual_seed_all(opt.seed)
 
     test(d_feature=opt.d_feature, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
-         checkpoint_epoch=opt.checkpoint_epoch, save_dir_path=opt.save_dir_path)
+         checkpoint_epoch=opt.checkpoint_epoch, save_dir_path=opt.save_dir_path,
+         only_building_graph=opt.only_building_graph)
