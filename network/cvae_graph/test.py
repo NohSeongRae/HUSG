@@ -72,7 +72,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss Size: {loss_size:.4f}")
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss Theta: {loss_theta:.4f}")
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss KL: {loss_kl:.4f}")
-
+            print(data.condition)
             if condition_type == 'image':
                 plot(output_pos.detach().cpu().numpy(),
                      output_size.detach().cpu().numpy(),
