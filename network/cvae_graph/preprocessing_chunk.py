@@ -81,6 +81,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             zeros = np.zeros((graph.number_of_nodes(), 5))
             building_feature = node_features[idx][n_street:, 1:]
             chunk_feature = chunk_features[idx]
+            print(chunk_feature)
             zeros[:len(chunk_feature)] = chunk_feature
             zeros[len(chunk_feature):] = building_feature
 
