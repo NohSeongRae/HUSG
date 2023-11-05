@@ -105,7 +105,7 @@ class Trainer:
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
-            return recon_loss.mean()
+            return recon_loss.mean() * self.pos_weight
 
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum() * self.pos_weight
@@ -114,7 +114,7 @@ class Trainer:
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
-            return recon_loss.mean()
+            return recon_loss.mean() * self.size_weight
 
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum() * self.size_weight
@@ -123,7 +123,7 @@ class Trainer:
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
-            return recon_loss.mean()
+            return recon_loss.mean() * self.theta_weight
 
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum() * self.theta_weight
