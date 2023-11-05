@@ -36,9 +36,9 @@ class BoundaryMaskEncoder(nn.Module):
         mask = self.linear(mask)
         return mask
 
-class StreetGraphEncoder(nn.Module):
+class GraphConditionEncoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head):
-        super(StreetGraphEncoder, self).__init__()
+        super(GraphConditionEncoder, self).__init__()
 
         self.street_fc = nn.Linear(128, feature_dim)
 
@@ -196,7 +196,7 @@ class GraphCVAE(nn.Module):
         if condition_type == 'image':
             self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel, bottleneck=bottleneck)
         elif condition_type == 'graph':
-            self.condition_encoder = StreetGraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
+            self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     only_building_graph=only_building_graph)
@@ -213,7 +213,7 @@ class GraphCVAE(nn.Module):
         if self.condition_type == 'image':
             condition = self.condition_encoder(data.condition)
         else:
-            condition = self.condition_encoder(data.condition)
+            condition = self.condition_encoder(data.condition, data.condition.edge_index)
 
         output_pos, output_size, output_theta = self.decoder(z, condition, edge_index, data.batch)
 
