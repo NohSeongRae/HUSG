@@ -57,9 +57,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             street_feature = np.unique(street_unit_position_datasets[idx], axis=0)
             n_street_node = len(street_feature)
 
-            print(adj_matrices[idx], n_street_node)
-            adj_matrices[idx] = adj_matrices[idx][n_street_node + 1:, n_street_node + 1:]
-            print(adj_matrices[idx])
+            adj_matrices[idx] = adj_matrices[idx][n_street_node:, n_street_node:]
             graph = nx.DiGraph(adj_matrices[idx])
 
             graph.graph['condition'] = inside_masks[idx]
@@ -70,7 +68,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                     node_features[idx][i, 1] += move_vector[idx][0]
                     node_features[idx][i, 2] += move_vector[idx][1]
 
-            building_feature = node_features[idx][n_street_node + 1:, 1:]
+            building_feature = node_features[idx][n_street_node:, 1:]
             zeros = building_feature
 
             if np.any((zeros[:, :2] < 0) | (zeros[:, :2] > 1)):
