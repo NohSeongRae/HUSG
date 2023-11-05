@@ -41,7 +41,7 @@ def kl_loss(mu, log_var):
     return kl_loss
 
 
-def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_building_graph, condition_type, chunk_graph):
+def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condition_type, chunk_graph):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     # Subsequent initializations will use the already loaded full dataset
@@ -114,4 +114,4 @@ if __name__ == '__main__':
 
     test(d_feature=opt.d_feature, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
          checkpoint_epoch=opt.checkpoint_epoch, save_dir_path=opt.save_dir_path, chunk_graph=opt.chunk_graph,
-         only_building_graph=opt.only_building_graph, condition_type=opt.condition_type)
+         condition_type=opt.condition_type)
