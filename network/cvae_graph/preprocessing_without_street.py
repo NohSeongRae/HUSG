@@ -58,7 +58,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             n_street_node = len(street_feature)
 
             print(adj_matrices[idx], n_street_node)
-            adj_matrices[idx] = adj_matrices[idx][n_street_node + 1:][n_street_node + 1:]
+            adj_matrices[idx] = adj_matrices[idx][n_street_node + 1:, n_street_node + 1:]
             print(adj_matrices[idx])
             graph = nx.DiGraph(adj_matrices[idx])
 
