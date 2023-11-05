@@ -214,7 +214,7 @@ class GraphCVAE(nn.Module):
         if self.condition_type == 'image':
             condition = self.condition_encoder(data.condition)
         else:
-            print(data.condition)
+            condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(data.condition, data.condition.edge_index)
 
         output_pos, output_size, output_theta = self.decoder(z, condition, edge_index, data.batch)
