@@ -73,22 +73,14 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_b
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss Theta: {loss_theta:.4f}")
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss KL: {loss_kl:.4f}")
 
-            if condition_type == 'graph':
-                plot(output_pos.detach().cpu().numpy(),
-                     output_size.detach().cpu().numpy(),
-                     output_theta.detach().cpu().numpy(),
-                     data.building_mask.detach().cpu().numpy(),
-                     data.building_feature.detach().cpu().numpy(),
-                     None,
-                     idx + 1)
-            else:
-                plot(output_pos.detach().cpu().numpy(),
-                     output_size.detach().cpu().numpy(),
-                     output_theta.detach().cpu().numpy(),
-                     data.building_mask.detach().cpu().numpy(),
-                     data.building_feature.detach().cpu().numpy(),
-                     data.condition.detach().cpu().numpy(),
-                     idx + 1)
+            plot(output_pos.detach().cpu().numpy(),
+                 output_size.detach().cpu().numpy(),
+                 output_theta.detach().cpu().numpy(),
+                 data.building_mask.detach().cpu().numpy(),
+                 data.building_feature.detach().cpu().numpy(),
+                 data.condition.detach().cpu().numpy(),
+                 idx + 1,
+                 condition_type)
 
 if __name__ == '__main__':
     # Set the argparse
