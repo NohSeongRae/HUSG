@@ -340,7 +340,7 @@ if __name__ == '__main__':
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--only_building_graph", type=bool, default=True, help="save dir path")
+    parser.add_argument("--only_building_graph", type=bool, default=False, help="save dir path")
 
     opt = parser.parse_args()
 
