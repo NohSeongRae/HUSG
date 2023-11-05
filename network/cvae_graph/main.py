@@ -24,7 +24,7 @@ import wandb
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
-                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight):
+                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight, grad_norm_clip):
         """
         Initialize the trainer with the specified parameters.
 
@@ -57,6 +57,7 @@ class Trainer:
         self.theta_weight = theta_weight
         self.kl_weight = kl_weight
         self.distance_weight = distance_weight
+        self.grad_norm_clip = grad_norm_clip
 
         print('local_rank', self.local_rank)
 
@@ -181,6 +182,7 @@ class Trainer:
 
                 # Backpropagation and optimization step
                 loss_total.backward()
+                torch.nn.utils.clip_grad_norm_(self.cvae.module.parameters(), grad_norm_clip)
                 self.optimizer.step()
                 self.scheduler.step()
 
@@ -297,7 +299,7 @@ if __name__ == '__main__':
 
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
-    parser.add_argument("--max_epoch", type=int, default=200, help="Maximum number of epochs for training.")
+    parser.add_argument("--max_epoch", type=int, default=400, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
     parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
@@ -316,6 +318,7 @@ if __name__ == '__main__':
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
+    parser.add_argument("--grad_norm_clip", type=float, default=1.0, help="save dir path")
 
     opt = parser.parse_args()
 
@@ -356,6 +359,6 @@ if __name__ == '__main__':
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
                       pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
-                      kl_weight=opt.kl_weight, distance_weight=opt.distance_weight)
+                      kl_weight=opt.kl_weight, distance_weight=opt.distance_weight, grad_norm_clip=opt.grad_norm_clip)
 
     trainer.train()
