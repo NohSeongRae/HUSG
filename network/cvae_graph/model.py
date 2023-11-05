@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric
-from torch_geometric.utils import degree
+from torch_geometric.data import Batch
 
 class BoundaryMaskEncoder(nn.Module):
     def __init__(self, image_size, inner_channel, bottleneck):
@@ -227,7 +227,8 @@ class GraphCVAE(nn.Module):
         if self.condition_type == 'image':
             condition = self.condition_encoder(data.condition)
         else:
-            condition = self.condition_encoder(data.condition, data.condition.edge_index)
+            condition = Batch.from_data_list(data.condition)
+            condition = self.condition_encoder(condition, condition.edge_index)
 
         output_pos, output_size, output_theta = self.decoder(z, condition, data.edge_index, data.batch)
 
