@@ -60,8 +60,8 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         for street in condition:
             x = street[:, 0]
             y = street[:, 1]
-            ax1.scatter(x, y, 0.01)
-            ax2.scatter(x, y, 0.01)
+            ax1.scatter(x, y, s=0.01)
+            ax2.scatter(x, y, s=0.01)
 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
