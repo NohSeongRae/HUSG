@@ -10,6 +10,11 @@ from tqdm import tqdm
 
 matplotlib.use('TkAgg')
 
+"""
+attribute 
+{xc, yc, w, h, n}
+"""
+
 
 def polar_angle(origin, point):
     """Compute the polar angle of a point relative to an origin."""
@@ -27,6 +32,12 @@ def sort_key(filename):
 
 def create_graph_from_df(df):
     """Create a graph from a DataFrame."""
+    # calculate bbox
+    for geom in df.geometry:
+        minx, miny, maxx, maxy = geom.bounds
+        bbox_width = maxx - minx
+        bbox_height = maxy - miny
+
     # Get the centroid of each polygon in the 'geometry' column
     point_list = [(polygon.centroid.x, polygon.centroid.y) for polygon in df['geometry']]
     point_list = np.unique(point_list, axis=0)
@@ -110,16 +121,47 @@ if __name__ == '__main__':
                 boundary_gdf = gpd.read_file(boundary_filename)
                 building_gdf = gpd.read_file(building_filename)
 
+
+
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))  # 1 row, 2 columns
+
+                # Plot the geographical data on the first subplot (ax1)
+                boundary_gdf.boundary.plot(ax=ax1, color='blue', label='Rotated Block Boundary')
+                building_gdf.plot(ax=ax1, color='red', label='Rotated Buildings')
+                ax1.set_title("Aligned Building Block with Buildings")
+                ax1.legend()
+
+                # Create the graph from the building_gdf DataFrame
+                G = create_graph_from_df(building_gdf)
+
+                for node, data in G.nodes(data=True):
+                    print(f"Node: {node}")
+                    print(f"Data: {data}")
+                    print(f"Graph: {G.graph}")
+                    print("-----")
+
+                # Plot the graph on the second subplot (ax2)
+                # You will need to modify plot_graph to accept an axis argument, or you can set ax2 as the current axis before calling plot_graph
+                # Here's how you can set ax2 as the current axis:
+                plt.sca(ax2)
+                plot_graph(G)
+                ax2.set_title("Graph of Buildings")
+
+                # Show the entire figure with both subplots
+                plt.show()
+
                 # fig2, ax2 = plt.subplots(figsize=(8, 8))
                 # boundary_gdf.boundary.plot(ax=ax2, color='blue', label='Rotated Block Boundary')
                 # building_gdf.plot(ax=ax2, color='red', label='Rotated Buildings')
                 # ax2.set_title("Aligned Building Block with Buildings")
                 # ax2.legend()
                 # plt.show()
-
-                graph = create_graph_from_df(building_gdf)
+                #
+                # graph = create_graph_from_df(building_gdf)
+                #
                 # plot_graph(graph)
-                save_graph(graph, city_name, num)
+                # plot_graph(graph)
+                # save_graph(graph, city_name, num)
 
             # counter += 1
             # if counter > 5:
