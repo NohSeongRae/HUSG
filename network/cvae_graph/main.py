@@ -1,6 +1,7 @@
 import sys
 import os
 import argparse
+import tracemalloc
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -37,6 +38,7 @@ class Trainer:
         - n_layer (int): Number of cvae layers.
         - n_head (int): Number of multi-head attentions.
         """
+        tracemalloc.start()  # 메모리 추적 시작
 
         # Initialize trainer parameters
         self.batch_size = batch_size
@@ -313,6 +315,12 @@ class Trainer:
                         os.makedirs(save_path)
                     torch.save(checkpoint, os.path.join(save_path, "epoch_" + str(epoch + 1) + ".pth"))
 
+            # 여기에서 메모리 스냅샷을 찍어 사용량을 확인합니다.
+            snapshot = tracemalloc.take_snapshot()
+            top_stats = snapshot.statistics('lineno')
+            print("[ Top 5 memory consuming lines ]")
+            for stat in top_stats[:5]:
+                print(stat)
 
 if __name__ == '__main__':
     # Set the argparse
