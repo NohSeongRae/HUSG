@@ -100,7 +100,6 @@ class Trainer:
 
         # scheduler
         data_len = len(self.train_dataloader)
-        print(data_len)
         num_train_steps = int(data_len / batch_size * self.max_epoch)
         num_warmup_steps = int(num_train_steps * 0.1)
         self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, num_warmup_steps=num_warmup_steps,
