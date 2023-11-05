@@ -24,7 +24,7 @@ import wandb
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
-                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight, grad_norm_clip):
+                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight, only_building_graph):
         """
         Initialize the trainer with the specified parameters.
 
@@ -57,7 +57,7 @@ class Trainer:
         self.theta_weight = theta_weight
         self.kl_weight = kl_weight
         self.distance_weight = distance_weight
-        self.grad_norm_clip = grad_norm_clip
+        self.only_building_graph = only_building_graph
 
         print('local_rank', self.local_rank)
 
@@ -65,19 +65,20 @@ class Trainer:
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = GraphDataset(data_type='train')
+        self.train_dataset = GraphDataset(data_type='train', only_building_graph=only_building_graph)
         self.train_sampler = DistributedSampler(dataset=self.train_dataset, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8, pin_memory=True)
 
         # Subsequent initializations will use the already loaded full dataset
-        self.val_dataset = GraphDataset(data_type='val')
+        self.val_dataset = GraphDataset(data_type='val', only_building_graph=only_building_graph)
         self.val_sampler = DistributedSampler(dataset=self.val_dataset, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
-        self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head).to(device=self.device)
+        self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
+                              only_building_graph=only_building_graph).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
         # optimizer
@@ -182,7 +183,6 @@ class Trainer:
 
                 # Backpropagation and optimization step
                 loss_total.backward()
-                # torch.nn.utils.clip_grad_norm_(self.cvae.module.parameters(), self.grad_norm_clip)
                 self.optimizer.step()
                 self.scheduler.step()
 
@@ -318,7 +318,7 @@ if __name__ == '__main__':
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--grad_norm_clip", type=float, default=1.0, help="save dir path")
+    parser.add_argument("--only_building_graph", type=bool, default=True, help="save dir path")
 
     opt = parser.parse_args()
 
@@ -359,6 +359,7 @@ if __name__ == '__main__':
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
                       pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
-                      kl_weight=opt.kl_weight, distance_weight=opt.distance_weight, grad_norm_clip=opt.grad_norm_clip)
+                      kl_weight=opt.kl_weight, distance_weight=opt.distance_weight,
+                      only_building_graph=opt.only_building_graph)
 
     trainer.train()

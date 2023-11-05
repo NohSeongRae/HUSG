@@ -37,10 +37,13 @@ class BoundaryMaskEncoder(nn.Module):
         return mask
 
 class GraphEncoder(nn.Module):
-    def __init__(self, T, feature_dim, latent_dim, n_head):
+    def __init__(self, T, feature_dim, latent_dim, n_head, only_building_graph):
         super(GraphEncoder, self).__init__()
 
-        self.street_fc = nn.Linear(128, feature_dim)
+        self.only_building_graph = only_building_graph
+
+        if not only_building_graph:
+            self.street_fc = nn.Linear(128, feature_dim)
         self.building_fc = nn.Linear(5, feature_dim)
 
         self.convlayer = torch_geometric.nn.GATConv
@@ -55,16 +58,20 @@ class GraphEncoder(nn.Module):
         self.fc_var = nn.Linear(latent_dim, latent_dim)
 
     def forward(self, data, edge_index):
-        street_feature = data.street_feature.view(-1, 128)
+        if not self.only_building_graph:
+            street_feature = data.street_feature.view(-1, 128)
+            street_feature = self.street_fc(street_feature)
+            street_feature = F.relu(street_feature)
+
         building_feature = data.building_feature
-
-        street_feature = self.street_fc(street_feature)
         building_feature = self.building_fc(building_feature)
-
-        street_feature = F.relu(street_feature)
         building_feature = F.relu(building_feature)
 
-        n_embed_0 = street_feature * data.street_mask + building_feature * data.building_mask
+        if not self.only_building_graph:
+            n_embed_0 = street_feature * data.street_mask + building_feature * data.building_mask
+        else:
+            n_embed_0 = building_feature * data.building_mask
+
         n_embed_1 = F.relu(self.e_conv1(n_embed_0, edge_index))
         n_embed_2 = F.relu(self.e_conv2(n_embed_1, edge_index))
         n_embed_3 = F.relu(self.e_conv3(n_embed_2, edge_index))
@@ -141,13 +148,14 @@ class GraphDecoder(nn.Module):
 
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
-                 image_size=64, inner_channel=80, bottleneck=128):
+                 image_size=64, inner_channel=80, bottleneck=128, only_building_graph=False):
         super(GraphCVAE, self).__init__()
 
         self.latent_dim = latent_dim
 
         self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel, bottleneck=bottleneck)
-        self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
+        self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
+                                    only_building_graph=only_building_graph)
         self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head, bottleneck=bottleneck)
 
     def reparameterize(self, mu, logvar):
