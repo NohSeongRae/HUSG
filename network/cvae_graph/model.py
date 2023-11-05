@@ -206,6 +206,7 @@ class GraphCVAE(nn.Module):
         return (torch.exp(0.5 * logvar)) * (torch.randn_like(torch.exp(0.5 * logvar))) + mu
 
     def forward(self, data):
+        print(data)
         edge_index = data.edge_index
         mu, log_var = self.encoder(data, edge_index)
         z = self.reparameterize(mu, log_var)
