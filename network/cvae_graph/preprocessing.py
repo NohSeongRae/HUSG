@@ -173,4 +173,4 @@ if __name__ == '__main__':
     preprocesing_dataset(train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
                          n_street=opt.n_street, n_building=opt.n_building,
                          n_boundary=opt.n_boundary, d_unit=opt.d_unit, d_street=opt.d_street,
-                         condition_type=opt.condtion_type)
+                         condition_type=opt.condition_type)
