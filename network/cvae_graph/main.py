@@ -299,7 +299,7 @@ if __name__ == '__main__':
 
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
-    parser.add_argument("--max_epoch", type=int, default=400, help="Maximum number of epochs for training.")
+    parser.add_argument("--max_epoch", type=int, default=200, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
     parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
