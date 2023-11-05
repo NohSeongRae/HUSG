@@ -54,7 +54,7 @@ class GraphConditionEncoder(nn.Module):
         self.fc_var = nn.Linear(latent_dim, latent_dim)
 
     def forward(self, data, edge_index):
-        street_feature = data.street_feature.view(-1, 128)
+        street_feature = data.condition_street_feature.view(-1, 128)
         street_feature = self.street_fc(street_feature)
         street_feature = F.relu(street_feature)
 
@@ -213,6 +213,7 @@ class GraphCVAE(nn.Module):
         if self.condition_type == 'image':
             condition = self.condition_encoder(data.condition)
         else:
+            print(data.condition)
             condition = self.condition_encoder(data.condition, data.condition.edge_index)
 
         output_pos, output_size, output_theta = self.decoder(z, condition, edge_index, data.batch)
