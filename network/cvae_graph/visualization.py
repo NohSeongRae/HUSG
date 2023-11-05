@@ -48,7 +48,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type):
+def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type, chunk_graph):
     # Create a figure and axes
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
     rotation_scale = 45
@@ -57,11 +57,22 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
         ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
     else:
-        for street in condition:
-            x = street[:, 0]
-            y = street[:, 1]
-            ax1.scatter(x, y, s=0.01)
-            ax2.scatter(x, y, s=0.01)
+        if not chunk_graph:
+            for street in condition:
+                x = street[:, 0]
+                y = street[:, 1]
+                ax1.scatter(x, y, s=0.01)
+                ax2.scatter(x, y, s=0.01)
+        else:
+            for i in range(len(condition)):
+                x, y, w, h, theta = condition[i][0], condition[i][1], condition[i][2], condition[i][3], (condition[i][4] * 2 - 1) * rotation_scale
+                points = get_bbox_corners(x, y, w, h)
+                rotated_points = rotate_points_around_center(points, [x, y], theta)
+
+                rotated_points = np.array(rotated_points)
+                rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
+                ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'b-', label='Rotated Box')
+                ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'b-', label='Rotated Box')
 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:

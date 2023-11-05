@@ -81,17 +81,29 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      data.building_feature.detach().cpu().numpy(),
                      data.condition.detach().cpu().numpy(),
                      idx + 1,
-                     condition_type)
+                     condition_type,
+                     chunk_graph)
             elif condition_type == 'graph':
-                plot(output_pos.detach().cpu().numpy(),
-                     output_size.detach().cpu().numpy(),
-                     output_theta.detach().cpu().numpy(),
-                     data.building_mask.detach().cpu().numpy(),
-                     data.building_feature.detach().cpu().numpy(),
-                     data.condition[0].condition_street_feature.detach().cpu().numpy(),
-                     idx + 1,
-                     condition_type)
-
+                if not chunk_graph:
+                    plot(output_pos.detach().cpu().numpy(),
+                         output_size.detach().cpu().numpy(),
+                         output_theta.detach().cpu().numpy(),
+                         data.building_mask.detach().cpu().numpy(),
+                         data.building_feature.detach().cpu().numpy(),
+                         data.condition[0].condition_street_feature.detach().cpu().numpy(),
+                         idx + 1,
+                         condition_type,
+                         chunk_graph)
+                else:
+                    plot(output_pos.detach().cpu().numpy(),
+                         output_size.detach().cpu().numpy(),
+                         output_theta.detach().cpu().numpy(),
+                         data.building_mask.detach().cpu().numpy(),
+                         data.building_feature.detach().cpu().numpy(),
+                         data.condition[0].condition_street_feature.detach().cpu().numpy(),
+                         idx + 1,
+                         condition_type,
+                         chunk_graph)
 if __name__ == '__main__':
     # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
@@ -104,7 +116,7 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
-    parser.add_argument("--chunk_graph", type=bool, default=False, help="save dir path")
+    parser.add_argument("--chunk_graph", type=bool, default=True, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
 
     opt = parser.parse_args()
