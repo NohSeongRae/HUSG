@@ -182,7 +182,7 @@ class Trainer:
 
                 # Backpropagation and optimization step
                 loss_total.backward()
-                torch.nn.utils.clip_grad_norm_(self.cvae.module.parameters(), grad_norm_clip)
+                torch.nn.utils.clip_grad_norm_(self.cvae.module.parameters(), self.grad_norm_clip)
                 self.optimizer.step()
                 self.scheduler.step()
 
