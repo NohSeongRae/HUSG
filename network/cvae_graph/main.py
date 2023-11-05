@@ -102,16 +102,28 @@ class Trainer:
 
     def recon_pos_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
+
+        if mask is None:
+            return recon_loss.mean()
+
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum() * self.pos_weight
 
     def recon_size_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
+
+        if mask is None:
+            return recon_loss.mean()
+
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum() * self.size_weight
 
     def recon_theta_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
+
+        if mask is None:
+            return recon_loss.mean()
+
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum() * self.theta_weight
 
@@ -120,12 +132,15 @@ class Trainer:
         return kl_loss * self.kl_weight
 
     def distance_loss(self, pred, trg, mask, edge_index):
-        # edge_index에서 선택된 노드들로만 구성된 엣지를 찾습니다.
-        mask = ((mask[edge_index[0]] == 1) & (mask[edge_index[1]] == 1)).squeeze(-1)
-        selected_edge_index = edge_index[:, mask]
+        if mask is not None:
+            # edge_index에서 선택된 노드들로만 구성된 엣지를 찾습니다.
+            mask = ((mask[edge_index[0]] == 1) & (mask[edge_index[1]] == 1)).squeeze(-1)
+            selected_edge_index = edge_index[:, mask]
 
-        # edge_index에서 시작 노드와 끝 노드의 인덱스를 가져옵니다.
-        start_nodes, end_nodes = selected_edge_index
+            # edge_index에서 시작 노드와 끝 노드의 인덱스를 가져옵니다.
+            start_nodes, end_nodes = selected_edge_index
+        else:
+            start_nodes, end_nodes = edge_index
 
         # 실제 좌표와 목표 좌표를 사용하여 거리를 계산합니다.
         actual_distances = torch.norm(pred[start_nodes] - pred[end_nodes], dim=-1)
@@ -168,16 +183,18 @@ class Trainer:
                 data = data.to(device=self.device)
                 output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
+                if self.only_building_graph:
+                    mask = None
+                else:
+                    mask = data.building_mask.detach()
+
                 # Compute the losses
-                loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2],
-                                               data.building_mask.detach())
-                loss_size = self.recon_size_loss(output_size, data.building_feature.detach()[:, 2:4],
-                                                 data.building_mask.detach())
-                loss_theta = self.recon_theta_loss(output_theta, data.building_feature.detach()[:, 4:],
-                                                   data.building_mask.detach())
+                loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2], mask)
+                loss_size = self.recon_size_loss(output_size, data.building_feature.detach()[:, 2:4], mask)
+                loss_theta = self.recon_theta_loss(output_theta, data.building_feature.detach()[:, 4:], mask)
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_distance = self.distance_loss(output_pos, data.building_feature.detach()[:, :2],
-                                                   data.building_mask.detach(), data.edge_index.detach())
+                                                   mask, data.edge_index.detach())
 
                 loss_total = loss_pos + loss_size + loss_theta + loss_kl + loss_distance
 
@@ -233,14 +250,18 @@ class Trainer:
                         data = data.to(device=self.device)
                         output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
+                        if self.only_building_graph:
+                            mask = None
+                        else:
+                            mask = data.building_mask
+
                         # Compute the losses using the generated sequence
-                        loss_pos = self.recon_pos_loss(output_pos, data.building_feature[:, :2], data.building_mask)
-                        loss_size = self.recon_size_loss(output_size, data.building_feature[:, 2:4], data.building_mask)
-                        loss_theta = self.recon_theta_loss(output_theta, data.building_feature[:, 4:],
-                                                           data.building_mask)
+                        loss_pos = self.recon_pos_loss(output_pos, data.building_feature[:, :2], mask)
+                        loss_size = self.recon_size_loss(output_size, data.building_feature[:, 2:4], mask)
+                        loss_theta = self.recon_theta_loss(output_theta, data.building_feature[:, 4:], mask)
                         loss_kl = self.kl_loss(mu, log_var)
                         loss_distance = self.distance_loss(output_pos, data.building_feature[:, :2],
-                                                           data.building_mask, data.edge_index)
+                                                           mask, data.edge_index)
 
                         # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
                         dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)

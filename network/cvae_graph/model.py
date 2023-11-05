@@ -70,7 +70,7 @@ class GraphEncoder(nn.Module):
         if not self.only_building_graph:
             n_embed_0 = street_feature * data.street_mask + building_feature * data.building_mask
         else:
-            n_embed_0 = building_feature * data.building_mask
+            n_embed_0 = building_feature
 
         n_embed_1 = F.relu(self.e_conv1(n_embed_0, edge_index))
         n_embed_2 = F.relu(self.e_conv2(n_embed_1, edge_index))
