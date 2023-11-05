@@ -36,6 +36,44 @@ class BoundaryMaskEncoder(nn.Module):
         mask = self.linear(mask)
         return mask
 
+class StreetGraphEncoder(nn.Module):
+    def __init__(self, T, feature_dim, latent_dim, n_head):
+        super(StreetGraphEncoder, self).__init__()
+
+        self.street_fc = nn.Linear(128, feature_dim)
+
+        self.convlayer = torch_geometric.nn.GATConv
+        self.global_pool = torch_geometric.nn.global_max_pool
+
+        self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
+        self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+        self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+
+        self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), latent_dim)
+        self.fc_mu = nn.Linear(latent_dim, latent_dim)
+        self.fc_var = nn.Linear(latent_dim, latent_dim)
+
+    def forward(self, data, edge_index):
+        street_feature = data.street_feature.view(-1, 128)
+        street_feature = self.street_fc(street_feature)
+        street_feature = F.relu(street_feature)
+
+        n_embed_0 = street_feature
+
+        n_embed_1 = F.relu(self.e_conv1(n_embed_0, edge_index))
+        n_embed_2 = F.relu(self.e_conv2(n_embed_1, edge_index))
+        n_embed_3 = F.relu(self.e_conv3(n_embed_2, edge_index))
+
+        g_embed_0 = self.global_pool(n_embed_0, data.batch)
+        g_embed_1 = self.global_pool(n_embed_1, data.batch)
+        g_embed_2 = self.global_pool(n_embed_2, data.batch)
+        g_embed_3 = self.global_pool(n_embed_3, data.batch)
+
+        g_embed = torch.cat((g_embed_0, g_embed_1, g_embed_2, g_embed_3), 1)
+        latent = self.aggregate(g_embed)
+
+        return latent
+
 class GraphEncoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, only_building_graph):
         super(GraphEncoder, self).__init__()
@@ -148,12 +186,18 @@ class GraphDecoder(nn.Module):
 
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
-                 image_size=64, inner_channel=80, bottleneck=128, only_building_graph=False):
+                 image_size=64, inner_channel=80, bottleneck=128, only_building_graph=False,
+                 condition_type='graph'):
         super(GraphCVAE, self).__init__()
 
         self.latent_dim = latent_dim
+        self.condition_type = condition_type
 
-        self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel, bottleneck=bottleneck)
+        if condition_type == 'image':
+            self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel, bottleneck=bottleneck)
+        elif condition_type == 'graph':
+            self.condition_encoder = StreetGraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
+
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     only_building_graph=only_building_graph)
         self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head, bottleneck=bottleneck)
@@ -165,14 +209,24 @@ class GraphCVAE(nn.Module):
         edge_index = data.edge_index
         mu, log_var = self.encoder(data, edge_index)
         z = self.reparameterize(mu, log_var)
-        condition = self.condition_encoder(data.condition)
+
+        if self.condition_type == 'image':
+            condition = self.condition_encoder(data.condition)
+        else:
+            condition = self.condition_encoder(data.condition)
+
         output_pos, output_size, output_theta = self.decoder(z, condition, edge_index, data.batch)
 
         return output_pos, output_size, output_theta, mu, log_var
 
     def test(self, data):
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
-        condition = self.condition_encoder(data.condition)
+
+        if self.condition_type == 'image':
+            condition = self.condition_encoder(data.condition)
+        else:
+            condition = self.condition_encoder(data.condition)
+
         output_pos, output_size, output_theta = self.decoder(z, condition, data.edge_index, data.batch)
 
         return output_pos, output_size, output_theta

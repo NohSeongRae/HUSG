@@ -9,7 +9,8 @@ import random
 from torch_geometric.utils import dense_to_sparse, to_dense_adj
 
 def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
-                      n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64):
+                      n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64, condition_type='graph'):
+
     dataset_path = '../../datasets/HUSG/'
     # dataset_path = '../../datasets/HUSG/'
     # dataset_path = '../mnt/2_transformer/train_dataset'
@@ -56,7 +57,21 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         for idx in range(len(street_unit_position_datasets)):
             graph = nx.DiGraph(adj_matrices[idx])
 
-            graph.graph['condition'] = inside_masks[idx]
+            if condition_type == 'image':
+                graph.graph['condition'] = inside_masks[idx]
+            elif condition_type == 'graph':
+                street_feature = np.unique(street_unit_position_datasets[idx], axis=0)
+                street_graph = adj_matrices[idx][:len(street_feature), :len(street_feature)]
+                street_graph = nx.DiGraph(street_graph)
+
+                zeros = np.zeros((street_graph.number_of_nodes(), d_street, 2))
+                street_feature = np.unique(street_unit_position_datasets[idx], axis=0)
+                zeros[:len(street_feature)] = street_feature
+
+                for node in street_graph.nodes():
+                    street_graph.nodes[node]['street_feature'] = zeros[node]
+
+                graph.graph['condition'] = street_graph
 
             zeros = np.zeros((graph.number_of_nodes(), d_street, 2))
             street_feature = np.unique(street_unit_position_datasets[idx], axis=0)
@@ -141,6 +156,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_boundary", type=int, default=250, help="Number of boundary or token.")
     parser.add_argument("--n_street", type=int, default=60, help="Number of boundary or token.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
+    parser.add_argument("--condition_type", type=str, default="graph", help="Random seed for reproducibility across runs.")
 
     opt = parser.parse_args()
 
@@ -156,4 +172,5 @@ if __name__ == '__main__':
 
     preprocesing_dataset(train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
                          n_street=opt.n_street, n_building=opt.n_building,
-                         n_boundary=opt.n_boundary, d_unit=opt.d_unit, d_street=opt.d_street)
+                         n_boundary=opt.n_boundary, d_unit=opt.d_unit, d_street=opt.d_street,
+                         condition_type=opt.condtion_type)

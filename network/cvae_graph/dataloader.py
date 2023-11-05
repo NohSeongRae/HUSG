@@ -4,14 +4,18 @@ import networkx as nx
 import numpy as np
 import pickle
 
+
 class GraphDataset(Dataset):
     """
     Dataset class for boundary data.
     """
-    def __init__(self, data_type='train', transform=None, pre_transform=None, only_building_graph=False):
+
+    def __init__(self, data_type='train', transform=None, pre_transform=None,
+                 only_building_graph=False, condition_type='graph'):
         super(GraphDataset, self).__init__(transform, pre_transform)
 
         self.only_building_graph = only_building_graph
+        self.condition_type = condition_type
 
         load_path = './network/cvae_graph/' + data_type + '_datasets.gpickle'
         with open(load_path, 'rb') as f:
@@ -32,7 +36,21 @@ class GraphDataset(Dataset):
                                         dtype=torch.float)
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.float)
-            condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float)
+
+            if self.condition_type == 'image':
+                condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float)
+            else:
+                condition_graph = graph.graph['condition']
+                condition_edge_index = nx.to_scipy_sparse_matrix(condition_graph).tocoo()
+                condition_edge_index = torch.tensor(np.vstack((condition_edge_index.row, condition_edge_index.col)),
+                                                    dtype=torch.long)
+                condition_street_feature = torch.tensor(
+                    np.array([condition_graph.nodes[node]['street_feature'] for node in condition_graph.nodes()]),
+                    dtype=torch.float)
+
+                condition = Data(condition_street_feature=condition_street_feature,
+                                 edge_index=condition_edge_index,
+                                 num_nodes=condition_graph.number_of_nodes())
 
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
