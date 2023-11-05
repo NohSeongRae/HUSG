@@ -57,7 +57,11 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
         ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
     else:
-        print(condition)
+        for street in condition:
+            x = street[:, 0]
+            y = street[:, 1]
+            ax1.scatter(x, y, 0.01)
+            ax2.scatter(x, y, 0.01)
 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
