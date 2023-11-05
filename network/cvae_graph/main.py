@@ -25,7 +25,7 @@ class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
                  pos_weight, size_weight, theta_weight, kl_weight, distance_weight, only_building_graph,
-                 condition_type):
+                 condition_type, convlayer):
         """
         Initialize the trainer with the specified parameters.
 
@@ -60,6 +60,7 @@ class Trainer:
         self.distance_weight = distance_weight
         self.only_building_graph = only_building_graph
         self.condition_type = condition_type
+        self.convlayer = convlayer
 
         print('local_rank', self.local_rank)
 
@@ -83,7 +84,7 @@ class Trainer:
         # Initialize the Transformer model
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
                               only_building_graph=only_building_graph,
-                              condition_type=condition_type).to(device=self.device)
+                              condition_type=condition_type, convlayer=convlayer).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
         # optimizer
@@ -346,6 +347,7 @@ if __name__ == '__main__':
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--only_building_graph", type=bool, default=False, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
+    parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
 
     opt = parser.parse_args()
 
@@ -390,6 +392,7 @@ if __name__ == '__main__':
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
                       pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
                       kl_weight=opt.kl_weight, distance_weight=opt.distance_weight,
-                      only_building_graph=opt.only_building_graph, condition_type=opt.condition_type)
+                      only_building_graph=opt.only_building_graph, condition_type=opt.condition_type,
+                      convlayer=opt.convlayer)
 
     trainer.train()

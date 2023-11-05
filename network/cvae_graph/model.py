@@ -37,12 +37,18 @@ class BoundaryMaskEncoder(nn.Module):
         return mask
 
 class GraphConditionEncoder(nn.Module):
-    def __init__(self, T, feature_dim, bottleneck, n_head):
+    def __init__(self, T, feature_dim, bottleneck, n_head, convlayer):
         super(GraphConditionEncoder, self).__init__()
 
         self.street_fc = nn.Linear(128, feature_dim)
 
-        self.convlayer = torch_geometric.nn.GATConv
+        if convlayer == 'gat':
+            self.convlayer = torch_geometric.nn.GATConv
+        elif convlayer == 'gcn':
+            self.convlayer = torch_geometric.nn.GCNConv
+        elif convlayer == 'gin':
+            self.convlayer = torch_geometric.nn.GINConv
+
         self.global_pool = torch_geometric.nn.global_max_pool
 
         self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
@@ -73,7 +79,7 @@ class GraphConditionEncoder(nn.Module):
         return latent
 
 class GraphEncoder(nn.Module):
-    def __init__(self, T, feature_dim, latent_dim, n_head, only_building_graph):
+    def __init__(self, T, feature_dim, latent_dim, n_head, only_building_graph, convlayer):
         super(GraphEncoder, self).__init__()
 
         self.only_building_graph = only_building_graph
@@ -82,7 +88,13 @@ class GraphEncoder(nn.Module):
             self.street_fc = nn.Linear(128, feature_dim)
         self.building_fc = nn.Linear(5, feature_dim)
 
-        self.convlayer = torch_geometric.nn.GATConv
+        if convlayer == 'gat':
+            self.convlayer = torch_geometric.nn.GATConv
+        elif convlayer == 'gcn':
+            self.convlayer = torch_geometric.nn.GCNConv
+        elif convlayer == 'gin':
+            self.convlayer = torch_geometric.nn.GINConv
+
         self.global_pool = torch_geometric.nn.global_max_pool
 
         self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
@@ -125,14 +137,19 @@ class GraphEncoder(nn.Module):
 
         return mu, log_var
 
-
 class GraphDecoder(nn.Module):
-    def __init__(self, feature_dim, latent_dim, n_head, bottleneck):
+    def __init__(self, feature_dim, latent_dim, n_head, bottleneck, convlayer):
         super(GraphDecoder, self).__init__()
 
         self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
 
-        self.convlayer = torch_geometric.nn.GATConv
+        if convlayer == 'gat':
+            self.convlayer = torch_geometric.nn.GATConv
+        elif convlayer == 'gcn':
+            self.convlayer = torch_geometric.nn.GCNConv
+        elif convlayer == 'gin':
+            self.convlayer = torch_geometric.nn.GINConv
+
         self.global_pool = torch_geometric.nn.global_max_pool
 
         self.d_conv1 = self.convlayer(feature_dim + 180, feature_dim, heads=n_head)
@@ -185,7 +202,7 @@ class GraphDecoder(nn.Module):
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
                  image_size=64, inner_channel=80, bottleneck=128, only_building_graph=False,
-                 condition_type='graph'):
+                 condition_type='graph', convlayer='gat'):
         super(GraphCVAE, self).__init__()
 
         self.latent_dim = latent_dim
@@ -194,11 +211,13 @@ class GraphCVAE(nn.Module):
         if condition_type == 'image':
             self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel, bottleneck=bottleneck)
         elif condition_type == 'graph':
-            self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck, n_head=n_head)
+            self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck,
+                                                           n_head=n_head, convlayer=convlayer)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
-                                    only_building_graph=only_building_graph)
-        self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head, bottleneck=bottleneck)
+                                    only_building_graph=only_building_graph, convlayer=convlayer)
+        self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
+                                    bottleneck=bottleneck, convlayer=convlayer)
 
     def reparameterize(self, mu, logvar):
         return (torch.exp(0.5 * logvar)) * (torch.randn_like(torch.exp(0.5 * logvar))) + mu

@@ -108,7 +108,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
             for node in graph.nodes():
                 graph.nodes[node]['building_masks'] = zeros[node]
-
             graphs.append(graph)
 
     random.shuffle(graphs)
