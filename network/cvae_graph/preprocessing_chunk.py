@@ -65,7 +65,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 street_graph = nx.DiGraph(street_graph)
 
                 for node in street_graph.nodes():
-                    street_graph.nodes[node]['street_feature'] = chunk_feature[node]
+                    street_graph.nodes[node]['chunk_features'] = chunk_feature[node]
 
                 graph.graph['condition'] = street_graph
 
