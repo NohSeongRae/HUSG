@@ -109,15 +109,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             for node in graph.nodes():
                 graph.nodes[node]['building_masks'] = zeros[node]
 
-            for i in range(len(node_features[idx])):
-                if node_features[idx][i, 0] == 0:
-                    for node in graph.nodes():
-                        if graph.has_edge(i, node):
-                            graph.remove_edge(i, node)
-                        if graph.has_edge(node, i):
-                            graph.remove_edge(node, i)
-                        if graph.has_edge(i, i):
-                            graph.remove_edge(i, i)
             graphs.append(graph)
 
     random.shuffle(graphs)
