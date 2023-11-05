@@ -37,7 +37,7 @@ class BoundaryMaskEncoder(nn.Module):
         return mask
 
 class GraphConditionEncoder(nn.Module):
-    def __init__(self, T, feature_dim, latent_dim, n_head):
+    def __init__(self, T, feature_dim, bottleneck, n_head):
         super(GraphConditionEncoder, self).__init__()
 
         self.street_fc = nn.Linear(128, feature_dim)
@@ -49,9 +49,7 @@ class GraphConditionEncoder(nn.Module):
         self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
         self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
 
-        self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), latent_dim)
-        self.fc_mu = nn.Linear(latent_dim, latent_dim)
-        self.fc_var = nn.Linear(latent_dim, latent_dim)
+        self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), bottleneck)
 
     def forward(self, data, edge_index):
         street_feature = data.condition_street_feature.view(-1, 128)
@@ -196,7 +194,7 @@ class GraphCVAE(nn.Module):
         if condition_type == 'image':
             self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel, bottleneck=bottleneck)
         elif condition_type == 'graph':
-            self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head)
+            self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck, n_head=n_head)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     only_building_graph=only_building_graph)
@@ -206,7 +204,6 @@ class GraphCVAE(nn.Module):
         return (torch.exp(0.5 * logvar)) * (torch.randn_like(torch.exp(0.5 * logvar))) + mu
 
     def forward(self, data):
-        print(data)
         edge_index = data.edge_index
         mu, log_var = self.encoder(data, edge_index)
         z = self.reparameterize(mu, log_var)
