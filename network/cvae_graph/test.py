@@ -41,16 +41,16 @@ def kl_loss(mu, log_var):
     return kl_loss
 
 
-def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_building_graph, condition_type):
+def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_building_graph, condition_type, chunk_graph):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     # Subsequent initializations will use the already loaded full dataset
-    test_dataset = GraphDataset(data_type='test', only_building_graph=only_building_graph, condition_type=condition_type)
+    test_dataset = GraphDataset(data_type='test', chunk_graph=chunk_graph, condition_type=condition_type)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model
     cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
-                     only_building_graph=only_building_graph, condition_type=condition_type).to(device=device)
+                     chunk_graph=chunk_graph, condition_type=condition_type).to(device=device)
 
     checkpoint = torch.load("./models/" + save_dir_path + "/epoch_" + str(checkpoint_epoch) + ".pth")
     cvae.load_state_dict(checkpoint['model_state_dict'])
@@ -73,15 +73,14 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_b
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss Theta: {loss_theta:.4f}")
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss KL: {loss_kl:.4f}")
 
-            if only_building_graph:
+            if condition_type == 'graph':
                 plot(output_pos.detach().cpu().numpy(),
                      output_size.detach().cpu().numpy(),
                      output_theta.detach().cpu().numpy(),
-                     None,
+                     data.building_mask.detach().cpu().numpy(),
                      data.building_feature.detach().cpu().numpy(),
-                     data.condition.detach().cpu().numpy(),
+                     None,
                      idx + 1)
-
             else:
                 plot(output_pos.detach().cpu().numpy(),
                      output_size.detach().cpu().numpy(),
@@ -90,7 +89,6 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, only_b
                      data.building_feature.detach().cpu().numpy(),
                      data.condition.detach().cpu().numpy(),
                      idx + 1)
-
 
 if __name__ == '__main__':
     # Set the argparse
@@ -104,7 +102,7 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
-    parser.add_argument("--only_building_graph", type=bool, default=True, help="save dir path")
+    parser.add_argument("--chunk_graph", type=bool, default=True, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
 
     opt = parser.parse_args()
@@ -123,5 +121,5 @@ if __name__ == '__main__':
     torch.cuda.manual_seed_all(opt.seed)
 
     test(d_feature=opt.d_feature, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
-         checkpoint_epoch=opt.checkpoint_epoch, save_dir_path=opt.save_dir_path,
-         only_building_graph=opt.only_building_graph, condition_type=condition_type)
+         checkpoint_epoch=opt.checkpoint_epoch, save_dir_path=opt.save_dir_path, chunk_graph=opt.chunk_graph,
+         only_building_graph=opt.only_building_graph, condition_type=opt.condition_type)

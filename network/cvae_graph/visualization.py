@@ -53,52 +53,33 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
     rotation_scale = 45
 
-    ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
-    ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
+    if condition is not None:
+        ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
+        ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
 
-    if building_exist_mask is not None:
-        for i in range(len(pos)):
-            if building_exist_mask[i] == 0:
-                continue
+    for i in range(len(pos)):
+        if building_exist_mask[i] == 0:
+            continue
 
-            x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale
-            points = get_bbox_corners(x, y, w, h)
-            rotated_points = rotate_points_around_center(points, [x, y], theta)
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
 
-            rotated_points = np.array(rotated_points)
-            rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-            ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
+        ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
 
-        for i in range(len(pos)):
-            if building_exist_mask[i] == 0:
-                continue
+    for i in range(len(pos)):
+        if building_exist_mask[i] == 0:
+            continue
 
-            x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (gt[i][4] * 2 - 1) * rotation_scale
-            points = get_bbox_corners(x, y, w, h)
-            rotated_points = rotate_points_around_center(points, [x, y], theta)
+        x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (gt[i][4] * 2 - 1) * rotation_scale
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
 
-            rotated_points = np.array(rotated_points)
-            rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-            ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
-
-    else:
-        for i in range(len(pos)):
-            x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale
-            points = get_bbox_corners(x, y, w, h)
-            rotated_points = rotate_points_around_center(points, [x, y], theta)
-
-            rotated_points = np.array(rotated_points)
-            rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-            ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
-
-        for i in range(len(pos)):
-            x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (gt[i][4] * 2 - 1) * rotation_scale
-            points = get_bbox_corners(x, y, w, h)
-            rotated_points = rotate_points_around_center(points, [x, y], theta)
-
-            rotated_points = np.array(rotated_points)
-            rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-            ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
+        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
 
     # Set the limits of the plot
     plt.xlim([-0.1, 1.1])

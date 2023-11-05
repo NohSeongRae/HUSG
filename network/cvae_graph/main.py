@@ -24,8 +24,8 @@ import wandb
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
-                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight, only_building_graph,
-                 condition_type, convlayer):
+                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight,
+                 condition_type, convlayer, chunk_graph):
         """
         Initialize the trainer with the specified parameters.
 
@@ -58,9 +58,9 @@ class Trainer:
         self.theta_weight = theta_weight
         self.kl_weight = kl_weight
         self.distance_weight = distance_weight
-        self.only_building_graph = only_building_graph
         self.condition_type = condition_type
         self.convlayer = convlayer
+        self.chunk_graph = chunk_graph
 
         print('local_rank', self.local_rank)
 
@@ -68,23 +68,23 @@ class Trainer:
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
         # Only the first dataset initialization will load the full dataset from disk
-        self.train_dataset = GraphDataset(data_type='train', only_building_graph=only_building_graph,
-                                          condition_type=condition_type)
+        self.train_dataset = GraphDataset(data_type='train',
+                                          condition_type=condition_type, chunk_graph=chunk_graph)
         self.train_sampler = DistributedSampler(dataset=self.train_dataset, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
                                            sampler=self.train_sampler, num_workers=8, pin_memory=True)
 
         # Subsequent initializations will use the already loaded full dataset
-        self.val_dataset = GraphDataset(data_type='val', only_building_graph=only_building_graph,
-                                        condition_type=condition_type)
+        self.val_dataset = GraphDataset(data_type='val',
+                                        condition_type=condition_type, chunk_graph=chunk_graph)
         self.val_sampler = DistributedSampler(dataset=self.val_dataset, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
-                              only_building_graph=only_building_graph,
-                              condition_type=condition_type, convlayer=convlayer).to(device=self.device)
+                              chunk_graph=chunk_graph, condition_type=condition_type,
+                              convlayer=convlayer).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
         # optimizer
@@ -189,10 +189,7 @@ class Trainer:
                 data = data.to(device=self.device)
                 output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
-                if self.only_building_graph:
-                    mask = None
-                else:
-                    mask = data.building_mask.detach()
+                mask = data.building_mask.detach()
 
                 # Compute the losses
                 loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2], mask)
@@ -256,10 +253,7 @@ class Trainer:
                         data = data.to(device=self.device)
                         output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
-                        if self.only_building_graph:
-                            mask = None
-                        else:
-                            mask = data.building_mask
+                        mask = data.building_mask
 
                         # Compute the losses using the generated sequence
                         loss_pos = self.recon_pos_loss(output_pos, data.building_feature[:, :2], mask)
@@ -345,7 +339,7 @@ if __name__ == '__main__':
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--only_building_graph", type=bool, default=False, help="save dir path")
+    parser.add_argument("--chunk_graph", type=bool, default=True, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
     parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
 
@@ -391,8 +385,7 @@ if __name__ == '__main__':
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
                       pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
-                      kl_weight=opt.kl_weight, distance_weight=opt.distance_weight,
-                      only_building_graph=opt.only_building_graph, condition_type=opt.condition_type,
-                      convlayer=opt.convlayer)
+                      kl_weight=opt.kl_weight, distance_weight=opt.distance_weight, condition_type=opt.condition_type,
+                      convlayer=opt.convlayer, chunk_graph=opt.chunk_graph)
 
     trainer.train()

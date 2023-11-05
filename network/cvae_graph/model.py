@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch_geometric
 from torch_geometric.data import Batch
 
+
 class BoundaryMaskEncoder(nn.Module):
     def __init__(self, image_size, inner_channel, bottleneck):
         super(BoundaryMaskEncoder, self).__init__()
@@ -26,7 +27,7 @@ class BoundaryMaskEncoder(nn.Module):
             nn.MaxPool2d(2, stride=2)  # b, 8, 2, 2
         )
 
-        channel_num = int((image_size / 2**4)**2 * inner_channel)
+        channel_num = int((image_size / 2 ** 4) ** 2 * inner_channel)
         self.linear = nn.Linear(channel_num, bottleneck)
 
     def forward(self, mask):
@@ -35,6 +36,7 @@ class BoundaryMaskEncoder(nn.Module):
         mask = torch.flatten(mask, 1)
         mask = self.linear(mask)
         return mask
+
 
 class GraphConditionEncoder(nn.Module):
     def __init__(self, T, feature_dim, bottleneck, n_head, convlayer):
@@ -78,13 +80,14 @@ class GraphConditionEncoder(nn.Module):
 
         return latent
 
+
 class GraphEncoder(nn.Module):
-    def __init__(self, T, feature_dim, latent_dim, n_head, only_building_graph, convlayer):
+    def __init__(self, T, feature_dim, latent_dim, n_head, convlayer, chunk_graph):
         super(GraphEncoder, self).__init__()
 
-        self.only_building_graph = only_building_graph
+        self.chunk_graph = chunk_graph
 
-        if not only_building_graph:
+        if not chunk_graph:
             self.street_fc = nn.Linear(128, feature_dim)
         self.building_fc = nn.Linear(5, feature_dim)
 
@@ -106,7 +109,7 @@ class GraphEncoder(nn.Module):
         self.fc_var = nn.Linear(latent_dim, latent_dim)
 
     def forward(self, data, edge_index):
-        if not self.only_building_graph:
+        if not self.chunk_graph:
             street_feature = data.street_feature.view(-1, 128)
             street_feature = self.street_fc(street_feature)
             street_feature = F.relu(street_feature)
@@ -115,7 +118,7 @@ class GraphEncoder(nn.Module):
         building_feature = self.building_fc(building_feature)
         building_feature = F.relu(building_feature)
 
-        if not self.only_building_graph:
+        if not self.chunk_graph:
             n_embed_0 = street_feature * data.street_mask + building_feature * data.building_mask
         else:
             n_embed_0 = building_feature
@@ -136,6 +139,7 @@ class GraphEncoder(nn.Module):
         log_var = self.fc_var(latent)
 
         return mu, log_var
+
 
 class GraphDecoder(nn.Module):
     def __init__(self, feature_dim, latent_dim, n_head, bottleneck, convlayer):
@@ -199,23 +203,25 @@ class GraphDecoder(nn.Module):
         one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=180)
         return one_hot_order
 
+
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
-                 image_size=64, inner_channel=80, bottleneck=128, only_building_graph=False,
-                 condition_type='graph', convlayer='gat'):
+                 image_size=64, inner_channel=80, bottleneck=128,
+                 condition_type='graph', convlayer='gat', chunk_graph=True):
         super(GraphCVAE, self).__init__()
 
         self.latent_dim = latent_dim
         self.condition_type = condition_type
 
         if condition_type == 'image':
-            self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel, bottleneck=bottleneck)
+            self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel,
+                                                         bottleneck=bottleneck)
         elif condition_type == 'graph':
             self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck,
                                                            n_head=n_head, convlayer=convlayer)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
-                                    only_building_graph=only_building_graph, convlayer=convlayer)
+                                    convlayer=convlayer, chunk_graph=chunk_graph)
         self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     bottleneck=bottleneck, convlayer=convlayer)
 
