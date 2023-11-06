@@ -57,6 +57,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         for idx in range(len(adj_matrices)):
             graph = nx.DiGraph(adj_matrices[idx])
 
+            chunk_features[idx][:, :2] += move_vector[idx]
+
             if condition_type == 'image':
                 graph.graph['condition'] = inside_masks[idx]
             elif condition_type == 'graph':
@@ -72,7 +74,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             n_street = 0
             for i in range(len(node_features[idx])):
                 if node_features[idx][i, 0] == 1:
-                    node_features[idx][i, 5] = node_features[idx][i, 5]
+                    node_features[idx][i, 5] = (node_features[idx][i, 5] * 180 / 45 + 1) / 2
                     node_features[idx][i, 1] += move_vector[idx][0]
                     node_features[idx][i, 2] += move_vector[idx][1]
                 else:
