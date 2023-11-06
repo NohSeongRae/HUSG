@@ -123,6 +123,7 @@ if __name__ == '__main__':
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
     parser.add_argument("--chunk_graph", type=bool, default=True, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
+    parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
 
     opt = parser.parse_args()
 
