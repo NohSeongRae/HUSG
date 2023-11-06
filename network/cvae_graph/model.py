@@ -53,9 +53,14 @@ class GraphConditionEncoder(nn.Module):
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
-        self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
-        self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
-        self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+        if convlayer == 'gat':
+            self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
+            self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+            self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+        else:
+            self.e_conv1 = self.convlayer(feature_dim, feature_dim)
+            self.e_conv2 = self.convlayer(feature_dim, feature_dim)
+            self.e_conv3 = self.convlayer(feature_dim, feature_dim)
 
         self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), bottleneck)
 
@@ -100,9 +105,14 @@ class GraphEncoder(nn.Module):
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
-        self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
-        self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
-        self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+        if convlayer == 'gat':
+            self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
+            self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+            self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+        else:
+            self.e_conv1 = self.convlayer(feature_dim, feature_dim)
+            self.e_conv2 = self.convlayer(feature_dim, feature_dim)
+            self.e_conv3 = self.convlayer(feature_dim, feature_dim)
 
         self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), latent_dim)
         self.fc_mu = nn.Linear(latent_dim, latent_dim)
@@ -156,9 +166,14 @@ class GraphDecoder(nn.Module):
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
-        self.d_conv1 = self.convlayer(feature_dim + 180, feature_dim, heads=n_head)
-        self.d_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
-        self.d_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+        if convlayer == 'gat':
+            self.d_conv1 = self.convlayer(feature_dim + 180, feature_dim, heads=n_head)
+            self.d_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+            self.d_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+        else:
+            self.d_conv1 = self.convlayer(feature_dim + 180, feature_dim)
+            self.d_conv2 = self.convlayer(feature_dim, feature_dim)
+            self.d_conv3 = self.convlayer(feature_dim, feature_dim)
 
         self.dec_pos = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_pos = nn.Linear(feature_dim, 2)
