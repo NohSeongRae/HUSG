@@ -78,7 +78,7 @@ class Trainer:
         self.val_dataset = GraphDataset(data_type='val',
                                         condition_type=condition_type, chunk_graph=chunk_graph)
         self.val_sampler = DistributedSampler(dataset=self.val_dataset, rank=rank)
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True,
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
