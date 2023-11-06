@@ -191,12 +191,17 @@ class Trainer:
 
                 mask = data.building_mask.detach()
 
+                if not self.chunk_graph:
+                    gt_feature = data.building_feature
+                else:
+                    gt_feature = data.node_features
+
                 # Compute the losses
-                loss_pos = self.recon_pos_loss(output_pos, data.building_feature.detach()[:, :2], mask)
-                loss_size = self.recon_size_loss(output_size, data.building_feature.detach()[:, 2:4], mask)
-                loss_theta = self.recon_theta_loss(output_theta, data.building_feature.detach()[:, 4:], mask)
+                loss_pos = self.recon_pos_loss(output_pos, gt_feature.detach()[:, :2], mask)
+                loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4], mask)
+                loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:], mask)
                 loss_kl = self.kl_loss(mu, log_var)
-                loss_distance = self.distance_loss(output_pos, data.building_feature.detach()[:, :2],
+                loss_distance = self.distance_loss(output_pos, gt_feature.detach()[:, :2],
                                                    mask, data.edge_index.detach())
 
                 loss_total = loss_pos + loss_size + loss_theta + loss_kl + loss_distance
@@ -255,12 +260,17 @@ class Trainer:
 
                         mask = data.building_mask
 
+                        if not self.chunk_graph:
+                            gt_feature = data.building_feature
+                        else:
+                            gt_feature = data.node_features
+
                         # Compute the losses using the generated sequence
-                        loss_pos = self.recon_pos_loss(output_pos, data.building_feature[:, :2], mask)
-                        loss_size = self.recon_size_loss(output_size, data.building_feature[:, 2:4], mask)
-                        loss_theta = self.recon_theta_loss(output_theta, data.building_feature[:, 4:], mask)
+                        loss_pos = self.recon_pos_loss(output_pos, gt_feature[:, :2], mask)
+                        loss_size = self.recon_size_loss(output_size, gt_feature[:, 2:4], mask)
+                        loss_theta = self.recon_theta_loss(output_theta, gt_feature[:, 4:], mask)
                         loss_kl = self.kl_loss(mu, log_var)
-                        loss_distance = self.distance_loss(output_pos, data.building_feature[:, :2],
+                        loss_distance = self.distance_loss(output_pos, gt_feature[:, :2],
                                                            mask, data.edge_index)
 
                         # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
