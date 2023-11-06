@@ -57,6 +57,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         for idx in range(len(adj_matrices)):
             graph = nx.DiGraph(adj_matrices[idx])
 
+            chunk_features[idx] = np.array(chunk_features[idx])
             chunk_features[idx][:, :2] += move_vector[idx]
 
             if condition_type == 'image':
