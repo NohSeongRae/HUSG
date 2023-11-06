@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.transforms as transforms
+from torch_geometric.utils import to_dense_adj
 import os
 
 def get_bbox_corners(x, y, w, h):
@@ -48,7 +49,8 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type, is_chunk_graph):
+def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type, is_chunk_graph, edge_indx):
+    print(edge_indx)
     node_x = []
     node_y = []
 
