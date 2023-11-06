@@ -39,11 +39,15 @@ class BoundaryMaskEncoder(nn.Module):
 
 
 class GraphConditionEncoder(nn.Module):
-    def __init__(self, T, feature_dim, bottleneck, n_head, convlayer):
+    def __init__(self, T, feature_dim, bottleneck, n_head, convlayer, chunk_graph):
         super(GraphConditionEncoder, self).__init__()
 
-        self.street_fc = nn.Linear(128, feature_dim)
+        self.chunk_graph = chunk_graph
 
+        if not chunk_graph:
+            self.street_fc = nn.Linear(128, feature_dim)
+        else:
+            self.street_fc = nn.Linear(5, feature_dim)
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
         elif convlayer == 'gcn':
@@ -65,7 +69,10 @@ class GraphConditionEncoder(nn.Module):
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), bottleneck)
 
     def forward(self, data, edge_index):
-        street_feature = data.condition_street_feature.view(-1, 128)
+        if self.chunk_graph:
+            street_feature = data.condition_street_feature.view(-1, 128)
+        else:
+            street_feature = data.condition_street_feature
         street_feature = self.street_fc(street_feature)
         street_feature = F.relu(street_feature)
 
@@ -237,7 +244,7 @@ class GraphCVAE(nn.Module):
                                                          bottleneck=bottleneck)
         elif condition_type == 'graph':
             self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck,
-                                                           n_head=n_head, convlayer=convlayer)
+                                                           n_head=n_head, convlayer=convlayer, chunk_graph=chunk_graph)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     convlayer=convlayer, chunk_graph=chunk_graph)
