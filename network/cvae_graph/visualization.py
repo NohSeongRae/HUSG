@@ -112,6 +112,7 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         num_nodes = len(pos)
         adj_matrix = np.zeros((num_nodes, num_nodes))
         adj_matrix[edge_index[0], edge_index[1]] = 1
+        print(edge_index)
         print(adj_matrix, num_nodes, sum(building_exist_mask))
 
         for i in range(len(adj_matrix)):
