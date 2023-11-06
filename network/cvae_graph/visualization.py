@@ -75,8 +75,8 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
 
                 rotated_points = np.array(rotated_points)
                 rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-                ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'b-', label='Rotated Box')
-                ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'b-', label='Rotated Box')
+                ax2.plot(rotated_box[:, 0], rotated_box[:, 1], label='Rotated Box')
+                ax2.plot(rotated_box[:, 0], rotated_box[:, 1], label='Rotated Box')
 
                 node_x.append(x)
                 node_y.append(y)
@@ -116,7 +116,7 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         for i in range(len(adj_matrix)):
             for j in range(len(adj_matrix)):
                 if adj_matrix[i][j] == 1 and adj_matrix[j][i] == 1:
-                    ax2.plot([node_x[i], node_x[j]], [node_y[i], node_y[j]])
+                    ax2.plot([node_x[i], node_x[j]], [node_y[i], node_y[j]], alpha=0.5)
 
     # Set the limits of the plot
     plt.xlim([-0.1, 1.1])
