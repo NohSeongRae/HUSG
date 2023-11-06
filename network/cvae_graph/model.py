@@ -125,14 +125,16 @@ class GraphEncoder(nn.Module):
             street_feature = self.street_fc(street_feature)
             street_feature = F.relu(street_feature)
 
-        building_feature = data.building_feature
-        building_feature = self.building_fc(building_feature)
-        building_feature = F.relu(building_feature)
+            building_feature = data.building_feature
+            building_feature = self.building_fc(building_feature)
+            building_feature = F.relu(building_feature)
 
-        if not self.chunk_graph:
             n_embed_0 = street_feature * data.street_mask + building_feature * data.building_mask
         else:
-            n_embed_0 = building_feature
+            node_feature = data.node_features
+            node_feature = self.building_fc(node_feature)
+            node_feature = F.relu(node_feature)
+            n_embed_0 = node_feature
 
         n_embed_1 = F.relu(self.e_conv1(n_embed_0, edge_index))
         n_embed_2 = F.relu(self.e_conv2(n_embed_1, edge_index))
