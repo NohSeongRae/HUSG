@@ -69,7 +69,7 @@ class GraphConditionEncoder(nn.Module):
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), bottleneck)
 
     def forward(self, data, edge_index):
-        if self.chunk_graph:
+        if not self.chunk_graph:
             street_feature = data.condition_street_feature.view(-1, 128)
         else:
             street_feature = data.condition_street_feature
