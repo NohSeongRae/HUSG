@@ -70,15 +70,15 @@ class Trainer:
         # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = GraphDataset(data_type='train',
                                           condition_type=condition_type, chunk_graph=chunk_graph)
-        self.train_sampler = DistributedSampler(dataset=self.train_dataset, rank=rank)
-        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,
+        self.train_sampler = DistributedSampler(dataset=self.train_dataset, rank=rank, shuffle=True)
+        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size,
                                            sampler=self.train_sampler, num_workers=8, pin_memory=True)
 
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = GraphDataset(data_type='val',
                                         condition_type=condition_type, chunk_graph=chunk_graph)
-        self.val_sampler = DistributedSampler(dataset=self.val_dataset, rank=rank)
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
+        self.val_sampler = DistributedSampler(dataset=self.val_dataset, rank=rank, shuffle=False)
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size,
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
