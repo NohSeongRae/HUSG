@@ -48,7 +48,10 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type, chunk_graph):
+def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type, is_chunk_graph):
+    node_x = []
+    node_y = []
+
     # Create a figure and axes
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
     rotation_scale = 45
@@ -57,7 +60,7 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
         ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
     else:
-        if not chunk_graph:
+        if not is_chunk_graph:
             for street in condition:
                 x = street[:, 0]
                 y = street[:, 1]
@@ -73,6 +76,9 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
                 rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
                 ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'b-', label='Rotated Box')
                 ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'b-', label='Rotated Box')
+
+                node_x.append(x)
+                node_y.append(y)
 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
@@ -97,6 +103,9 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
         ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
+
+        node_x.append(x)
+        node_y.append(y)
 
     # Set the limits of the plot
     plt.xlim([-0.1, 1.1])

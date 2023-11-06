@@ -82,7 +82,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      data.condition.detach().cpu().numpy(),
                      idx + 1,
                      condition_type,
-                     chunk_graph)
+                     chunk_graph,
+                     data.edge_index.detach().cpu().numpy())
             elif condition_type == 'graph':
                 if not chunk_graph:
                     plot(output_pos.detach().cpu().numpy(),
@@ -93,7 +94,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                          data.condition[0].condition_street_feature.detach().cpu().numpy(),
                          idx + 1,
                          condition_type,
-                         chunk_graph)
+                         chunk_graph,
+                         data.edge_index.detach().cpu().numpy())
                 else:
                     plot(output_pos.detach().cpu().numpy(),
                          output_size.detach().cpu().numpy(),
@@ -103,7 +105,10 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                          data.condition[0].condition_street_feature.detach().cpu().numpy(),
                          idx + 1,
                          condition_type,
-                         chunk_graph)
+                         chunk_graph,
+                         data.edge_index.detach().cpu().numpy())
+
+
 if __name__ == '__main__':
     # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
@@ -122,7 +127,7 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     # change save dir path
-    opt.save_dir_path = f'{opt.save_dir_path}_condition_type_{opt.condition_type}'
+    opt.save_dir_path = f'{opt.save_dir_path}_condition_type_{opt.condition_type}_convlyaer_type_{opt.convlayer}'
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
