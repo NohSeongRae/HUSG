@@ -49,8 +49,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type, is_chunk_graph, edge_indx):
-    print(edge_indx)
+def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type, is_chunk_graph, edge_index):
     node_x = []
     node_y = []
 
@@ -81,6 +80,15 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
 
                 node_x.append(x)
                 node_y.append(y)
+
+            num_nodes = len(pos)
+            adj_matrix = np.zeros((num_nodes, num_nodes))
+            adj_matrix[edge_index[0], edge_index[1]] = 1
+
+            for i in range(len(adj_matrix)):
+                for j in range(len(adj_matrix)):
+                    if adj_matrix[i][j] == 1 and adj_matrix[j][i] == 1:
+                        plt.plot([node_x[i], node_x[j]], [node_y[i], node_y[j]])
 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
