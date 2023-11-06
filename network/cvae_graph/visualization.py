@@ -81,15 +81,6 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
                 node_x.append(x)
                 node_y.append(y)
 
-            num_nodes = len(pos)
-            adj_matrix = np.zeros((num_nodes, num_nodes))
-            adj_matrix[edge_index[0], edge_index[1]] = 1
-
-            for i in range(len(adj_matrix)):
-                for j in range(len(adj_matrix)):
-                    if adj_matrix[i][j] == 1 and adj_matrix[j][i] == 1:
-                        plt.plot([node_x[i], node_x[j]], [node_y[i], node_y[j]])
-
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
             continue
@@ -116,6 +107,16 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
 
         node_x.append(x)
         node_y.append(y)
+
+    if is_chunk_graph:
+        num_nodes = len(pos)
+        adj_matrix = np.zeros((num_nodes, num_nodes))
+        adj_matrix[edge_index[0], edge_index[1]] = 1
+
+        for i in range(len(adj_matrix)):
+            for j in range(len(adj_matrix)):
+                if adj_matrix[i][j] == 1 and adj_matrix[j][i] == 1:
+                    ax2.plot([node_x[i], node_x[j]], [node_y[i], node_y[j]])
 
     # Set the limits of the plot
     plt.xlim([-0.1, 1.1])
