@@ -57,12 +57,12 @@ class GraphConditionEncoder(nn.Module):
             self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
             self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
             self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+            self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), bottleneck)
         else:
             self.e_conv1 = self.convlayer(feature_dim, feature_dim)
             self.e_conv2 = self.convlayer(feature_dim, feature_dim)
             self.e_conv3 = self.convlayer(feature_dim, feature_dim)
-
-        self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), bottleneck)
+            self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), bottleneck)
 
     def forward(self, data, edge_index):
         street_feature = data.condition_street_feature.view(-1, 128)
@@ -109,12 +109,13 @@ class GraphEncoder(nn.Module):
             self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
             self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
             self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+            self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), latent_dim)
         else:
             self.e_conv1 = self.convlayer(feature_dim, feature_dim)
             self.e_conv2 = self.convlayer(feature_dim, feature_dim)
             self.e_conv3 = self.convlayer(feature_dim, feature_dim)
+            self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), latent_dim)
 
-        self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), latent_dim)
         self.fc_mu = nn.Linear(latent_dim, latent_dim)
         self.fc_var = nn.Linear(latent_dim, latent_dim)
 
@@ -174,6 +175,7 @@ class GraphDecoder(nn.Module):
             self.d_conv1 = self.convlayer(feature_dim + 180, feature_dim)
             self.d_conv2 = self.convlayer(feature_dim, feature_dim)
             self.d_conv3 = self.convlayer(feature_dim, feature_dim)
+            n_head = 1
 
         self.dec_pos = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_pos = nn.Linear(feature_dim, 2)
