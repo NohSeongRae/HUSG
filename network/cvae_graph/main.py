@@ -87,6 +87,10 @@ class Trainer:
                               convlayer=convlayer).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
+        base_batch_size = 16
+        new_batch_size = self.batch_size
+        self.lr = self.lr*(new_batch_size/base_batch_size)
+
         # optimizer
         param_optimizer = list(self.cvae.named_parameters())
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']

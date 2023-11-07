@@ -24,11 +24,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     # city_names = ["atlanta"]
 
     dataset_names = [
-        'adj_matrices_chunk',
-        'chunk_features',
+        'edge_indices',
         'node_features',
-        'insidemask',
-        'movedvector'
+        'building_semantics',
     ]
 
     graphs = []
@@ -36,65 +34,43 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     for city_name in tqdm(city_names):
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[0] + '.pkl'
         with open(filepath, 'rb') as f:
-            adj_matrices = pickle.load(f)
+            edge_indices = pickle.load(f)
 
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[1] + '.pkl'
         with open(filepath, 'rb') as f:
-            chunk_features = pickle.load(f)
+            node_features = pickle.load(f)
 
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[2] + '.pkl'
         with open(filepath, 'rb') as f:
-            node_features = pickle.load(f)
+            building_semantics = pickle.load(f)
 
-        filepath = dataset_path + '/' + city_name + '/' + dataset_names[3] + '.pkl'
-        with open(filepath, 'rb') as f:
-            inside_masks = pickle.load(f)
+        for idx in range(len(edge_indices)):
+            graph = nx.Graph()
+            graph.add_edges_from(edge_indices[idx])
+            adj_matrix = nx.adjacency_matrix(graph).todense()
 
-        filepath = dataset_path + '/' + city_name + '/' + dataset_names[4] + '.pkl'
-        with open(filepath, 'rb') as f:
-            move_vector = pickle.load(f)
-
-        for idx in range(len(adj_matrices)):
-            graph = nx.DiGraph(adj_matrices[idx])
-
-            chunk_features[idx] = np.array(chunk_features[idx])
-            chunk_features[idx][:, :2] += move_vector[idx]
+            n_node = graph.number_of_nodes()
+            n_building = len(building_semantics[idx])
+            n_chunk = n_node - n_building
 
             if condition_type == 'image':
+                break
                 graph.graph['condition'] = inside_masks[idx]
             elif condition_type == 'graph':
-                chunk_feature = chunk_features[idx]
-                street_graph = adj_matrices[idx][:len(chunk_feature), :len(chunk_feature)]
+                street_graph = adj_matrix[:n_chunk, :n_chunk]
                 street_graph = nx.DiGraph(street_graph)
 
+                chunk_feature = node_features[idx][:n_chunk]
                 for node in street_graph.nodes():
                     street_graph.nodes[node]['chunk_features'] = chunk_feature[node]
 
                 graph.graph['condition'] = street_graph
 
-            n_street = 0
-            for i in range(len(node_features[idx])):
-                if node_features[idx][i, 0] == 1:
-                    node_features[idx][i, 5] = (node_features[idx][i, 5] * 180 / 45 + 1) / 2
-                    node_features[idx][i, 1] += move_vector[idx][0]
-                    node_features[idx][i, 2] += move_vector[idx][1]
-                else:
-                    n_street += 1
-
-            zeros = np.zeros((graph.number_of_nodes(), 5))
-            building_feature = node_features[idx][n_street:, 1:]
-            chunk_feature = chunk_features[idx]
-            zeros[:len(chunk_feature)] = chunk_feature
-            zeros[len(chunk_feature):] = building_feature
-
-            if np.any((zeros[:, :2] < 0) | (zeros[:, :2] > 1)):
-                continue
-
             for node in graph.nodes():
-                graph.nodes[node]['node_features'] = zeros[node]
+                graph.nodes[node]['node_features'] = node_features[idx][node]
 
             zeros = np.zeros((graph.number_of_nodes(), 1))
-            zeros[len(chunk_feature):] = 1
+            zeros[n_chunk:] = 1
 
             for node in graph.nodes():
                 graph.nodes[node]['building_masks'] = zeros[node]
