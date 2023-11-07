@@ -4,6 +4,7 @@ import numpy as np
 from shapely.geometry import Point
 import os
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 # def get_random_color(seed):
 #     random.seed(seed)
@@ -45,19 +46,19 @@ def plot_groups_with_rectangles_v7(block_gdf, buildings_gdf, unit_roads, boundin
                  str(building_polygon_idx) + ', ' + str(building_polygon[1]),
                  fontsize=7, ha='center', va='center', color='black')
 
-    # for i in range(len(adj_matrix)):
-    #     for j in range(len(adj_matrix)):
-    #         if adj_matrix[i][j] == 1 and adj_matrix[j][i] == 1:
-    #             if i < n_street:
-    #                 node_i = Point(np.mean(street_position_dataset[i], axis=0))
-    #             else:
-    #                 node_i = Point(building_polygons[i - n_street][2].centroid)
-    #             if j < n_street:
-    #                 node_j = Point(np.mean(street_position_dataset[j], axis=0))
-    #             else:
-    #                 node_j = Point(building_polygons[j - n_street][2].centroid)
-    #
-    #             plt.plot([node_i.x, node_j.x], [node_i.y, node_j.y])
+    for i in range(len(adj_matrix)):
+        for j in range(len(adj_matrix)):
+            if adj_matrix[i][j] == 1 and adj_matrix[j][i] == 1:
+                if i < n_street:
+                    node_i = Point(np.mean(street_position_dataset[i], axis=0))
+                else:
+                    node_i = Point(building_polygons[i - n_street][2].centroid)
+                if j < n_street:
+                    node_j = Point(np.mean(street_position_dataset[j], axis=0))
+                else:
+                    node_j = Point(building_polygons[j - n_street][2].centroid)
+
+                plt.plot([node_i.x, node_j.x], [node_i.y, node_j.y])
 
     # if file_name is not None:
     #     city_name = extract_before_underscore(file_name)
@@ -71,3 +72,21 @@ def plot_groups_with_rectangles_v7(block_gdf, buildings_gdf, unit_roads, boundin
     #     plt.clf()
 
     plt.show()
+
+def plot_bbox(building_bboxs, unit_road_bboxs, unit_road_street_indcies):
+
+    for i in range(len(building_bboxs)):
+        x, y = building_bboxs[i].exterior.coords.xy
+        plt.plot(x, y)
+
+    for i in range(len(unit_road_bboxs)):
+        x, y = unit_road_bboxs[i].exterior.coords.xy
+        plt.plot(x, y, color=get_random_color(unit_road_street_indcies[i]))
+
+def plot_graph(node_features, edge_index):
+    for edge in edge_index:
+        node_a = node_features[edge[0]][:2]
+        node_b = node_features[edge[1]][:2]
+
+        plt.plot([node_a[0], node_b[0]], [node_a[1], node_b[1]])
+

@@ -5,6 +5,64 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, LineString, Point
 from shapely.ops import unary_union
 
+
+def expand_line_to_rectangle(p1, p2):
+    """
+    주어진 선분의 시작점과 끝점을 받아 선분의 두께를 늘려 직사각형으로 만들고
+    직사각형의 네 꼭짓점의 좌표를 반환하는 함수.
+
+    Parameters:
+    - p1: (x, y) 형태의 튜플이나 리스트, 선분의 시작점 좌표.
+    - p2: (x, y) 형태의 튜플이나 리스트, 선분의 끝점 좌표.
+    - thickness_ratio: 선분의 두께 배율, 실제 두께는 이 값에 0.04를 곱한 값임.
+
+    Returns:
+    - rect_points: 네 꼭짓점의 좌표를 담은 넘파이 배열.
+    """
+    thickness_ratio = 0.25
+
+    # 넘파이 배열로 변환
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+
+    # 선분의 방향 벡터 계산
+    direction = p2 - p1
+
+    # 방향 벡터에 수직인 벡터 계산
+    perpendicular = np.array([-direction[1], direction[0]])
+
+    # 수직 벡터의 길이를 정규화하고 두께로 조정
+    thickness = 0.04 * thickness_ratio
+    perpendicular = perpendicular / np.linalg.norm(perpendicular) * (thickness / 2)
+
+    # 직사각형의 네 꼭짓점 계산
+    rect_points = np.array([p1 + perpendicular, p1 - perpendicular,
+                            p2 - perpendicular, p2 + perpendicular, p1 + perpendicular])
+
+    eps = 1e-12
+
+    rect_min = 999
+    for rect_point in rect_points:
+        for rect_p in rect_point:
+            if rect_p < rect_min:
+                rect_min = rect_p
+
+    if rect_min < eps:
+        rect_points += (eps - rect_min)
+
+    rect_max = -999
+    for rect_point in rect_points:
+        for rect_p in rect_point:
+            if rect_p > rect_max:
+                rect_max = rect_p
+
+    if rect_max > (1 - eps):
+        rect_points -= (1 - eps - rect_max)
+
+    try:
+        return Polygon(rect_points)
+    except:
+        return None
 def get_near_street_idx(building_polygon, boundary_lines):
     """
     Returns the index of the nearest boundary_line to the given building_polygon.
@@ -24,6 +82,8 @@ def get_near_street_idx(building_polygon, boundary_lines):
                 nearest_street_idx = boundary_line[0]
 
     return nearest_street_idx
+
+
 
 def get_bbox_details(rotated_rectangle):
     # 사각형의 꼭짓점들을 얻음
@@ -46,7 +106,7 @@ def get_bbox_details(rotated_rectangle):
     dx = x[idx + 1] - x[idx]
     dy = y[idx + 1] - y[idx]
     theta = math.degrees(math.atan2(dy, dx))
-    theta = theta / 180
+    theta = (theta + 45) / 90
 
     # 좌하단 꼭짓점을 x, y로 선택
     x, y = rotated_rectangle.centroid.x, rotated_rectangle.centroid.y

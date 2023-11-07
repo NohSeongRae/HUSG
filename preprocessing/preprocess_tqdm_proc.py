@@ -20,7 +20,7 @@ from plot_utils import *
 # from preprocessing.building_utils import *
 # from preprocessing.plot_utils import *
 
-from shapely.ops import unary_union
+from shapely.ops import unary_union, nearest_points
 from shapely.geometry import box
 
 def merge_geometries_by_index(bounding_boxs, geometries):
@@ -65,8 +65,10 @@ street_eos_idx = n_street - 1
 n_street_sample = 64
 n_unit_sample = 8
 
-city_names = ["miami", "seattle", "boston", "providence",
-              "neworleans", "denver", "pittsburgh", "washington"]
+city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+              "philadelphia", "phoenix", "portland", "richmond", "saintpaul",
+              "sanfrancisco", "miami", "seattle", "boston", "providence",
+              "neworleans", "denver", "pittsburgh", "tampa", "washington"]
 
 def sort_key(filename):
     # 파일 이름에서 숫자만 추출
@@ -83,11 +85,13 @@ def process_file(file_path):
 
         # Get building polygons for the current file and add them to the building_polygon list
         building_polygons = [row['geometry'] for idx, row in building_gdf.iterrows()]
+        building_semantics = [row['key'] for idx, row in building_gdf.iterrows()]
 
         # if len(building_polygons) == 1:
         #     continue
 
         boundary_polygon = boundary_gdf.iloc[0]['geometry']
+        boundary_scale = boundary_gdf.iloc[0]['scale']
 
         sorted_edges = sorted_boundary_edges(boundary_polygon, unit_length)
 
@@ -159,138 +163,213 @@ def process_file(file_path):
 
         # polygons = extend_polygon(unit_roads, box_heights, farthest_points)
         # plot_polygons(polygons)
+        origin_building_polygons = building_polygons
         building_polygons = get_building_polygon(building_polygons, bounding_boxs, boundary_polygon)
         for idx in range(len(building_polygons)):
             if len(building_polygons[idx][1]) == 0:
                 near_street_idx = get_near_street_idx(building_polygons[idx][2], boundary_lines)
                 building_polygons[idx][1].append(near_street_idx)
 
-        cur_n_street = len(boundary_lines)
-        cur_n_building = len(building_polygons)
-        adj_matrix = np.eye(cur_n_street + cur_n_building)
-        node_feature = np.zeros((cur_n_street + cur_n_building, 6))     # is_building, x, y, w, h, theta
-        building_exist_sequence = []
-        street_index_sequence = []
+        #################################################
+        sorted_building_polygons = []
+        for i in range(len(building_polygons)):
+            sorted_building_polygons.append(building_polygons[i][2])
 
-        for unit_road_idx, unit_road in enumerate(unit_roads):
-            is_exist = False
-            for building in building_polygons:
-                if is_exist:
-                    break
+        # Create a dictionary that maps the elements of a to their indices in sorted_a
+        index_map = {value: index for index, value in enumerate(sorted_building_polygons)}
+        # Sort list b using the indices from the sorted list a
+        building_semantics = sorted(building_semantics,
+                                    key=lambda x: index_map[origin_building_polygons[building_semantics.index(x)]])
 
-                # rule 1
-                if unit_road[0] in building[1]:
-                    overlaps = project_polygon_onto_linestring_full(building[2], LineString(unit_road[1]))
-                    if overlaps:
-                        is_exist = True
+        #######################
 
-                # rule 2
-                p1 = np.array(unit_road[1])[0]
-                p2 = np.array(unit_road[1][1])
-                v_rotated = rotated_line_90(p1, p2, unit_length)
-                # plt.plot([v_rotated[0][0], v_rotated[1][0]],
-                #          [v_rotated[0][1], v_rotated[1][1]], linewidth=1)
+        # 피규어 생성 및 크기 설정: 너비 10인치, 높이 5인치
+        # plt.figure(figsize=(6, 6))
 
-                building_segments = get_segments_as_lists(building[2])
-
-                is_intersect = False
-                for segment in building_segments:
-                    if angle_between(LineString(v_rotated), LineString(segment)) > 45:
-                        if LineString(v_rotated).intersects(LineString(segment)):
-                            is_exist = True
-
-            if is_exist:
-                building_exist_sequence.append(1)
-            else:
-                building_exist_sequence.append(0)
-
-        for unit_road_idx, unit_road in enumerate(unit_roads):
-            street_index_sequence.append(unit_road[0] + 1)  # unit index, street index
-
-            for building in building_polygons:
-                # rule 1
-                for street_idx in building[1]:
-                    adj_matrix[street_idx][cur_n_street + building[0] - 1] = 1
-                    adj_matrix[cur_n_street + building[0] - 1][street_idx] = 1
-
-                # rule 2
-                p1 = np.array(unit_road[1])[0]
-                p2 = np.array(unit_road[1][1])
-                v_rotated = rotated_line_90(p1, p2, unit_length)
-                # plt.plot([v_rotated[0][0], v_rotated[1][0]],
-                #          [v_rotated[0][1], v_rotated[1][1]], linewidth=1)
-
-                building_segments = get_segments_as_lists(building[2])
-                is_intersect = False
-                for segment in building_segments:
-                    if angle_between(LineString(v_rotated), LineString(segment)) > 45:
-                        if LineString(v_rotated).intersects(LineString(segment)):
-                            is_intersect = True
-
-                if is_intersect:
-                    adj_matrix[unit_road[0]][cur_n_street + building[0] - 1] = 1
-                    adj_matrix[cur_n_street + building[0] - 1][unit_road[0]] = 1
-
-
-        for building1 in building_polygons:
-            x, y, w, h, theta = get_bbox_details(building1[2].minimum_rotated_rectangle)
-
-            node_feature[cur_n_street + building1[0] - 1] = np.array([1, x, y, w, h, theta])
-
-            x, y = building1[2].minimum_rotated_rectangle.exterior.xy
-
-            for building2 in building_polygons:
-                idx1 = cur_n_street + building1[0] - 1
-                idx2 = cur_n_street + building2[0] - 1
-
-                if adj_matrix[idx1][idx2] == 0:
-                    th = 0.05
-                    aabb1 = building1[2].minimum_rotated_rectangle
-                    aabb2 = building2[2].minimum_rotated_rectangle
-
-                    b1_bbox = aabb1
-                    b2_bbox = aabb2
-
-                    distance = b1_bbox.distance(b2_bbox)
-                    if distance <= th:
-                        if not is_building_between(building1[2], building2[2], building_polygons):
-                            adj_matrix[idx1][idx2] = 1
-                            adj_matrix[idx2][idx1] = 1
-
-        street_indices = []
-        for idx in range(len(boundary_lines)):
-            street_index = boundary_lines[idx][0]
-            node_feature[street_index] = np.array([0, 0, 0, 0, 0, 0])
-
-            if street_index < len(boundary_lines) - 1:
-                adj_matrix[street_index][street_index+1] = 1
-                adj_matrix[street_index+1][street_index] = 1
-            else:
-                adj_matrix[street_index][0] = 1
-                adj_matrix[0][street_index] = 1
-
-        unit_position_dataset = np.zeros((len(unit_roads), n_unit_sample, 2))
-        street_position_dataset = np.zeros((cur_n_street, n_street_sample, 2))
-        street_unit_position_dataset = np.zeros((len(unit_roads), n_street_sample, 2))
-        unit_coords_dataset = np.zeros((len(unit_roads), 2, 2))
-
-        for idx, street in enumerate(boundary_lines):
-            street_position_dataset[idx] = random_sample_points_on_multiple_lines(street[1], 64)
-
-        for idx, unit_road in enumerate(unit_roads):
-            p1 = np.array(unit_road[1])[0]
-            p2 = np.array(unit_road[1])[1]
-            unit_position_dataset[idx] = random_sample_points_on_line(p1, p2, 8)
-            street_unit_position_dataset[idx] = street_position_dataset[unit_road[0]]
-
-            unit_coords_dataset[idx] = [[unit_road[1][0][0], unit_road[1][0][1]], [unit_road[1][1][0], unit_road[1][1][1]]]
-
-        building_polygons_coord = []
+        # get building bbox
+        building_bboxs = []
         for building in building_polygons:
-            building_polygons_coord.append(np.array(building[2].exterior.coords))
+            building_bbox = building[2].minimum_rotated_rectangle
+            building_bboxs.append(building_bbox)
+            x, y = building[2].exterior.xy
+            plt.fill(x, y, alpha=0.8)
 
-        return building_exist_sequence, street_index_sequence, unit_position_dataset, street_unit_position_dataset, \
-               unit_coords_dataset, node_feature, adj_matrix, building_polygons_coord, building_filename, boundary_filename
+        # get unit road bbox and street inidces
+        unit_road_street_indcies = []
+        unit_road_bboxs = []
+        for unit_road in unit_roads:
+            unit_road_street_indcies.append(unit_road[0])
+            unit_road_bboxs.append(expand_line_to_rectangle(unit_road[1][0], unit_road[1][1]))
+
+        # plot_bbox(building_bboxs, unit_road_bboxs, unit_road_street_indcies)
+
+        ###############
+
+        edge_index = []
+
+        # get unit road ring graph edge index
+        for unit_road_idx, unit_road in enumerate(unit_roads):
+            edge_index.append([unit_road_idx, unit_road_idx])
+
+            if unit_road_idx == len(unit_roads) - 1:
+                edge_index.append([unit_road_idx, 0])
+                edge_index.append([0, unit_road_idx])
+            else:
+                edge_index.append([unit_road_idx, unit_road_idx + 1])
+                edge_index.append([unit_road_idx + 1, unit_road_idx])
+
+        # get unit road to building edge index
+        scale = 500 * boundary_scale
+        buildnig_street_count = np.zeros((len(building_bboxs), unit_road_street_indcies[-1] + 1))
+        for unit_road_idx, unit_road in enumerate(unit_roads):
+            unit_road_coords = unit_road[1]
+
+            p1 = np.array(unit_road_coords[0])
+            p2 = np.array(unit_road_coords[1])
+            v_rotated = rotated_line_90(p1, p2, unit_length, scale=scale)
+
+            v_rotated_start = v_rotated - np.mean((p1, p2), axis=0) + p1
+            v_rotated_end = v_rotated - np.mean((p1, p2), axis=0) + p2
+
+            for building_bbox_idx, building_bbox in enumerate(building_bboxs):
+                if LineString(v_rotated).intersects(building_bbox) or \
+                        LineString(v_rotated_start).intersects(building_bbox) or \
+                        LineString(v_rotated_end).intersects(building_bbox):
+                    check_line = LineString(nearest_points(LineString(unit_road_coords), building_bbox))
+
+                    is_invalid = False
+                    for unit_road_idx_, unit_road_ in enumerate(unit_roads):
+                        if unit_road_idx + 1 < unit_road_idx_ or unit_road_idx_ < unit_road_idx - 1:
+                            if LineString(unit_road_[1]).intersects(check_line):
+                                is_invalid = True
+                                break
+
+                    for building_bbox_idx_, building_bbox_ in enumerate(building_bboxs):
+                        if building_bbox_idx_ != building_bbox_idx:
+                            if building_polygons[building_bbox_idx_][2].intersects(check_line):
+                                is_invalid = True
+                                break
+
+                            center_1 = (building_bbox.centroid.x, building_bbox.centroid.y)
+                            center_2 = (
+                            unit_road_bboxs[unit_road_idx].centroid.x, unit_road_bboxs[unit_road_idx].centroid.y)
+                            if building_polygons[building_bbox_idx_][2].intersects(LineString([center_1, center_2])):
+                                is_invalid = True
+                                break
+
+                    if not is_invalid:
+                        # cut edge street oriented method
+                        max_street_to_building = 3
+                        if buildnig_street_count[
+                            building_bbox_idx, unit_road_street_indcies[unit_road_idx]] >= max_street_to_building:
+                            cur_distance = LineString(unit_road_coords).distance(building_bbox)
+
+                            for unit_road_idx_, unit_road_ in enumerate(unit_roads):
+                                if [unit_road_idx_, len(unit_roads) + building_bbox_idx] in edge_index and \
+                                        unit_road_street_indcies[unit_road_idx] == unit_road_street_indcies[
+                                    unit_road_idx_]:
+                                    distance = LineString(unit_road_[1]).distance(building_bbox)
+                                    if cur_distance < distance:
+                                        edge_index.remove([unit_road_idx_, len(unit_roads) + building_bbox_idx])
+                                        edge_index.remove([len(unit_roads) + building_bbox_idx, unit_road_idx_])
+
+                                        edge_index.append([unit_road_idx, len(unit_roads) + building_bbox_idx])
+                                        edge_index.append([len(unit_roads) + building_bbox_idx, unit_road_idx])
+
+                                        break
+                        else:
+                            edge_index.append([unit_road_idx, len(unit_roads) + building_bbox_idx])
+                            edge_index.append([len(unit_roads) + building_bbox_idx, unit_road_idx])
+
+                            buildnig_street_count[building_bbox_idx, unit_road_street_indcies[unit_road_idx]] += 1
+
+        # get building to building edge index
+        for building_bbox_idx_1, building_bbox_1 in enumerate(building_bboxs):
+            edge_index.append([len(unit_roads) + building_bbox_idx_1, len(unit_roads) + building_bbox_idx_1])
+
+            for building_bbox_idx_2, building_bbox_2 in enumerate(building_bboxs):
+                if building_bbox_idx_1 >= building_bbox_idx_2:
+                    continue
+
+                check_line = LineString(nearest_points(building_bbox_1, building_bbox_2))
+
+                is_invalid = False
+                if building_bbox_1.distance(building_bbox_2) < unit_length * scale:
+                    for building_bbox_idx_, building_bbox_ in enumerate(building_bboxs):
+                        if building_bbox_idx_ != building_bbox_idx_1 and building_bbox_idx_ != building_bbox_idx_2:
+                            if building_polygons[building_bbox_idx_][2].intersects(check_line):
+                                is_invalid = True
+                                break
+
+                            center_1 = (building_bbox_1.centroid.x, building_bbox_1.centroid.y)
+                            center_2 = (building_bbox_2.centroid.x, building_bbox_2.centroid.y)
+                            if building_polygons[building_bbox_idx_][2].intersects(LineString([center_1, center_2])):
+                                is_invalid = True
+                                break
+
+                    for unit_road_idx_, unit_road_ in enumerate(unit_roads):
+                        if LineString(unit_road_[1]).intersects(check_line):
+                            is_invalid = True
+                            break
+
+                    if not is_invalid:
+                        edge_index.append(
+                            [len(unit_roads) + building_bbox_idx_2, len(unit_roads) + building_bbox_idx_1])
+                        edge_index.append(
+                            [len(unit_roads) + building_bbox_idx_1, len(unit_roads) + building_bbox_idx_2])
+
+        # get minimum building
+        edge_count = np.zeros(len(unit_roads) + len(building_bboxs))
+        for edge in edge_index:
+            edge_count[edge[0]] += 1
+            edge_count[edge[1]] += 1
+
+        for count_idx, count in enumerate(edge_count):
+            if count == 2:
+                cur_building_idx = count_idx - len(unit_roads)
+                min_idx = -1
+                min_distance = 999
+                for building_bbox_idx, building_bbox in enumerate(building_bboxs):
+                    if cur_building_idx != building_bbox_idx:
+                        if min_distance > building_bbox.distance(building_bboxs[cur_building_idx]):
+                            min_idx = building_bbox_idx
+                            min_distance = building_bbox.distance(building_bboxs[cur_building_idx])
+
+                for unit_road_bbox_idx, unit_road_bbox in enumerate(unit_road_bboxs):
+                    if cur_building_idx != unit_road_bbox_idx:
+                        if min_distance > unit_road_bbox.distance(building_bboxs[cur_building_idx]):
+                            min_idx = unit_road_bbox_idx
+                            min_distance = unit_road_bbox.distance(building_bboxs[cur_building_idx])
+
+                edge_index.append([count_idx, min_idx])
+                edge_index.append([min_idx, count_idx])
+
+        node_features = []
+        for unit_road_bbox in unit_road_bboxs:
+            unit_road_feature = get_bbox_details(unit_road_bbox)
+            node_features.append(unit_road_feature)
+
+        for building_bbox in building_bboxs:
+            building_bbox_feature = get_bbox_details(building_bbox)
+            node_features.append(building_bbox_feature)
+
+        # plot_graph(node_features, edge_index)
+        #
+        # plt.xlim(-0.1, 1.1)
+        # plt.ylim(-0.1, 1.1)
+        # plt.show()
+
+        building_polygons = []
+        for polygon in sorted_building_polygons:
+            building_polygons.append(np.array(polygon.exterior.xy))
+
+        node_features = np.array(node_features)
+        edge_index = np.array(edge_index)
+        unit_road_street_indcies = np.array(unit_road_street_indcies)
+        building_semantics = np.array(building_semantics)
+
+        return node_features, edge_index, unit_road_street_indcies, building_filename, \
+               boundary_filename, building_polygons, building_semantics
     else:
         return [False]
 
@@ -298,16 +377,13 @@ if __name__ == '__main__':
     for city_name in city_names:
         print("Processing city:", city_name)
 
-        adj_matrices = []
         node_features = []
-        building_exist_sequences = []
-        street_index_sequences = []
-        unit_position_datasets = []
-        street_unit_position_datasets = []
-        unit_coords_datasets = []
-        building_polygon_datasets = []
+        edge_indices = []
+        unit_road_street_indices = []
         building_filenames = []
         boundary_filenames = []
+        building_polygons = []
+        building_semantics = []
 
         building_dir_path = os.path.join('/home', 'rhosunr99', 'HUSG', 'preprocessing', 'city_data',f'{city_name}',
                                      'density20_building120_rotate_normalized', 'Buildings')
@@ -339,33 +415,28 @@ if __name__ == '__main__':
             if any(x is False for x in result):
                 continue
 
-            building_exist_sequence, street_index_sequence, unit_position_dataset, street_unit_position_dataset, unit_coords_dataset, node_feature, adj_matrix, building_polygons_coord, building_filepath, boundary_filepath = result
+            node_feature, edge_index, unit_road_street_index, building_filename, boundary_filename, building_polygon, building_semantic = result
 
-            building_exist_sequences.append(building_exist_sequence)
-            street_index_sequences.append(street_index_sequence)
-            unit_position_datasets.append(unit_position_dataset)
-            street_unit_position_datasets.append(street_unit_position_dataset)
-            unit_coords_datasets.append(unit_coords_dataset)
             node_features.append(node_feature)
-            adj_matrices.append(adj_matrix)
-            building_polygon_datasets.append(building_polygons_coord)
-            building_filenames.append(building_filepath)
-            boundary_filenames.append(boundary_filepath)
+            edge_indices.append(edge_index)
+            unit_road_street_indices.append(unit_road_street_index)
+            building_filenames.append(building_filename)
+            boundary_filenames.append(boundary_filename)
+            building_polygons.append(building_polygon)
+            building_semantics.append(building_semantic)
 
         folder_path = os.path.join('/home', 'rhosunr99', 'HUSG', 'preprocessing', '2_transformer_test', 'train_dataset', city_name)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
         datasets = [
-            
-            
-            
-            
             ('node_features', node_features),
-            
-            
-            ('building_filenames', building_filenames)
-            
+            ('edge_indices', edge_indices),
+            ('unit_road_street_indices', unit_road_street_indices),
+            ('building_filenames', building_filenames),
+            ('boundary_filenames', boundary_filenames),
+            ('building_polygons', building_polygons),
+            ('building_semantics', building_semantics)
         ]
         for name, dataset in datasets:
             filepath = os.path.join(folder_path, name + '.pkl')
