@@ -53,7 +53,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             n_building = len(building_semantics[idx])
             n_chunk = n_node - n_building
 
-            if np.any((node_features[idx][:, :2] < 0) | (node_features[idx][:, :2] > 1)):
+            if np.any((node_features[idx][:, :2] < -0.1) | (node_features[idx][:, :2] > 1.1)):
                 print(idx, node_features[idx][:, :2])
                 continue
 
