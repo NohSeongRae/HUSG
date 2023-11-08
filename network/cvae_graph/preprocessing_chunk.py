@@ -48,6 +48,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             graph = nx.Graph()
             graph.add_edges_from(edge_indices[idx])
             adj_matrix = nx.adjacency_matrix(graph).todense()
+            print(adj_matrix)
 
             n_node = graph.number_of_nodes()
             n_building = len(building_semantics[idx])
