@@ -91,12 +91,13 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             start_index = int(total_size * (train_ratio + val_ratio))
             end_index = int(total_size * (train_ratio + val_ratio + test_ratio))
 
-        save_path = './network/cvae_graph/'
+        save_path = './network/cvae_graph/' + data_type
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
-        with open(save_path + data_type + '_datasets.gpickle', 'wb') as f:
-            nx.write_gpickle(graphs[start_index:end_index], f)
+        for idx in range(start_index, end_index):
+            with open(save_path + '/' + srt(idx - start_index) + '.gpickle', 'wb') as f:
+                nx.write_gpickle(graphs[idx], f)
 
 if __name__ == '__main__':
     # Set the argparse
