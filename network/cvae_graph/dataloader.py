@@ -35,7 +35,7 @@ class GraphDataset(Dataset):
 
         if self.chunk_graph:
             # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
-            graph = self.graph[idx]
+            graph = self.graph
 
             # 그래프를 PyG 데이터 객체로 변환합니다.
             # 노드 특성과 엣지 인덱스를 추출합니다.
