@@ -46,9 +46,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
         for idx in range(len(edge_indices)):
             graph = nx.Graph()
-            print(edge_indices[idx].shape)
-            edge_indices[idx] = np.unique(edge_indices[idx], axis=0)
-            print(edge_indices[idx].shape)
             graph.add_edges_from(edge_indices[idx])
             adj_matrix = nx.adjacency_matrix(graph).todense()
 
