@@ -20,17 +20,20 @@ for city_name in city_names:
     #                              f'{city_name}')
     # save_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'new_dataset', 'sorted_fix_node_feature_dataset',
     #                              f'{city_name}')
-    load_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'sorted_dataset',
+    load_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '7_CVAE', 'train_dataset_graph',
                                  f'{city_name}')
-    save_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'int_sorted_dataset',
+    save_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '7_CVAE', 'sorted_train_dataset',
+                                 f'{city_name}')
+    load_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '7_CVAE', 'train_dataset_mask',
+                                 f'{city_name}')
+    save_dir_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '7_CVAE', 'sorted_train_dataset',
                                  f'{city_name}')
 
     # 파일 이름을 정의합니다.
-    file_names = ["adj_matrices.pkl", "boundary_filenames.pkl", "building_exist_sequences.pkl",
-                  "building_filenames.pkl", "building_polygons.pkl",
-                  "node_features.pkl", "street_index_sequences.pkl", "street_unit_position_datasets.pkl",
-                  "unit_coords_datasets.pkl", "unit_position_datasets.pkl"]
-    # file_names = ["building_filenames.pkl", "node_features.pkl"]
+    file_names = ["boundary_filenames.pkl", "building_filenames.pkl", "building_polygons.pkl",
+                  "building_semantics.pkl", "edge_indices.pkl",
+                  "node_features.pkl", "unit_road_street_indices.pkl"]
+    file_names = ["file_paths.pkl", "insidemask.pkl"]
 
     # 파일로부터 데이터를 불러옵니다.
     lists = []
@@ -50,7 +53,7 @@ for city_name in city_names:
         print("All lists have the same length.")
 
     # 4번째 리스트를 기준으로 정렬 순서를 얻습니다.
-    sort_idx = 3
+    sort_idx = 0
     extracted_numbers = []
     for file_path in lists[sort_idx]:
         split_path = file_path.split('/')
@@ -71,13 +74,3 @@ for city_name in city_names:
         with open(file_path, 'wb') as f:
             data = sorted_lists[i]
             pickle.dump(data, f)
-
-    # 정렬된 4번째 리스트를 기준으로 정렬 여부 확인
-    sorted_building_filenames = sorted_lists[sort_idx]
-    is_sorted = all(sorted_building_filenames[i] <= sorted_building_filenames[i + 1] for i in range(len(sorted_building_filenames) - 1))
-
-    # 각 리스트의 원소 순서가 동일한지 확인
-    is_same_order = all(np.array_equal(lists[i][j], sorted_lists[i][j]) for i in range(len(file_names)) for j in range(len(lists[0])))
-
-    print("Is the list sorted correctly?:", is_sorted)
-    print("Are the elements in the same order in all lists?:", is_same_order)
