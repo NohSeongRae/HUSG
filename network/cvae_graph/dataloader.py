@@ -19,17 +19,17 @@ class GraphDataset(Dataset):
         self.chunk_graph = chunk_graph
         self.data_type = data_type
 
-        folder_path = './network/cvae_graph/' + self.data_type
+        self.folder_path = '/local_dataset/graph_condition_train_datasets/' + self.data_type
         file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
 
         count = 0
-        for filename in os.listdir(folder_path):
+        for filename in os.listdir(self.folder_path):
             if filename.endswith(file_extension):
                 count += 1
         self.data_length = count
 
     def get(self, idx):
-        load_path = './network/cvae_graph/' + self.data_type + '/' + str(idx) + '.gpickle'
+        load_path = self.folder_path + '/' + str(idx) + '.gpickle'
         with open(load_path, 'rb') as f:
             self.graph = pickle.load(f)
 
