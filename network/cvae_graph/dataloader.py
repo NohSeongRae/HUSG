@@ -61,7 +61,6 @@ class GraphDataset(Dataset):
 
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
-
             # PyG 데이터 객체를 생성합니다.
             data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
@@ -105,6 +104,7 @@ class GraphDataset(Dataset):
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
+        print(data)
         return data
 
     def len(self):
