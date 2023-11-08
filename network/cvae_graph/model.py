@@ -226,7 +226,7 @@ class GraphDecoder(nn.Module):
             mask = (batch == ub)
             order_within_batch[mask] = torch.arange(mask.sum(), device=batch.device)
 
-        one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=180)
+        one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=320)
         return one_hot_order
 
 
