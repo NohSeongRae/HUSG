@@ -104,7 +104,6 @@ class GraphDataset(Dataset):
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
-        print(data)
         return data
 
     def len(self):

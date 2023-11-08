@@ -177,11 +177,11 @@ class GraphDecoder(nn.Module):
         self.global_pool = torch_geometric.nn.global_max_pool
 
         if convlayer == 'gat':
-            self.d_conv1 = self.convlayer(feature_dim + 180, feature_dim, heads=n_head)
+            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim, heads=n_head)
             self.d_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
             self.d_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
         else:
-            self.d_conv1 = self.convlayer(feature_dim + 180, feature_dim)
+            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim)
             self.d_conv2 = self.convlayer(feature_dim, feature_dim)
             self.d_conv3 = self.convlayer(feature_dim, feature_dim)
             n_head = 1
