@@ -25,9 +25,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
     dataset_names = [
         'edge_indices',
-        'insidemask',
         'node_features',
         'building_semantics',
+        'insidemask'
     ]
 
     graphs = []
