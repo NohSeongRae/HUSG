@@ -108,7 +108,7 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         node_x.append(x)
         node_y.append(y)
 
-    if is_chunk_graph:
+    if is_chunk_graph and condition_type == 'graph':
         num_nodes = len(pos)
         adj_matrix = np.zeros((num_nodes, num_nodes))
         adj_matrix[edge_index[0], edge_index[1]] = 1
