@@ -19,7 +19,7 @@ class GraphDataset(Dataset):
         self.chunk_graph = chunk_graph
         self.data_type = data_type
 
-        self.folder_path = '../../..//local_dataset/graph_condition_train_datasets/' + self.data_type
+        self.folder_path = '../../../..//local_dataset/graph_condition_train_datasets/' + self.data_type
         file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
 
         count = 0
