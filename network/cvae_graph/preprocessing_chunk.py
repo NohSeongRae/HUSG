@@ -64,6 +64,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
             if condition_type == 'image':
                 graph.graph['condition'] = inside_masks[idx]
+                print(inside_masks[idx])
             elif condition_type == 'graph':
                 street_graph = adj_matrix[:n_chunk, :n_chunk]
                 street_graph = nx.DiGraph(street_graph)
