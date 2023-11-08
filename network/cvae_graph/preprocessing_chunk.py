@@ -96,7 +96,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             os.makedirs(save_path)
 
         for idx in range(start_index, end_index):
-            with open(save_path + '/' + srt(idx - start_index) + '.gpickle', 'wb') as f:
+            with open(save_path + '/' + str(idx - start_index) + '.gpickle', 'wb') as f:
                 nx.write_gpickle(graphs[idx], f)
 
 if __name__ == '__main__':
