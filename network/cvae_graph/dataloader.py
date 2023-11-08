@@ -3,6 +3,7 @@ from torch_geometric.data import Data, Dataset
 import networkx as nx
 import numpy as np
 import pickle
+import os
 
 
 class GraphDataset(Dataset):
@@ -16,15 +17,25 @@ class GraphDataset(Dataset):
 
         self.condition_type = condition_type
         self.chunk_graph = chunk_graph
-        print('load start')
-        load_path = './network/cvae_graph/' + data_type + '_datasets.gpickle'
-        with open(load_path, 'rb') as f:
-            self.graphs = pickle.load(f)
-        print('load finish')
+        self.data_type = data_type
+
+        folder_path = './network/cvae_graph/' + self.data_type
+        file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
+
+        count = 0
+        for filename in os.listdir(folder_path):
+            if filename.endswith(file_extension):
+                count += 1
+        self.data_length = count
+
     def get(self, idx):
+        load_path = './network/cvae_graph/' + self.data_type + '/' + str(idx) + '.gpickle'
+        with open(load_path, 'rb') as f:
+            self.graph = pickle.load(f)
+
         if self.chunk_graph:
             # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
-            graph = self.graphs[idx]
+            graph = self.graph[idx]
 
             # 그래프를 PyG 데이터 객체로 변환합니다.
             # 노드 특성과 엣지 인덱스를 추출합니다.
@@ -58,7 +69,7 @@ class GraphDataset(Dataset):
 
         else:
             # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
-            graph = self.graphs[idx]
+            graph = self.graph
 
             # 그래프를 PyG 데이터 객체로 변환합니다.
             # 노드 특성과 엣지 인덱스를 추출합니다.
@@ -97,4 +108,5 @@ class GraphDataset(Dataset):
         return data
 
     def len(self):
-        return len(self.graphs)
+
+        return self.data_length
