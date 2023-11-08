@@ -16,11 +16,11 @@ class GraphDataset(Dataset):
 
         self.condition_type = condition_type
         self.chunk_graph = chunk_graph
-
+        print('load start')
         load_path = './network/cvae_graph/' + data_type + '_datasets.gpickle'
         with open(load_path, 'rb') as f:
             self.graphs = pickle.load(f)
-
+        print('load finish')
     def get(self, idx):
         if self.chunk_graph:
             # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
