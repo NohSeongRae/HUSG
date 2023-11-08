@@ -74,16 +74,29 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss KL: {loss_kl:.4f}")
 
             if condition_type == 'image':
-                plot(output_pos.detach().cpu().numpy(),
-                     output_size.detach().cpu().numpy(),
-                     output_theta.detach().cpu().numpy(),
-                     data.building_mask.detach().cpu().numpy(),
-                     data.building_feature.detach().cpu().numpy(),
-                     data.condition.detach().cpu().numpy(),
-                     idx + 1,
-                     condition_type,
-                     chunk_graph,
-                     data.edge_index.detach().cpu().numpy())
+                if not chunk_graph:
+                    plot(output_pos.detach().cpu().numpy(),
+                         output_size.detach().cpu().numpy(),
+                         output_theta.detach().cpu().numpy(),
+                         data.building_mask.detach().cpu().numpy(),
+                         data.building_feature.detach().cpu().numpy(),
+                         data.condition.detach().cpu().numpy(),
+                         idx + 1,
+                         condition_type,
+                         chunk_graph,
+                         data.edge_index.detach().cpu().numpy())
+                else:
+                    plot(output_pos.detach().cpu().numpy(),
+                         output_size.detach().cpu().numpy(),
+                         output_theta.detach().cpu().numpy(),
+                         data.building_mask.detach().cpu().numpy(),
+                         data.node_features.detach().cpu().numpy(),
+                         data.condition.detach().cpu().numpy(),
+                         idx + 1,
+                         condition_type,
+                         chunk_graph,
+                         data.edge_index.detach().cpu().numpy())
+
             elif condition_type == 'graph':
                 if not chunk_graph:
                     plot(output_pos.detach().cpu().numpy(),
