@@ -144,7 +144,7 @@ class Trainer:
     def distance_loss(self, pred, trg, mask, edge_index):
         if mask is not None:
             # edge_index에서 선택된 노드들로만 구성된 엣지를 찾습니다.
-            mask = ((mask[edge_index[0]] == 1) | (mask[edge_index[1]] == 1)).squeeze(-1)
+            mask = ((mask[edge_index[0]] == 1) & (mask[edge_index[1]] == 1)).squeeze(-1)
             selected_edge_index = edge_index[:, mask]
 
             # edge_index에서 시작 노드와 끝 노드의 인덱스를 가져옵니다.
