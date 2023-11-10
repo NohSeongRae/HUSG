@@ -92,7 +92,7 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
         if building_exist_mask[i] == 0:
             continue
 
-        x, y, w, h, theta, semantic = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale, semantics
+        x, y, w, h, theta, semantic = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale, semantics[i]
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
