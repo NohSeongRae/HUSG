@@ -102,6 +102,7 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
 
         semantic = np.argmax(semantic)
+        print(semantic)
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color=get_random_color(semantic), label='Rotated Box')
 
     for i in range(len(pos)):
