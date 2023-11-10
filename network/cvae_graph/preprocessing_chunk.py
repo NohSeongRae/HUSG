@@ -102,7 +102,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                     print(zeros)
                 else:
                     for i in range(len(semantic_list)):
-                        if building_semantics[idx][node - n_street] in semantic_list[i]:
+                        if building_semantics[idx][node - n_chunk] in semantic_list[i]:
                             zeros = np.zeros(10)
                             zeros[i + 1] = 1
                             graph.nodes[node]['node_semantics'] = zeros
@@ -126,7 +126,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             start_index = int(total_size * (train_ratio + val_ratio))
             end_index = int(total_size * (train_ratio + val_ratio + test_ratio))
 
-        save_path = './network/cvae_graph/' + data_type
+        save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'+ data_type
         if not os.path.exists(save_path):
             os.makedirs(save_path)
 
