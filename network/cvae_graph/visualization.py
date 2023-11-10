@@ -57,6 +57,8 @@ def rotate_points_around_center(points, center, theta_deg):
     return rotated_points
 
 def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
+    print(semantics)
+    print(gt_semantics)
     node_x = []
     node_y = []
 
