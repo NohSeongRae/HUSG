@@ -8,6 +8,7 @@ import random
 import seaborn as sns
 
 def get_random_color(seed, palette='pastel', n_colors=15):
+    print(seed)
     random.seed(seed)
     colors = sns.color_palette(palette, n_colors)
     return colors[random.randint(0, len(colors) - 1)]
