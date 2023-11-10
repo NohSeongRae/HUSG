@@ -102,7 +102,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         if building_semantics[idx][node - n_chunk] in semantic_list[i]:
                             graph.nodes[node]['node_semantics'] = i + 1
                             break
-
+                print(city_name, idx)
                 print(building_semantics[idx])
                 print(graph.nodes[node]['node_semantics'], n_node, n_chunk, n_building)
             graphs.append(graph)
