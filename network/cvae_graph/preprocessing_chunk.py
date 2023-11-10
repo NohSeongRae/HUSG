@@ -83,6 +83,32 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
             for node in graph.nodes():
                 graph.nodes[node]['building_masks'] = zeros[node]
+
+            semantic_list = [["shop", "supermarket", "restaurant", "tourism", "accommodation"],
+                             ["kindergarten", "school", "college", "university"],
+                             ["police_station", "ambulance_station", "fire_station"],
+                             ["bank", "bureau_de_change"],
+                             ["government_office", "embassy", "military", "post_office"],
+                             ["doctor", "dentist", "clinic", "hospital", "pharmacy", "alternative"],
+                             ["place_of_worship", "community_centre", "library", "historic", "toilet"],
+                             ["stadium", "swimming_pool", "pitch", "sport_centre"],
+                             ['residence']]
+
+            for node in graph.nodes():
+                if node < n_street:
+                    zeros = np.zeros(10)
+                    zeros[0] = 1
+                    graph.nodes[node]['node_semantics'] = zeros
+                    print(zeros)
+                else:
+                    for i in range(len(semantic_list)):
+                        if building_semantics[idx][node - n_street] in semantic_list[i]:
+                            zeros = np.zeros(10)
+                            zeros[i + 1] = 1
+                            graph.nodes[node]['node_semantics'] = zeros
+                            print(zeros)
+                            break
+            print('---')
             graphs.append(graph)
 
     random.shuffle(graphs)
