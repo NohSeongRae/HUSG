@@ -8,7 +8,7 @@ sys.path.append(husg_directory_path)
 from etc.cityname import city_name, location
 from data_download import data_download
 from extract import extract
-from get_boundary import get_boundary
+# from get_boundary import get_boundary
 from etc import filepath as filepath
 
 # get_data.py에선 data_download, extract, get_boundary를 진행함
@@ -44,4 +44,4 @@ for filename in os.listdir(filepath.nld):
 print(f"get_data start: {location}")
 data_download(city_name, location)
 extract(city_name)
-get_boundary(city_name, location)
+# get_boundary(city_name, location)

@@ -39,14 +39,21 @@ def data_download(city_name, location):
 
     data = {"type": "FeatureCollection", "features": []}
     # 주어진 location에 대해 osmnx에서 태그별 데이터 다운로드 후 json으로 변환
+    water_tags = {'place': 'sea', 'natural': ['water', 'bay'],
+                  'water': ['lake', 'pond', 'salt_pond', 'reservoir', 'river']}
+    # 주어진 location에 대해 osmnx에서 태그별 데이터 다운로드 후 json으로 변환
     for tag in tqdm(tags):
         gdf = ox.geometries_from_place(location, {tag: tags[tag]})
         geojson_data = json.loads(gdf.to_json())
 
         # 주어진 geojson_data["features"]에 대해, properties중 None이 아닌 값만을 선별해서 저장
         for feature in geojson_data["features"]:
-            feature["properties"] = {k: v for k, v in feature["properties"].items() if v is not None}
-            data["features"].append(feature)
+            if not any(feature['properties'].get(water_key) in water_values if feature['properties'].get(
+                    water_key) is not None else False for water_key, water_values in water_tags.items()):
+                feature["properties"] = {k: v for k, v in feature["properties"].items() if v is not None}
+                data["features"].append(feature)
+            else:
+                print("\nwater data removed\n")
 
     # 파일 저장
     with open(filepath.data_filepath, 'w') as f:
