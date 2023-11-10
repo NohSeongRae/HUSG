@@ -118,7 +118,7 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-        ax2.plot(rotated_box[:, 0], rotated_box[:, 1],get_random_color(semantic), label='Rotated Box')
+        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color=get_random_color(semantic), label='Rotated Box')
 
         node_x.append(x)
         node_y.append(y)
