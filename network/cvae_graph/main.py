@@ -144,6 +144,7 @@ class Trainer:
 
     def semantic_loss(self, pred, trg, mask):
         semantic_loss = F.cross_entropy(pred, trg, ignore_index=0)
+        print(semantic_loss * self.semantic_weight)
         return semantic_loss * self.semantic_weight
 
     def distance_loss(self, pred, trg, mask, edge_index):
