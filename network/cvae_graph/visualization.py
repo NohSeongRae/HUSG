@@ -4,6 +4,13 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from torch_geometric.utils import to_dense_adj
 import os
+import random
+import seaborn as sns
+
+def get_random_color(seed, palette='pastel', n_colors=10):
+    random.seed(seed)
+    colors = sns.color_palette(palette, n_colors)
+    return colors[random.randint(0, len(colors) - 1)]
 
 def get_bbox_corners(x, y, w, h):
     # Calculate half width and half height
@@ -49,7 +56,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type, is_chunk_graph, edge_index):
+def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
     node_x = []
     node_y = []
 
@@ -85,25 +92,28 @@ def plot(pos, size, rot, building_exist_mask, gt, condition, idx, condition_type
         if building_exist_mask[i] == 0:
             continue
 
-        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale
+        x, y, w, h, theta, semantic = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale, semantics
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-        ax1.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
+
+        semantic = np.argmax(semantic)
+        ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color=get_random_color(semantic), label='Rotated Box')
 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
             continue
 
-        x, y, w, h, theta = gt[i][0], gt[i][1], gt[i][2], gt[i][3], (gt[i][4] * 2 - 1) * rotation_scale
+        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
+        semantic = gt_semantics[i]
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], 'r-', label='Rotated Box')
+        ax2.plot(rotated_box[:, 0], rotated_box[:, 1],get_random_color(semantic), label='Rotated Box')
 
         node_x.append(x)
         node_y.append(y)

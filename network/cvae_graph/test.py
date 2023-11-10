@@ -35,6 +35,9 @@ def recon_theta_loss(pred, trg, mask):
     recon_loss = recon_loss * mask
     return recon_loss.sum() / mask.sum()
 
+def semantic_loss(pred, trg, mask):
+    semantic_loss = F.cross_entropy(pred, trg, ignore_index=0)
+    return semantic_loss
 
 def kl_loss(mu, log_var):
     kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
@@ -60,7 +63,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
         for idx, data in enumerate(tqdm(test_dataloader)):
             # Get the source and target sequences from the batch
             data = data.to(device=device)
-            output_pos, output_size, output_theta = cvae.test(data)
+            output_pos, output_size, output_theta, output_semantics = cvae.test(data)
 
             # # Compute the losses using the generated sequence
             # loss_pos = recon_pos_loss(output_pos, data.building_feature[:, :2], data.building_mask)
@@ -113,8 +116,10 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                     plot(output_pos.detach().cpu().numpy(),
                          output_size.detach().cpu().numpy(),
                          output_theta.detach().cpu().numpy(),
+                         output_semantics.detach().cpu().numpy(),
                          data.building_mask.detach().cpu().numpy(),
                          data.node_features.detach().cpu().numpy(),
+                         data.node_semantics.detach().cpu().numpy(),
                          data.condition[0].condition_street_feature.detach().cpu().numpy(),
                          idx + 1,
                          condition_type,
