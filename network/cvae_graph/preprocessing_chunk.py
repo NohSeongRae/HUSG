@@ -99,6 +99,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                              ["stadium", "swimming_pool", "pitch", "sport_centre"],
                              ['residence']]
 
+            if 'cemetery' in building_semantics[idx][:] or 'seating' in building_semantics[idx][:]:
+                continue
+
             for node in graph.nodes():
                 if node < n_chunk:
                     graph.nodes[node]['node_semantics'] = 0
