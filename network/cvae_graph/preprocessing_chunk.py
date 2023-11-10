@@ -95,7 +95,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                              ['residence']]
 
             for node in graph.nodes():
-                if node < n_street:
+                if node < n_chunk:
                     zeros = np.zeros(10)
                     zeros[0] = 1
                     graph.nodes[node]['node_semantics'] = zeros
