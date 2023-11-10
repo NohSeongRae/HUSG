@@ -27,7 +27,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         'edge_indices',
         'node_features',
         'building_semantics',
-        'insidemask'
+        'insidemask',
+        'boundary_filenames'
     ]
 
     graphs = []
@@ -48,6 +49,10 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[3] + '.pkl'
         with open(filepath, 'rb') as f:
             inside_masks = pickle.load(f)
+
+        filepath = dataset_path + '/' + city_name + '/' + dataset_names[4] + '.pkl'
+        with open(filepath, 'rb') as f:
+            file_names = pickle.load(f)
 
         for idx in range(len(edge_indices)):
             graph = nx.Graph()
@@ -102,7 +107,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         if building_semantics[idx][node - n_chunk] in semantic_list[i]:
                             graph.nodes[node]['node_semantics'] = i + 1
                             break
-                print(city_name, idx)
+                print(city_name, idx, file_names[idx])
                 print(building_semantics[idx])
                 print(graph.nodes[node]['node_semantics'], n_node, n_chunk, n_building)
             graphs.append(graph)
