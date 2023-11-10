@@ -7,7 +7,7 @@ import os
 import random
 import seaborn as sns
 
-def get_random_color(seed, palette='pastel', n_colors=10):
+def get_random_color(seed, palette='pastel', n_colors=15):
     random.seed(seed)
     colors = sns.color_palette(palette, n_colors)
     return colors[random.randint(0, len(colors) - 1)]
@@ -57,8 +57,6 @@ def rotate_points_around_center(points, center, theta_deg):
     return rotated_points
 
 def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
-    print(semantics)
-    print(gt_semantics)
     node_x = []
     node_y = []
 
@@ -102,7 +100,6 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
 
         semantic = np.argmax(semantic)
-        print(semantic)
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color=get_random_color(semantic), label='Rotated Box')
 
     for i in range(len(pos)):
