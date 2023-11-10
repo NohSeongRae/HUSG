@@ -103,7 +103,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                             graph.nodes[node]['node_semantics'] = i + 1
                             break
 
-                print(graph.nodes[node]['node_semantics'])
+                print(graph.nodes[node]['node_semantics'], n_node, n_chunk, n_building)
             graphs.append(graph)
 
     random.shuffle(graphs)
