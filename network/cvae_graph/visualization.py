@@ -81,7 +81,7 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
                 ax2.scatter(x, y, s=0.01)
         else:
             for i in range(len(condition)):
-                x, y, w, h, theta = condition[i][0], condition[i][1], condition[i][2], condition[i][3], condition[i][4]
+                x, y, w, h, theta = condition[i][0], condition[i][1], condition[i][2], condition[i][3], (condition[i][4] * 2 - 1) * rotation_scale
                 points = get_bbox_corners(x, y, w, h)
                 rotated_points = rotate_points_around_center(points, [x, y], theta)
 
