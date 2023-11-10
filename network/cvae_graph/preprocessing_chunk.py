@@ -96,15 +96,11 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
             for node in graph.nodes():
                 if node < n_chunk:
-                    zeros = np.zeros(10)
-                    zeros[0] = 1
-                    graph.nodes[node]['node_semantics'] = zeros
+                    graph.nodes[node]['node_semantics'] = 0
                 else:
                     for i in range(len(semantic_list)):
                         if building_semantics[idx][node - n_chunk] in semantic_list[i]:
-                            zeros = np.zeros(10)
-                            zeros[i + 1] = 1
-                            graph.nodes[node]['node_semantics'] = zeros
+                            graph.nodes[node]['node_semantics'] = i + 1
                             break
             graphs.append(graph)
 
