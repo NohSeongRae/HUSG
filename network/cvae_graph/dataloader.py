@@ -43,12 +43,14 @@ class GraphDataset(Dataset):
             # 그래프를 PyG 데이터 객체로 변환합니다.
             # 노드 특성과 엣지 인덱스를 추출합니다.
             node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
-                                         dtype=torch.float)
+                                         dtype=torch.float32)
+            node_semantics = torch.tensor(np.array([graph.nodes[node]['node_semantics'] for node in graph.nodes()]),
+                                          dtype=torch.float32)
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
-                                          dtype=torch.float)
+                                          dtype=torch.float32)
 
             if self.condition_type == 'image':
-                condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float)
+                condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
             else:
                 condition_graph = graph.graph['condition']
                 condition_edge_index = nx.to_scipy_sparse_matrix(condition_graph).tocoo()
@@ -56,7 +58,7 @@ class GraphDataset(Dataset):
                                                     dtype=torch.long)
                 condition_street_feature = torch.tensor(
                     np.array([condition_graph.nodes[node]['chunk_features'] for node in condition_graph.nodes()]),
-                    dtype=torch.float)
+                    dtype=torch.float32)
 
                 condition = Data(condition_street_feature=condition_street_feature,
                                  edge_index=condition_edge_index,
@@ -65,7 +67,7 @@ class GraphDataset(Dataset):
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
             # PyG 데이터 객체를 생성합니다.
-            data = Data(node_features=node_features,
+            data = Data(node_features=node_features, node_semantics=node_semantics,
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 

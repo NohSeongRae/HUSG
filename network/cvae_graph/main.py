@@ -24,7 +24,7 @@ import wandb
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
-                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight,
+                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight, semantic_weight,
                  condition_type, convlayer, chunk_graph):
         """
         Initialize the trainer with the specified parameters.
@@ -56,6 +56,7 @@ class Trainer:
         self.pos_weight = pos_weight
         self.size_weight = size_weight
         self.theta_weight = theta_weight
+        self.semantic_weight = semantic_weight
         self.kl_weight = kl_weight
         self.distance_weight = distance_weight
         self.condition_type = condition_type
@@ -141,6 +142,10 @@ class Trainer:
         kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
         return kl_loss * self.kl_weight
 
+    def semantic_loss(self, pred, trg, mask):
+        semantic_loss = F.cross_entropy(pred, trg, ignore_index=0)
+        return semantic_loss * self.semantic_weight
+
     def distance_loss(self, pred, trg, mask, edge_index):
         if mask is not None:
             # edge_index에서 선택된 노드들로만 구성된 엣지를 찾습니다.
@@ -181,6 +186,7 @@ class Trainer:
             total_pos_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
             total_size_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
             total_theta_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+            total_semantic_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
             total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
             total_distance_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
@@ -191,7 +197,7 @@ class Trainer:
 
                 # Get the model's predictions
                 data = data.to(device=self.device)
-                output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
+                output_pos, output_size, output_theta, output_semantics, mu, log_var = self.cvae(data)
 
                 mask = data.building_mask.detach()
 
@@ -204,11 +210,12 @@ class Trainer:
                 loss_pos = self.recon_pos_loss(output_pos, gt_feature.detach()[:, :2], mask)
                 loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4], mask)
                 loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:], mask)
+                loss_semantic = self.semantic_loss(output_semantics, data.node_semantics.detach(), mask)
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_distance = self.distance_loss(output_pos, gt_feature.detach()[:, :2],
                                                    mask, data.edge_index.detach())
 
-                loss_total = loss_pos + loss_size + loss_theta + loss_kl + loss_distance
+                loss_total = loss_pos + loss_size + loss_theta + loss_semantic + loss_kl + loss_distance
 
                 # Backpropagation and optimization step
                 loss_total.backward()
@@ -219,11 +226,13 @@ class Trainer:
                 dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_semantic, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_distance, op=dist.ReduceOp.SUM)
                 total_pos_loss += loss_pos
                 total_size_loss += loss_size
                 total_theta_loss += loss_theta
+                total_semantic_loss += loss_semantic
                 total_kl_loss += loss_kl
                 total_distance_loss += loss_distance
 
@@ -232,11 +241,13 @@ class Trainer:
                 loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_theta_mean = total_theta_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_semantic_mean = total_semantic_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_distance_mean = total_distance_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Pos: {loss_pos_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Size: {loss_size_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Theta: {loss_theta_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Semantic: {loss_semantic_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Distance: {loss_distance_mean:.4f}")
 
@@ -244,6 +255,7 @@ class Trainer:
                     wandb.log({"Train pos loss": loss_pos_mean}, step=epoch + 1)
                     wandb.log({"Train size loss": loss_size_mean}, step=epoch + 1)
                     wandb.log({"Train theta loss": loss_theta_mean}, step=epoch + 1)
+                    wandb.log({"Train semantic loss": loss_semantic_mean}, step=epoch + 1)
                     wandb.log({"Train kl loss": loss_kl_mean}, step=epoch + 1)
                     wandb.log({"Train distance loss": loss_distance_mean}, step=epoch + 1)
 
@@ -252,6 +264,7 @@ class Trainer:
                 total_pos_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
                 total_size_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
                 total_theta_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_semantic_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
                 total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
                 total_distance_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
 
@@ -260,7 +273,7 @@ class Trainer:
                     for data in tqdm(self.val_dataloader):
                         # Get the source and target sequences from the batch
                         data = data.to(device=self.device)
-                        output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
+                        output_pos, output_size, output_theta, output_semantics, mu, log_var = self.cvae(data)
 
                         mask = data.building_mask
 
@@ -273,6 +286,7 @@ class Trainer:
                         loss_pos = self.recon_pos_loss(output_pos, gt_feature[:, :2], mask)
                         loss_size = self.recon_size_loss(output_size, gt_feature[:, 2:4], mask)
                         loss_theta = self.recon_theta_loss(output_theta, gt_feature[:, 4:], mask)
+                        loss_semantic = self.semantic_loss(output_semantics, data.node_semantics, mask)
                         loss_kl = self.kl_loss(mu, log_var)
                         loss_distance = self.distance_loss(output_pos, gt_feature[:, :2],
                                                            mask, data.edge_index)
@@ -281,11 +295,13 @@ class Trainer:
                         dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_semantic, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_distance, op=dist.ReduceOp.SUM)
                         total_pos_loss += loss_pos
                         total_size_loss += loss_size
                         total_theta_loss += loss_theta
+                        total_semantic_loss += loss_semantic
                         total_kl_loss += loss_kl
                         total_distance_loss += loss_distance
 
@@ -294,12 +310,14 @@ class Trainer:
                         loss_pos_mean = total_pos_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_size_mean = total_size_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_theta_mean = total_theta_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_semantic_mean = total_semantic_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_distance_mean = total_distance_loss.item() / (
                                 len(self.val_dataloader) * dist.get_world_size())
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Pos: {loss_pos_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Size: {loss_size_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Theta: {loss_theta_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Semantic: {loss_semantic_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss KL: {loss_kl_mean:.4f}")
                         print(
                             f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Distance: {loss_distance_mean:.4f}")
@@ -308,6 +326,7 @@ class Trainer:
                             wandb.log({"Validation pos loss": loss_pos_mean}, step=epoch + 1)
                             wandb.log({"Validation size loss": loss_size_mean}, step=epoch + 1)
                             wandb.log({"Validation theta loss": loss_theta_mean}, step=epoch + 1)
+                            wandb.log({"Validation semantic loss": loss_semantic_mean}, step=epoch + 1)
                             wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
                             wandb.log({"Validation distance loss": loss_distance_mean}, step=epoch + 1)
 
@@ -350,6 +369,7 @@ if __name__ == '__main__':
     parser.add_argument("--pos_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--size_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
+    parser.add_argument("--semantic_weight", type=float, default=2.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--chunk_graph", type=bool, default=True, help="save dir path")
@@ -398,6 +418,7 @@ if __name__ == '__main__':
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
                       pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
+                      semantic_weight=opt.semantic_weight,
                       kl_weight=opt.kl_weight, distance_weight=opt.distance_weight, condition_type=opt.condition_type,
                       convlayer=opt.convlayer, chunk_graph=opt.chunk_graph)
 

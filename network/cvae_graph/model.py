@@ -102,6 +102,8 @@ class GraphEncoder(nn.Module):
         if not chunk_graph:
             self.street_fc = nn.Linear(128, feature_dim)
         self.building_fc = nn.Linear(5, feature_dim)
+        self.semantic_embed = nn.Embedding(10, feature_dim)
+        self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -141,7 +143,14 @@ class GraphEncoder(nn.Module):
             node_feature = data.node_features
             node_feature = self.building_fc(node_feature)
             node_feature = F.relu(node_feature)
-            n_embed_0 = node_feature
+
+            node_semantics = data.node_semantics
+            node_semantics = self.semantic_embed(node_semantics)
+            node_semantics = F.relu(node_semantics)
+
+            node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_semantics], dim=1)))
+
+        n_embed_0 = node_feature
 
         n_embed_1 = F.relu(self.e_conv1(n_embed_0, edge_index))
         n_embed_2 = F.relu(self.e_conv2(n_embed_1, edge_index))
@@ -195,6 +204,9 @@ class GraphDecoder(nn.Module):
         self.dec_theta = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_theta = nn.Linear(feature_dim, 1)
 
+        self.dec_semantics = nn.Linear(feature_dim * n_head, feature_dim)
+        self.fc_semantics = nn.Linear(feature_dim, 10)
+
     def forward(self, z, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
@@ -217,7 +229,10 @@ class GraphDecoder(nn.Module):
         output_theta = F.relu(self.dec_theta(d_embed_3))
         output_theta = self.fc_theta(output_theta)
 
-        return output_pos, output_size, output_theta
+        output_semantics = F.relu(self.dec_semantics(d_embed_3))
+        output_semantics = F.softmax(self.fc_semantics(output_semantics), dim=-1)
+
+        return output_pos, output_size, output_theta, output_semantics
 
     def node_order_within_batch(self, batch):
         order_within_batch = torch.zeros_like(batch)
@@ -265,9 +280,9 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, condition, edge_index, data.batch)
+        output_pos, output_size, output_theta, output_semantics = self.decoder(z, condition, edge_index, data.batch)
 
-        return output_pos, output_size, output_theta, mu, log_var
+        return output_pos, output_size, output_theta, output_semantics, mu, log_var
 
     def test(self, data):
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
@@ -278,6 +293,6 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, condition, data.edge_index, data.batch)
+        output_pos, output_size, output_theta, output_semantics = self.decoder(z, condition, data.edge_index, data.batch)
 
-        return output_pos, output_size, output_theta
+        return output_pos, output_size, output_theta, output_semantics
