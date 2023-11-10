@@ -4,15 +4,18 @@ import matplotlib.patches as patches
 import matplotlib.transforms as transforms
 from torch_geometric.utils import to_dense_adj
 import os
-import random
-import seaborn as sns
 
-def get_random_color(seed, palette='pastel', n_colors=15):
-    seed = int(seed)
-    print(seed)
-    random.seed(seed)
-    colors = sns.color_palette(palette, n_colors)
-    return colors[random.randint(0, len(colors) - 1)]
+def get_random_color(seed):
+    """
+    Returns a distinct color for each index in the range 0-9.
+    """
+    # Define a color palette (using matplotlib's tab10 palette)
+    palette = plt.cm.tab10
+    # Normalize index to be between 0 and 1
+    norm_index = seed / 10
+    # Get the corresponding color
+    color = palette(norm_index)
+    return color
 
 def get_bbox_corners(x, y, w, h):
     # Calculate half width and half height
