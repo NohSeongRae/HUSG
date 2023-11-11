@@ -59,8 +59,18 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         with open(filepath, 'rb') as f:
             mask_file_names = pickle.load(f)
 
-        for idx in range(len(edge_indices)):
+        idx = 0
+        while idx < len(edge_indices):
             source_file_names[idx] = source_file_names[idx].split('/')[-1]
+
+            if source_file_names[idx].split('/')[-1] is not mask_file_names[idx]:
+                del mask_file_names[idx]
+                del inside_masks[idx]
+
+            else:
+                idx += 1
+
+        for idx in range(len(edge_indices)):
             print(source_file_names[idx])
             print(mask_file_names[idx])
 
@@ -73,7 +83,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             n_chunk = n_node - n_building
 
             if np.any((node_features[idx][:, :2] < -0.1) | (node_features[idx][:, :2] > 1.1)):
-                print(idx, node_features[idx][:, :2])
+                print(source_file_names[idx], idx, node_features[idx][:, :2])
                 continue
 
             if condition_type == 'image':
