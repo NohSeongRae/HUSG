@@ -53,7 +53,13 @@ class GraphConditionEncoder(nn.Module):
         elif convlayer == 'gcn':
             self.convlayer = torch_geometric.nn.GCNConv
         elif convlayer == 'gin':
-            self.convlayer = torch_geometric.nn.GINConv
+            self.convlayer = lambda in_channels, out_channels: torch_geometric.nn.GINConv(
+                nn.Sequential(
+                    nn.Linear(in_channels, out_channels),
+                    nn.ReLU(),
+                    nn.Linear(out_channels, out_channels)
+                )
+            )
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
@@ -110,7 +116,13 @@ class GraphEncoder(nn.Module):
         elif convlayer == 'gcn':
             self.convlayer = torch_geometric.nn.GCNConv
         elif convlayer == 'gin':
-            self.convlayer = torch_geometric.nn.GINConv
+            self.convlayer = lambda in_channels, out_channels: torch_geometric.nn.GINConv(
+                nn.Sequential(
+                    nn.Linear(in_channels, out_channels),
+                    nn.ReLU(),
+                    nn.Linear(out_channels, out_channels)
+                )
+            )
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
@@ -181,7 +193,13 @@ class GraphDecoder(nn.Module):
         elif convlayer == 'gcn':
             self.convlayer = torch_geometric.nn.GCNConv
         elif convlayer == 'gin':
-            self.convlayer = torch_geometric.nn.GINConv
+            self.convlayer = lambda in_channels, out_channels: torch_geometric.nn.GINConv(
+                nn.Sequential(
+                    nn.Linear(in_channels, out_channels),
+                    nn.ReLU(),
+                    nn.Linear(out_channels, out_channels)
+                )
+            )
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
