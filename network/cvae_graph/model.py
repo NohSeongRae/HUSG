@@ -65,13 +65,17 @@ class GraphConditionEncoder(nn.Module):
 
         if convlayer == 'gat':
             self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
-            self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
-            self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+            self.layer_stack = nn.ModuleList([
+                self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+                for _ in range(T -1)
+            ])
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), bottleneck)
         else:
             self.e_conv1 = self.convlayer(feature_dim, feature_dim)
-            self.e_conv2 = self.convlayer(feature_dim, feature_dim)
-            self.e_conv3 = self.convlayer(feature_dim, feature_dim)
+            self.layer_stack = nn.ModuleList([
+                self.convlayer(feature_dim, feature_dim, heads=n_head)
+                for _ in range(T - 1)
+            ])
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), bottleneck)
 
     def forward(self, data, edge_index):
@@ -83,19 +87,20 @@ class GraphConditionEncoder(nn.Module):
         street_feature = F.relu(street_feature)
 
         n_embed_0 = street_feature
-
-        n_embed_1 = F.relu(self.e_conv1(n_embed_0, edge_index))
-        n_embed_2 = F.relu(self.e_conv2(n_embed_1, edge_index))
-        n_embed_3 = F.relu(self.e_conv3(n_embed_2, edge_index))
-
         g_embed_0 = self.global_pool(n_embed_0, data.batch)
-        g_embed_1 = self.global_pool(n_embed_1, data.batch)
-        g_embed_2 = self.global_pool(n_embed_2, data.batch)
-        g_embed_3 = self.global_pool(n_embed_3, data.batch)
 
-        g_embed = torch.cat((g_embed_0, g_embed_1, g_embed_2, g_embed_3), 1)
+        n_embed_t = F.relu(self.e_conv1(n_embed_0, edge_index))
+        g_embed_t = self.global_pool(n_embed_t, data.batch)
+
+        g_embed = torch.cat((g_embed_0, g_embed_t), dim=1)
+
+        for e_conv_t in self.layer_stack:
+            n_embed_t = F.relu(e_conv_t(n_embed_t, edge_index))
+            g_embed_t = self.global_pool(n_embed_t, data.batch)
+
+            g_embed = torch.cat((g_embed, g_embed_t), dim=1)
+
         latent = self.aggregate(g_embed)
-
         return latent
 
 
@@ -128,13 +133,17 @@ class GraphEncoder(nn.Module):
 
         if convlayer == 'gat':
             self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
-            self.e_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
-            self.e_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+            self.layer_stack = nn.ModuleList([
+                self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+                for _ in range(T -1)
+            ])
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), latent_dim)
         else:
             self.e_conv1 = self.convlayer(feature_dim, feature_dim)
-            self.e_conv2 = self.convlayer(feature_dim, feature_dim)
-            self.e_conv3 = self.convlayer(feature_dim, feature_dim)
+            self.layer_stack = nn.ModuleList([
+                self.convlayer(feature_dim, feature_dim, heads=n_head)
+                for _ in range(T - 1)
+            ])
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), latent_dim)
 
         self.fc_mu = nn.Linear(latent_dim, latent_dim)
@@ -163,17 +172,19 @@ class GraphEncoder(nn.Module):
             node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_semantics], dim=1)))
 
         n_embed_0 = node_feature
-
-        n_embed_1 = F.relu(self.e_conv1(n_embed_0, edge_index))
-        n_embed_2 = F.relu(self.e_conv2(n_embed_1, edge_index))
-        n_embed_3 = F.relu(self.e_conv3(n_embed_2, edge_index))
-
         g_embed_0 = self.global_pool(n_embed_0, data.batch)
-        g_embed_1 = self.global_pool(n_embed_1, data.batch)
-        g_embed_2 = self.global_pool(n_embed_2, data.batch)
-        g_embed_3 = self.global_pool(n_embed_3, data.batch)
 
-        g_embed = torch.cat((g_embed_0, g_embed_1, g_embed_2, g_embed_3), 1)
+        n_embed_t = F.relu(self.e_conv1(n_embed_0, edge_index))
+        g_embed_t = self.global_pool(n_embed_t, data.batch)
+
+        g_embed = torch.cat((g_embed_0, g_embed_t), dim=1)
+
+        for e_conv_t in self.layer_stack:
+            n_embed_t = F.relu(e_conv_t(n_embed_t, edge_index))
+            g_embed_t = self.global_pool(n_embed_t, data.batch)
+
+            g_embed = torch.cat((g_embed, g_embed_t), dim=1)
+
         latent = self.aggregate(g_embed)
 
         mu = self.fc_mu(latent)
@@ -183,7 +194,7 @@ class GraphEncoder(nn.Module):
 
 
 class GraphDecoder(nn.Module):
-    def __init__(self, feature_dim, latent_dim, n_head, bottleneck, convlayer):
+    def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer):
         super(GraphDecoder, self).__init__()
 
         self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
@@ -205,12 +216,16 @@ class GraphDecoder(nn.Module):
 
         if convlayer == 'gat':
             self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim, heads=n_head)
-            self.d_conv2 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
-            self.d_conv3 = self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+            self.layer_stack = nn.ModuleList([
+                self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
+                for _ in range(T - 1)
+            ])
         else:
             self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim)
-            self.d_conv2 = self.convlayer(feature_dim, feature_dim)
-            self.d_conv3 = self.convlayer(feature_dim, feature_dim)
+            self.layer_stack = nn.ModuleList([
+                self.convlayer(feature_dim, feature_dim, heads=n_head)
+                for _ in range(T - 1)
+            ])
             n_head = 1
 
         self.dec_pos = nn.Linear(feature_dim * n_head, feature_dim)
@@ -234,20 +249,20 @@ class GraphDecoder(nn.Module):
         z = torch.cat([z, pos], 1)
 
         d_embed_0 = F.relu(z)
-        d_embed_1 = F.relu(self.d_conv1(d_embed_0, edge_index))
-        d_embed_2 = F.relu(self.d_conv2(d_embed_1, edge_index))
-        d_embed_3 = F.relu(self.d_conv3(d_embed_2, edge_index))
+        d_embed_t = F.relu(self.d_conv1(d_embed_0, edge_index))
+        for d_conv_t in self.layer_stack:
+            d_embed_t = F.relu(d_conv_t(d_embed_t, edge_index))
 
-        output_pos = F.relu(self.dec_pos(d_embed_3))
+        output_pos = F.relu(self.dec_pos(d_embed_t))
         output_pos = self.fc_pos(output_pos)
 
-        output_size = F.relu(self.dec_size(d_embed_3))
+        output_size = F.relu(self.dec_size(d_embed_t))
         output_size = self.fc_size(output_size)
 
-        output_theta = F.relu(self.dec_theta(d_embed_3))
+        output_theta = F.relu(self.dec_theta(d_embed_t))
         output_theta = self.fc_theta(output_theta)
 
-        output_semantics = F.relu(self.dec_semantics(d_embed_3))
+        output_semantics = F.relu(self.dec_semantics(d_embed_t))
         output_semantics = F.softmax(self.fc_semantics(output_semantics), dim=-1)
 
         return output_pos, output_size, output_theta, output_semantics
@@ -281,7 +296,7 @@ class GraphCVAE(nn.Module):
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     convlayer=convlayer, chunk_graph=chunk_graph)
-        self.decoder = GraphDecoder(feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
+        self.decoder = GraphDecoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     bottleneck=bottleneck, convlayer=convlayer)
 
     def reparameterize(self, mu, logvar):
