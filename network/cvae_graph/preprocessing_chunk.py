@@ -61,9 +61,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
         idx = 0
         while idx < len(edge_indices):
-            print(idx)
-            source_file_names[idx] = source_file_names[idx].split('/')[-1]
-
             if source_file_names[idx].split('/')[-1] != mask_file_names[idx]:
                 del mask_file_names[idx]
                 del inside_masks[idx]
