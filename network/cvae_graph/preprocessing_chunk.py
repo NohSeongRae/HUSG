@@ -82,7 +82,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 continue
 
             if condition_type == 'image':
+                print(inside_masks.tolist())
                 inside_masks[idx] = np.flipud(inside_masks[idx])
+                print(inside_masks.tolist())
                 graph.graph['condition'] = inside_masks[idx]
 
             elif condition_type == 'graph':
