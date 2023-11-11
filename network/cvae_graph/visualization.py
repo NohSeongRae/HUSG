@@ -72,11 +72,6 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
     if condition_type == 'image':
         ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
         ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
-
-        if idx == 45 or idx == 40:
-            for c in condition:
-                print(c)
-            print('----')
     else:
         if not is_chunk_graph:
             for street in condition:
