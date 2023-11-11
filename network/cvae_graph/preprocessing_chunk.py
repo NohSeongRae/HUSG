@@ -28,7 +28,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         'node_features',
         'building_semantics',
         'insidemask',
-        'boundary_filenames'
+        'boundary_filenames',
+        'filename'
     ]
 
     graphs = []
@@ -52,9 +53,16 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[4] + '.pkl'
         with open(filepath, 'rb') as f:
-            file_names = pickle.load(f)
+            source_file_names = pickle.load(f)
+
+        filepath = dataset_path + '/' + city_name + '/' + dataset_names[5] + '.pkl'
+        with open(filepath, 'rb') as f:
+            mask_file_names = pickle.load(f)
 
         for idx in range(len(edge_indices)):
+            print(source_file_names[idx])
+            print(mask_file_names[idx])
+
             graph = nx.Graph()
             graph.add_edges_from(edge_indices[idx])
             adj_matrix = nx.adjacency_matrix(graph).todense()
