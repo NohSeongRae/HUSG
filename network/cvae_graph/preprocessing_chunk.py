@@ -60,6 +60,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             mask_file_names = pickle.load(f)
 
         for idx in range(len(edge_indices)):
+            source_file_names[idx] = source_file_names[idx].split('/')[-1]
             print(source_file_names[idx])
             print(mask_file_names[idx])
 
