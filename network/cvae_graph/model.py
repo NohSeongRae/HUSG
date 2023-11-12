@@ -218,7 +218,7 @@ class GraphDecoder(nn.Module):
     def forward(self, z, node_mask, condition, edge_index, batch):
         node_mask = self.mask_embed(node_mask).squeeze(1)
         node_mask = F.relu(node_mask)
-
+        print(z.shape, node_mask.shape, condition.shape)
         z = torch.cat([z, node_mask, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
