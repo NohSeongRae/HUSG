@@ -66,7 +66,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
             # Get the source and target sequences from the batch
             data = data.to(device=device)
-            output_pos, output_size, output_theta, output_semantics = cvae.test(data)
+            output_pos, output_size, output_theta = cvae.test(data)
 
             # # Compute the losses using the generated sequence
             # loss_pos = recon_pos_loss(output_pos, data.building_feature[:, :2], data.building_mask)
@@ -83,7 +83,6 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                 plot(output_pos.detach().cpu().numpy(),
                      output_size.detach().cpu().numpy(),
                      output_theta.detach().cpu().numpy(),
-                     output_semantics.detach().cpu().numpy(),
                      data.building_mask.detach().cpu().numpy(),
                      data.node_features.detach().cpu().numpy(),
                      data.node_semantics.detach().cpu().numpy(),
@@ -96,7 +95,6 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                 plot(output_pos.detach().cpu().numpy(),
                      output_size.detach().cpu().numpy(),
                      output_theta.detach().cpu().numpy(),
-                     output_semantics.detach().cpu().numpy(),
                      data.building_mask.detach().cpu().numpy(),
                      data.node_features.detach().cpu().numpy(),
                      data.node_semantics.detach().cpu().numpy(),

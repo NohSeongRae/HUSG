@@ -62,7 +62,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
+def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
     filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
     with open(filepath, 'rb') as f:
         building_polygons = pickle.load(f)
@@ -80,14 +80,13 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
         if building_exist_mask[i] == 0:
             continue
 
-        x, y, w, h, theta, semantic = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale, semantics[i]
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
 
-        semantic = np.argmax(semantic)
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
     for i in range(len(pos)):
