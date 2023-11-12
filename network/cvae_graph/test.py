@@ -61,7 +61,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     cvae.eval()
     with torch.no_grad():
         for idx, data in enumerate(tqdm(test_dataloader)):
-            if idx > 1000:
+            if idx >= 1000:
                 break
 
             # Get the source and target sequences from the batch
