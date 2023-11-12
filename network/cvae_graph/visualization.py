@@ -69,6 +69,72 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
     rotation_scale = 45
 
+    for i in range(len(pos)):
+        if building_exist_mask[i] == 0:
+            continue
+
+        x, y, w, h, theta, semantic = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale, semantics[i]
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
+
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
+
+        semantic = np.argmax(semantic)
+        ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color=get_random_color(0), label='Rotated Box')
+
+    for i in range(len(pos)):
+        if building_exist_mask[i] == 0:
+            continue
+
+        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
+        semantic = gt_semantics[i]
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
+
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
+        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color=get_random_color(0), label='Rotated Box')
+
+        node_x.append(x)
+        node_y.append(y)
+
+    # Set the limits of the plot
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+
+    # Set the aspect of the plot to be equal
+    ax1.set_aspect('equal', adjustable='box')
+    ax2.set_aspect('equal', adjustable='box')
+
+    ax1.set_title('Prediction')
+    ax1.grid(True)
+    ax2.set_title('Ground Truth')
+    ax2.grid(True)
+
+    # Set the limits of the plot
+    ax1.set_xlim([0.0, 1.0])  # x축 범위 설정
+    ax1.set_ylim([0.0, 1.0])  # y축 범위 설정
+    ax2.set_xlim([0.0, 1.0])  # x축 범위 설정
+    ax2.set_ylim([0.0, 1.0])  # y축 범위 설정
+
+    # Save the plot
+    directory = f"./images_{condition_type}"  # 변경: 저장 경로를 /mnt/data/ 아래로 지정
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # 이미지 파일로 저장
+    save_path = os.path.join(directory, "cvae" + str(idx) + ".png")
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+
+def test_plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
+    node_x = []
+    node_y = []
+
+    # Create a figure and axes
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    rotation_scale = 45
+
     if condition_type == 'image':
         ax1.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
         ax2.imshow(condition, cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
