@@ -82,7 +82,7 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
 
         semantic = np.argmax(semantic)
-        ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color='--b', label='Rotated Box')
+        ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
@@ -95,7 +95,7 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='--b', label='Rotated Box')
+        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
         node_x.append(x)
         node_y.append(y)
