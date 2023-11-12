@@ -63,14 +63,6 @@ def rotate_points_around_center(points, center, theta_deg):
     return rotated_points
 
 def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index):
-    filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
-    with open(filepath, 'rb') as f:
-        building_polygons = pickle.load(f)
-        print(building_polygons)
-
-    node_x = []
-    node_y = []
-
     # Create a figure and axes
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
@@ -89,21 +81,26 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
 
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
-    for i in range(len(pos)):
-        if building_exist_mask[i] == 0:
-            continue
+    # for i in range(len(pos)):
+    #     if building_exist_mask[i] == 0:
+    #         continue
+    #
+    #     x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
+    #     semantic = gt_semantics[i]
+    #     points = get_bbox_corners(x, y, w, h)
+    #     rotated_points = rotate_points_around_center(points, [x, y], theta)
+    #
+    #     rotated_points = np.array(rotated_points)
+    #     rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
+    #     ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
-        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
-        semantic = gt_semantics[i]
-        points = get_bbox_corners(x, y, w, h)
-        rotated_points = rotate_points_around_center(points, [x, y], theta)
+    filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
+    with open(filepath, 'rb') as f:
+        building_polygons = pickle.load(f)
 
-        rotated_points = np.array(rotated_points)
-        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
-
-        node_x.append(x)
-        node_y.append(y)
+    for idx, building_polygon in enumerate(building_polygons):
+        x, y = building_polygon
+        ax2.plot(x, y, color='k', label='Rotated Box')
 
     # Set the limits of the plot
     plt.xlim([0.0, 1.0])
