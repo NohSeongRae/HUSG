@@ -174,7 +174,8 @@ class GraphDecoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer):
         super(GraphDecoder, self).__init__()
 
-        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
+        self.mask_embed = nn.Embedding(2, latent_dim)
+        self.dec_feature_init = nn.Linear(latent_dim + latent_dim + bottleneck, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -214,8 +215,11 @@ class GraphDecoder(nn.Module):
         self.dec_theta = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_theta = nn.Linear(feature_dim, 1)
 
-    def forward(self, z, condition, edge_index, batch):
-        z = torch.cat([z, condition], dim=1)
+    def forward(self, z, node_mask, condition, edge_index, batch):
+        node_mask = self.mask_embed(node_mask).squeeze(1)
+        node_mask = F.relu(node_mask)
+
+        z = torch.cat([z, node_mask, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
 
@@ -284,7 +288,7 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, condition, edge_index, data.batch)
+        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, edge_index, data.batch)
 
         return output_pos, output_size, output_theta, mu, log_var
 
@@ -297,6 +301,6 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, condition, data.edge_index, data.batch)
+        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, data.edge_index, data.batch)
 
         return output_pos, output_size, output_theta
