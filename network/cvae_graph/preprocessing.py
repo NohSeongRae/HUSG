@@ -34,9 +34,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         'boundarymask'
     ]
 
-    graphs = []
-    polygons = []
-
     for city_name in tqdm(city_names):
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[0] + '.pkl'
         with open(filepath, 'rb') as f:

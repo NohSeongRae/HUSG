@@ -21,6 +21,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     total_files = len(gpickle_files)
     train_end = int(total_files * train_ratio)
     val_end = train_end + int(total_files * val_ratio)
+    print(total_files, train_end, val_end)
 
     # 각 데이터셋에 대한 파일 목록
     train_files = gpickle_files[:train_end]
@@ -33,7 +34,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
     # 파일 묶음을 해당 폴더로 이동
     for file_set in [train_files, val_files, test_files]:
-        for gpickle_file in file_set:
+        for gpickle_file in tqdm(file_set):
             base_filename = os.path.splitext(gpickle_file)[0]
             pkl_file = base_filename + '.pkl'
 
