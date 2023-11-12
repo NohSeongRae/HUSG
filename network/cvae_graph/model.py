@@ -39,15 +39,10 @@ class BoundaryMaskEncoder(nn.Module):
 
 
 class GraphConditionEncoder(nn.Module):
-    def __init__(self, T, feature_dim, bottleneck, n_head, convlayer, chunk_graph):
+    def __init__(self, T, feature_dim, bottleneck, n_head, convlayer):
         super(GraphConditionEncoder, self).__init__()
 
-        self.chunk_graph = chunk_graph
-
-        if not chunk_graph:
-            self.street_fc = nn.Linear(128, feature_dim)
-        else:
-            self.street_fc = nn.Linear(5, feature_dim)
+        self.bbox_fc = nn.Linear(5, feature_dim)
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
         elif convlayer == 'gcn':
@@ -79,11 +74,8 @@ class GraphConditionEncoder(nn.Module):
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), bottleneck)
 
     def forward(self, data, edge_index):
-        if not self.chunk_graph:
-            street_feature = data.condition_street_feature.view(-1, 128)
-        else:
-            street_feature = data.condition_street_feature
-        street_feature = self.street_fc(street_feature)
+        street_feature = data.condition_street_feature
+        street_feature = self.bbox_fc(street_feature)
         street_feature = F.relu(street_feature)
 
         n_embed_0 = street_feature
@@ -105,15 +97,11 @@ class GraphConditionEncoder(nn.Module):
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, T, feature_dim, latent_dim, n_head, convlayer, chunk_graph):
+    def __init__(self, T, feature_dim, latent_dim, n_head, convlayer):
         super(GraphEncoder, self).__init__()
 
-        self.chunk_graph = chunk_graph
-
-        if not chunk_graph:
-            self.street_fc = nn.Linear(128, feature_dim)
-        self.building_fc = nn.Linear(5, feature_dim)
-        self.semantic_embed = nn.Embedding(10, feature_dim)
+        self.bbox_fc = nn.Linear(5, feature_dim)
+        self.mask_embed = nn.Embedding(2, feature_dim)
         self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
 
         if convlayer == 'gat':
@@ -150,26 +138,16 @@ class GraphEncoder(nn.Module):
         self.fc_var = nn.Linear(latent_dim, latent_dim)
 
     def forward(self, data, edge_index):
-        if not self.chunk_graph:
-            street_feature = data.street_feature.view(-1, 128)
-            street_feature = self.street_fc(street_feature)
-            street_feature = F.relu(street_feature)
+        node_feature = data.node_features
+        node_feature = self.bbox_fc(node_feature)
+        node_feature = F.relu(node_feature)
 
-            building_feature = data.building_feature
-            building_feature = self.building_fc(building_feature)
-            building_feature = F.relu(building_feature)
+        node_mask = data.building_mask
+        print(node_mask)
+        node_mask = self.mask_embed(node_mask)
+        node_mask = F.relu(node_mask)
 
-            n_embed_0 = street_feature * data.street_mask + building_feature * data.building_mask
-        else:
-            node_feature = data.node_features
-            node_feature = self.building_fc(node_feature)
-            node_feature = F.relu(node_feature)
-
-            node_semantics = data.node_semantics
-            node_semantics = self.semantic_embed(node_semantics)
-            node_semantics = F.relu(node_semantics)
-
-            node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_semantics], dim=1)))
+        node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask], dim=1)))
 
         n_embed_0 = node_feature
         g_embed_0 = self.global_pool(n_embed_0, data.batch)
@@ -237,9 +215,6 @@ class GraphDecoder(nn.Module):
         self.dec_theta = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_theta = nn.Linear(feature_dim, 1)
 
-        self.dec_semantics = nn.Linear(feature_dim * n_head, feature_dim)
-        self.fc_semantics = nn.Linear(feature_dim, 10)
-
     def forward(self, z, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
@@ -262,10 +237,7 @@ class GraphDecoder(nn.Module):
         output_theta = F.relu(self.dec_theta(d_embed_t))
         output_theta = self.fc_theta(output_theta)
 
-        output_semantics = F.relu(self.dec_semantics(d_embed_t))
-        output_semantics = F.softmax(self.fc_semantics(output_semantics), dim=-1)
-
-        return output_pos, output_size, output_theta, output_semantics
+        return output_pos, output_size, output_theta
 
     def node_order_within_batch(self, batch):
         order_within_batch = torch.zeros_like(batch)
@@ -281,7 +253,7 @@ class GraphDecoder(nn.Module):
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
                  image_size=64, inner_channel=80, bottleneck=128,
-                 condition_type='graph', convlayer='gat', chunk_graph=True):
+                 condition_type='graph', convlayer='gat'):
         super(GraphCVAE, self).__init__()
 
         self.latent_dim = latent_dim
@@ -292,10 +264,10 @@ class GraphCVAE(nn.Module):
                                                          bottleneck=bottleneck)
         elif condition_type == 'graph':
             self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck,
-                                                           n_head=n_head, convlayer=convlayer, chunk_graph=chunk_graph)
+                                                           n_head=n_head, convlayer=convlayer)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
-                                    convlayer=convlayer, chunk_graph=chunk_graph)
+                                    convlayer=convlayer)
         self.decoder = GraphDecoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     bottleneck=bottleneck, convlayer=convlayer)
 
@@ -313,9 +285,9 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta, output_semantics = self.decoder(z, condition, edge_index, data.batch)
+        output_pos, output_size, output_theta = self.decoder(z, condition, edge_index, data.batch)
 
-        return output_pos, output_size, output_theta, output_semantics, mu, log_var
+        return output_pos, output_size, output_theta, mu, log_var
 
     def test(self, data):
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
@@ -326,6 +298,6 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta, output_semantics = self.decoder(z, condition, data.edge_index, data.batch)
+        output_pos, output_size, output_theta = self.decoder(z, condition, data.edge_index, data.batch)
 
-        return output_pos, output_size, output_theta, output_semantics
+        return output_pos, output_size, output_theta
