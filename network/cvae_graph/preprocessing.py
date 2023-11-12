@@ -137,8 +137,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
 
     p = np.random.permutation(len(graphs))  # 셔플할 인덱스 생성
-    graphs = graphs[p]
-    polygons = polygons[p]
+    graphs = [graphs[i] for i in p]
+    polygons = [polygons[i] for i in p]
 
     total_size = len(graphs)
 
