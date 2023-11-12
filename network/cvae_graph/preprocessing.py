@@ -145,37 +145,16 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                             graph.nodes[node]['node_semantics'] = i + 1
                             break
 
-            graphs.append(graph)
-            polygons.append(building_polygons[idx])
+            save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
 
+            with open(save_path + '/' + mask_file_names[idx] + '.gpickle', 'wb') as f:
+                nx.write_gpickle(graph, f)
 
-    p = np.random.permutation(len(graphs))  # 셔플할 인덱스 생성
-    graphs = [graphs[i] for i in p]
-    polygons = [polygons[i] for i in p]
+            with open(save_path + '/' + mask_file_names[idx] + '.pkl', 'wb') as f:
+                pickle.dump(building_polygons[idx], f)
 
-    total_size = len(graphs)
-
-    for data_type in tqdm(['train', 'val', 'test']):
-        if data_type == 'train':
-            start_index = 0
-            end_index = int(total_size * train_ratio)
-        elif data_type == 'val':
-            start_index = int(total_size * train_ratio)
-            end_index = int(total_size * (train_ratio + val_ratio))
-        else:
-            start_index = int(total_size * (train_ratio + val_ratio))
-            end_index = int(total_size * (train_ratio + val_ratio + test_ratio))
-
-        save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'+ data_type
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-
-        for idx in range(start_index, end_index):
-            with open(save_path + '/' + str(idx - start_index) + '.gpickle', 'wb') as f:
-                nx.write_gpickle(graphs[idx], f)
-
-            with open(save_path + '/' + str(idx - start_index) + '.pkl', 'wb') as f:
-                pickle.dump(polygons[idx], f)
 
 if __name__ == '__main__':
     # Set the argparse
