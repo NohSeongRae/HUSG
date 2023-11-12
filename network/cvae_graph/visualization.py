@@ -66,7 +66,8 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
     node_y = []
 
     # Create a figure and axes
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
+    fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     rotation_scale = 45
 
     for i in range(len(pos)):
