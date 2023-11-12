@@ -103,29 +103,23 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
 
-    # Set the aspect of the plot to be equal
-    ax1.set_aspect('equal', adjustable='box')
-    ax2.set_aspect('equal', adjustable='box')
-
-    ax1.set_title('Prediction')
-    ax1.grid(True)
-    ax2.set_title('Ground Truth')
-    ax2.grid(True)
-
-    # Set the limits of the plot
-    ax1.set_xlim([0.0, 1.0])  # x축 범위 설정
-    ax1.set_ylim([0.0, 1.0])  # y축 범위 설정
-    ax2.set_xlim([0.0, 1.0])  # x축 범위 설정
-    ax2.set_ylim([0.0, 1.0])  # y축 범위 설정
-
-    # Save the plot
-    directory = f"./images_{condition_type}"  # 변경: 저장 경로를 /mnt/data/ 아래로 지정
+    directory = f"./images_{condition_type}"
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    # 이미지 파일로 저장
-    save_path = os.path.join(directory, "cvae" + str(idx) + ".png")
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    # ax1 (예측) 이미지 저장
+    ax1.set_aspect('equal', adjustable='box')
+    ax1.set_xlim([0.0, 1.0])
+    ax1.set_ylim([0.0, 1.0])
+    save_path_1 = os.path.join(directory, "prediction_" + str(idx) + ".png")
+    ax1.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
+
+    # ax2 (실제) 이미지 저장
+    ax2.set_aspect('equal', adjustable='box')
+    ax2.set_xlim([0.0, 1.0])
+    ax2.set_ylim([0.0, 1.0])
+    save_path_2 = os.path.join(directory, "ground_truth_" + str(idx) + ".png")
+    ax2.figure.savefig(save_path_2, dpi=300, bbox_inches='tight')
 
 def test_plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
     node_x = []
