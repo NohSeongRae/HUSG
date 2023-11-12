@@ -29,7 +29,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         'building_semantics',
         'insidemask',
         'boundary_filenames',
-        'filename'
+        'filename',
+        'building_polygons'
     ]
 
     graphs = []
@@ -58,6 +59,10 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[5] + '.pkl'
         with open(filepath, 'rb') as f:
             mask_file_names = pickle.load(f)
+
+        filepath = dataset_path + '/' + city_name + '/' + dataset_names[6] + '.pkl'
+        with open(filepath, 'rb') as f:
+            building_polygons = pickle.load(f)
 
         idx = 0
         while idx < len(edge_indices):
@@ -125,6 +130,12 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                         if building_semantics[idx][node - n_chunk] in semantic_list[i]:
                             graph.nodes[node]['node_semantics'] = i + 1
                             break
+
+            buildings = building_polygons[idx]
+            for building in buildings:
+                print(building)
+            print('---')
+
             graphs.append(graph)
 
     random.shuffle(graphs)
