@@ -62,7 +62,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
+def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index):
     filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
     with open(filepath, 'rb') as f:
         building_polygons = pickle.load(f)
