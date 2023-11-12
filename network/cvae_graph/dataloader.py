@@ -45,7 +45,7 @@ class GraphDataset(Dataset):
             node_semantics = torch.tensor(np.array([graph.nodes[node]['node_semantics'] for node in graph.nodes()]),
                                           dtype=torch.long)
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
-                                          dtype=torch.float32)
+                                          dtype=torch.long)
 
             if self.condition_type == 'image':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)

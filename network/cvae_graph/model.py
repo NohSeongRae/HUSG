@@ -143,7 +143,6 @@ class GraphEncoder(nn.Module):
         node_feature = F.relu(node_feature)
 
         node_mask = data.building_mask
-        print(node_mask)
         node_mask = self.mask_embed(node_mask)
         node_mask = F.relu(node_mask)
 
