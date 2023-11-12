@@ -174,8 +174,7 @@ class GraphDecoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer):
         super(GraphDecoder, self).__init__()
 
-        self.mask_embed = nn.Embedding(2, latent_dim)
-        self.dec_feature_init = nn.Linear(latent_dim + latent_dim + bottleneck, feature_dim)
+        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -192,14 +191,15 @@ class GraphDecoder(nn.Module):
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
+        self.mask_embed = nn.Embedding(2, latent_dim)
         if convlayer == 'gat':
-            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim, heads=n_head)
+            self.d_conv1 = self.convlayer(feature_dim + feature_dim+ 320, feature_dim, heads=n_head)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
                 for _ in range(T - 1)
             ])
         else:
-            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim)
+            self.d_conv1 = self.convlayer(feature_dim + feature_dim + 320, feature_dim)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim, feature_dim, heads=n_head)
                 for _ in range(T - 1)
