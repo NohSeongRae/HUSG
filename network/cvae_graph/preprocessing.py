@@ -34,6 +34,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     ]
 
     graphs = []
+    polygons = []
 
     for city_name in tqdm(city_names):
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[0] + '.pkl'
@@ -131,14 +132,13 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                             graph.nodes[node]['node_semantics'] = i + 1
                             break
 
-            buildings = building_polygons[idx]
-            for building in buildings:
-                print(building)
-            print('---')
-
             graphs.append(graph)
+            polygons.append(building_polygons[idx])
 
-    random.shuffle(graphs)
+
+    p = np.random.permutation(len(graphs))  # 셔플할 인덱스 생성
+    graphs = graphs[p]
+    polygons = polygons[p]
 
     total_size = len(graphs)
 
@@ -160,6 +160,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         for idx in range(start_index, end_index):
             with open(save_path + '/' + str(idx - start_index) + '.gpickle', 'wb') as f:
                 nx.write_gpickle(graphs[idx], f)
+
+            with open(save_path + '/' + str(idx - start_index) + '.pkl', 'wb') as f:
+                pickle.dump(polygons, f)
 
 if __name__ == '__main__':
     # Set the argparse
