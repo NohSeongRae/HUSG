@@ -216,15 +216,16 @@ class GraphDecoder(nn.Module):
         self.fc_theta = nn.Linear(feature_dim, 1)
 
     def forward(self, z, node_mask, condition, edge_index, batch):
-        node_mask = self.mask_embed(node_mask).squeeze(1)
-        node_mask = F.relu(node_mask)
-        print(z.shape, node_mask.shape, condition.shape)
-        z = torch.cat([z, node_mask, condition], dim=1)
+        z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
 
         pos = self.node_order_within_batch(batch)
-        z = torch.cat([z, pos], 1)
+
+        node_mask = self.mask_embed(node_mask).squeeze(1)
+        node_mask = F.relu(node_mask)
+
+        z = torch.cat([z, node_mask, pos], 1)
 
         d_embed_0 = F.relu(z)
         d_embed_t = F.relu(self.d_conv1(d_embed_0, edge_index))
