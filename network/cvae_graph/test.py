@@ -9,6 +9,7 @@ from torch_geometric.loader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torch.distributed as dist
 
+from itertools import islice
 import numpy as np
 import random
 from tqdm import tqdm
@@ -60,7 +61,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
     cvae.eval()
     with torch.no_grad():
-        for idx, data in enumerate(tqdm(test_dataloader[:1000])):
+        for idx, data in enumerate(tqdm(islice(test_dataloader, 1000))):
             # Get the source and target sequences from the batch
             data = data.to(device=device)
             output_pos, output_size, output_theta, output_semantics = cvae.test(data)
