@@ -111,6 +111,7 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
     ax1.set_aspect('equal', adjustable='box')
     ax1.set_xlim([0.0, 1.0])
     ax1.set_ylim([0.0, 1.0])
+    ax1.set_axis_off()  # 축 표기 제거
     save_path_1 = os.path.join(directory, "prediction_" + str(idx) + ".png")
     ax1.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
 
@@ -118,6 +119,7 @@ def plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semanti
     ax2.set_aspect('equal', adjustable='box')
     ax2.set_xlim([0.0, 1.0])
     ax2.set_ylim([0.0, 1.0])
+    ax2.set_axis_off()  # 축 표기 제거
     save_path_2 = os.path.join(directory, "ground_truth_" + str(idx) + ".png")
     ax2.figure.savefig(save_path_2, dpi=300, bbox_inches='tight')
 
