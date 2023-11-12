@@ -162,7 +162,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 nx.write_gpickle(graphs[idx], f)
 
             with open(save_path + '/' + str(idx - start_index) + '.pkl', 'wb') as f:
-                pickle.dump(polygons, f)
+                pickle.dump(polygons[idx], f)
 
 if __name__ == '__main__':
     # Set the argparse
