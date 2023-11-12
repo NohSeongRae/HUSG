@@ -29,8 +29,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         'building_semantics',
         'insidemask',
         'boundary_filenames',
-        'filename',
-        'building_polygons'
+        'insidemask_filename',
+        'building_polygons',
+        'boundarymask'
     ]
 
     graphs = []
@@ -65,11 +66,16 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
+        filepath = dataset_path + '/' + city_name + '/' + dataset_names[7] + '.pkl'
+        with open(filepath, 'rb') as f:
+            boundary_masks = pickle.load(f)
+
         idx = 0
         while idx < len(edge_indices):
             if source_file_names[idx].split('/')[-1] != mask_file_names[idx]:
                 del mask_file_names[idx]
                 del inside_masks[idx]
+                del boundary_masks[idx]
 
             else:
                 idx += 1
@@ -90,6 +96,13 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             if condition_type == 'image':
                 inside_masks[idx] = np.flipud(inside_masks[idx])
                 graph.graph['condition'] = inside_masks[idx]
+
+            elif condition_type == 'image_resnet34':
+                inside_masks[idx] = np.flipud(inside_masks[idx])
+                boundary_masks[idx] = np.flipud(boundary_masks[idx])
+                zero_channel = np.zeros((224, 224))
+                combined_mask = np.stack([inside_masks[idx], boundary_masks[idx], zero_channel], axis=0)
+                graph.graph['condition'] = combined_mask
 
             elif condition_type == 'graph':
                 street_graph = adj_matrix[:n_chunk, :n_chunk]

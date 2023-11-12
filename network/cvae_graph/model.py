@@ -3,7 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric
 from torch_geometric.data import Batch
+import torchvision.models as models
 
+class ResNet34(nn.Module):
+    def __init__(self, bottleneck):
+        super(ResNet34, self).__init__()
+        self.model = models.resnet34(pretrained=True)
+
+        # 마지막 FC 층을 원하는 출력 크기로 교체
+        num_features = self.model.fc.in_features
+        self.model.fc = nn.Linear(num_features, bottleneck)
+
+    def forward(self, mask):
+        return self.model(mask)
 
 class BoundaryMaskEncoder(nn.Module):
     def __init__(self, image_size, inner_channel, bottleneck):
@@ -266,6 +278,8 @@ class GraphCVAE(nn.Module):
         if condition_type == 'image':
             self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel,
                                                          bottleneck=bottleneck)
+        elif condition_type == 'image_resnet34':
+            self.condition_encoder = ResNet34(bottleneck=bottleneck)
         elif condition_type == 'graph':
             self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck,
                                                            n_head=n_head, convlayer=convlayer)
@@ -283,7 +297,7 @@ class GraphCVAE(nn.Module):
         mu, log_var = self.encoder(data, edge_index)
         z = self.reparameterize(mu, log_var)
 
-        if self.condition_type == 'image':
+        if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
             condition = self.condition_encoder(data.condition)
         else:
             condition = Batch.from_data_list(data.condition)
@@ -296,7 +310,7 @@ class GraphCVAE(nn.Module):
     def test(self, data):
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
 
-        if self.condition_type == 'image':
+        if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
             condition = self.condition_encoder(data.condition)
         else:
             condition = Batch.from_data_list(data.condition)
