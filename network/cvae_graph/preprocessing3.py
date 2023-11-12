@@ -17,7 +17,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         gpickle_files = [f for f in os.listdir(folder_path) if f.endswith('.gpickle')]
         gpickle_files.sort()  # 파일 이름에 따라 정렬
 
-        for i, gpickle_filename in tqdm(enumerate(gpickle_files)):
+        for i, gpickle_filename in enumerate(tqdm(gpickle_files)):
             base_filename = os.path.splitext(gpickle_filename)[0]
 
             # 연관된 .pkl 파일 찾기
