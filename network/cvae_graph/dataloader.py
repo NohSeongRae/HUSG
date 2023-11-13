@@ -116,11 +116,9 @@ class GraphDataset(Dataset):
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
-            load_path = self.folder_path + '/' + self.gpickle_files[idx].replace('.gpickle', '.pkl')
-            with open(load_path, 'rb') as f:
-                polygon = pickle.load(f)
-
-            return (data, polygon)
+            polygon_idx = self.gpickle_files[idx].replace('.gpickle', 'pkl')
+            print(polygon_idx)
+            return (data, polygon_idx)
     def len(self):
 
         return self.data_length
