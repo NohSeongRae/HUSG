@@ -359,6 +359,7 @@ class Trainer:
 
 if __name__ == '__main__':
     os.environ['MASTER_PORT'] = find_free_port()
+    print(os.environ['MASTER_PORT'])
     # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
