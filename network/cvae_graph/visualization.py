@@ -99,7 +99,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
     else:
-        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(polygon_idx) + '.pkl'
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(polygon_idx[0]) + '.pkl'
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
