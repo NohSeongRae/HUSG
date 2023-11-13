@@ -20,6 +20,14 @@ from dataloader import GraphDataset
 
 import wandb
 
+import socket
+from contextlib import closing
+
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
@@ -344,6 +352,9 @@ class Trainer:
 
 
 if __name__ == '__main__':
+    # 사용 가능한 포트 찾기
+    free_port = find_free_port()
+
     # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 

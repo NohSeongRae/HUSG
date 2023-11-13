@@ -9,15 +9,6 @@ import random
 import shutil
 from torch_geometric.utils import dense_to_sparse, to_dense_adj
 
-import socket
-from contextlib import closing
-
-def find_free_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
-
 def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                       n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64, condition_type='graph'):
 
@@ -99,9 +90,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
 
 if __name__ == '__main__':
-    # 사용 가능한 포트 찾기
-    free_port = find_free_port()
-
     # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
 
