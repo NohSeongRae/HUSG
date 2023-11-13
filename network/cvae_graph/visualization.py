@@ -68,6 +68,10 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     rotation_scale = 45
 
+    if condition_type == 'image_resnet34':
+        ax1.imshow(condition[0], cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
+        ax2.imshow(condition[0], cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
+
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
             continue
