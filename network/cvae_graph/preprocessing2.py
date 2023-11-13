@@ -49,16 +49,19 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     print(val_result)
     print(test_result)
 
-    # # 분할 지점 계산
-    # total_files = len(gpickle_files)
-    # train_end = int(total_files * train_ratio)
-    # val_end = train_end + int(total_files * val_ratio)
-    # print(total_files, train_end, val_end)
-    #
-    # # 각 데이터셋에 대한 파일 목록
-    # train_files = gpickle_files[:train_end]
-    # val_files = gpickle_files[train_end:val_end]
-    # test_files = gpickle_files[val_end:]
+    # 분할 지점 계산
+    total_files = len(gpickle_files)
+    train_end = int(total_files * train_ratio)
+    val_end = train_end + int(total_files * val_ratio)
+    print(total_files, train_end, val_end)
+
+    # 각 데이터셋에 대한 파일 목록
+    train_files = gpickle_files[:train_end]
+    val_files = gpickle_files[train_end:val_end]
+    test_files = gpickle_files[val_end:]
+    print(np.array(train_files), np.array(train_files).shape)
+    print(np.array(val_files), np.array(val_files).shape)
+    print(np.array(test_files), np.array(test_files).shape)
     #
     # # 폴더 생성 (존재하지 않을 경우)
     # for folder in ['train', 'val', 'test']:
