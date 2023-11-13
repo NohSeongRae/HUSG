@@ -33,7 +33,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
     gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
     for gpickle_file in gpickle_files:
-        os.rename(os.path.join(save_path, gpickle_file), os.path.join(save_path, gpickle_file).replace(".geojson", "").replace("boundaries", "buildings"))
+        os.rename(os.path.join(save_path, gpickle_file), os.path.join(save_path, gpickle_file.replace(".geojson", "").replace("boundaries", "buildings")))
     gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
     gpickle_files.sort()
 
