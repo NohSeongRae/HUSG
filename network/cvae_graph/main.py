@@ -374,6 +374,15 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
+    # wandb 로그인 및 초기화
+    if opt.local_rank == 0:
+        wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
+        wandb.init(project='cvae_graph', config=vars(opt))
+
+        # wandb Sweep을 통해 업데이트된 하이퍼파라미터 사용
+        for key, value in wandb.config.items():
+            setattr(opt, key, value)
+
     # 현재 시간을 기반으로 폴더 이름 생성
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     opt.save_dir_path = f"{opt.save_dir_path}_{current_time}"
@@ -409,12 +418,8 @@ if __name__ == '__main__':
             dist.init_process_group("nccl")
 
     if opt.local_rank == 0:
-        wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
-        wandb.init(project='cvae_graph')
-        # 실행 이름 설정
         wandb.run.name = 'cvae init'
         wandb.run.save()
-        wandb.config.update(opt)
 
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch,
@@ -428,3 +433,7 @@ if __name__ == '__main__':
                       convlayer=opt.convlayer, weight_decay=opt.weight_decay)
 
     trainer.train()
+
+    # 종료 시 wandb 종료 (local_rank == 0 인 경우에만)
+    if opt.local_rank == 0:
+        wandb.finish()
