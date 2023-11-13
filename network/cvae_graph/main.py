@@ -424,14 +424,10 @@ if __name__ == '__main__':
     # ddp
     rank = opt.local_rank
     torch.cuda.set_device(rank)
-    if not dist.is_initialized():
-        if torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu') == "cuda:0":
-            dist.init_process_group("gloo")
-        else:
-            dist.init_process_group(
-                backend='nccl',  # 또는 'gloo', 'mpi' 등을 사용할 수 있습니다.
-                init_method=f'tcp://127.0.0.1:{find_free_port()}'
-            )
+    dist.init_process_group(
+        backend='nccl',  # 또는 'gloo', 'mpi' 등을 사용할 수 있습니다.
+        init_method=f'tcp://127.0.0.1:{find_free_port()}'
+    )
 
     if opt.local_rank == 0:
         wandb.run.name = 'cvae init'
