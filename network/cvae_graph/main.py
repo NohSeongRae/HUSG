@@ -423,17 +423,22 @@ if __name__ == '__main__':
 
     # ddp
     rank = opt.local_rank
+    world_size = os.environ['SLURM_NTASKS']
     torch.cuda.set_device(rank)
     if not dist.is_initialized():
         if torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu') == "cuda:0":
             dist.init_process_group(
                 backend='gloo',  # 또는 'gloo', 'mpi' 등을 사용할 수 있습니다.
-                init_method=f'tcp://127.0.0.1:{find_free_port()}'
+                init_method=f'tcp://127.0.0.1:{find_free_port()}',
+                world_size=world_size,  # 전체 프로세스의 수
+                rank=rank              # 현재 프로세스의 번호
             )
         else:
             dist.init_process_group(
                 backend='nccl',  # 또는 'gloo', 'mpi' 등을 사용할 수 있습니다.
-                init_method=f'tcp://127.0.0.1:{find_free_port()}'
+                init_method=f'tcp://127.0.0.1:{find_free_port()}',
+                world_size=world_size,  # 전체 프로세스의 수
+                rank=rank              # 현재 프로세스의 번호
             )
 
     if opt.local_rank == 0:
