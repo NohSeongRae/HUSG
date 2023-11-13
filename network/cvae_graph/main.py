@@ -159,6 +159,7 @@ class Trainer:
         """Training loop for the cvae model."""
         epoch_start = 0
         min_loss = 999
+        early_stop_count = 0
 
         if self.use_checkpoint:
             checkpoint = torch.load("./models/cvae/epoch_" + str(self.checkpoint_epoch) + ".pth")
@@ -316,6 +317,13 @@ class Trainer:
                                     os.makedirs(save_path)
                                 torch.save(checkpoint, os.path.join(save_path, "epoch_best.pth"))
 
+                                early_stop_count = 0
+                            else:
+                                early_stop_count += 1
+
+                                if early_stop_count >= self.max_epoch / 10:
+                                    break
+
 
                 self.cvae.module.train()
 
@@ -340,7 +348,7 @@ if __name__ == '__main__':
 
     # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
-    parser.add_argument("--max_epoch", type=int, default=200, help="Maximum number of epochs for training.")
+    parser.add_argument("--max_epoch", type=int, default=500, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
     parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
@@ -360,12 +368,13 @@ if __name__ == '__main__':
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
+    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="save dir path")
     parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
 
     opt = parser.parse_args()
 
     # change save dir path
+    # save_dir_path + condition_type + convlayer + batch_size + T + d_feature + d_latent + n_head + lr + weight_decay + pos_weight + size_weight + theta_weight + kl_weight + distance_wegiht
     opt.save_dir_path = f'{opt.save_dir_path}_condition_type_{opt.condition_type}_convlyaer_type_{opt.convlayer}'
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs

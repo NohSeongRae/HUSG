@@ -81,7 +81,7 @@ class GraphConditionEncoder(nn.Module):
         else:
             self.e_conv1 = self.convlayer(feature_dim, feature_dim)
             self.layer_stack = nn.ModuleList([
-                self.convlayer(feature_dim, feature_dim, heads=n_head)
+                self.convlayer(feature_dim, feature_dim)
                 for _ in range(T - 1)
             ])
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), bottleneck)
@@ -142,7 +142,7 @@ class GraphEncoder(nn.Module):
         else:
             self.e_conv1 = self.convlayer(feature_dim, feature_dim)
             self.layer_stack = nn.ModuleList([
-                self.convlayer(feature_dim, feature_dim, heads=n_head)
+                self.convlayer(feature_dim, feature_dim)
                 for _ in range(T - 1)
             ])
             self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), latent_dim)
@@ -214,7 +214,7 @@ class GraphDecoder(nn.Module):
         else:
             self.d_conv1 = self.convlayer(feature_dim + feature_dim + 320, feature_dim)
             self.layer_stack = nn.ModuleList([
-                self.convlayer(feature_dim, feature_dim, heads=n_head)
+                self.convlayer(feature_dim, feature_dim)
                 for _ in range(T - 1)
             ])
             n_head = 1
