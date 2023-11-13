@@ -51,9 +51,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     # print(np.array(test_split), np.array(test_split).shape)
     # print(np.array(gpickle_files), np.array(gpickle_files).shape)
 
-    print(train_result)
-    print(val_result)
-    print(test_result)
+    # print(train_result)
+    # print(val_result)
+    # print(test_result)
 
     # 분할 지점 계산
     total_files = len(gpickle_files)
