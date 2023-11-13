@@ -61,7 +61,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     cvae.eval()
     with torch.no_grad():
         for idx, data in enumerate(tqdm(test_dataloader)):
-            if idx >= 1000:
+            if idx > 1000:
                 break
 
             # Get the source and target sequences from the batch
@@ -79,7 +79,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss Theta: {loss_theta:.4f}")
             # print(f"Epoch {idx + 1}/{len(test_dataloader)} - Validation Loss KL: {loss_kl:.4f}")
 
-            if condition_type == 'image':
+            if condition_type == 'image' or condition_type == 'image_resnet34':
                 plot(output_pos.detach().cpu().numpy(),
                      output_size.detach().cpu().numpy(),
                      output_theta.detach().cpu().numpy(),
