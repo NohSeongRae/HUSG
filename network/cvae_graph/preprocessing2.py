@@ -12,36 +12,50 @@ from torch_geometric.utils import dense_to_sparse, to_dense_adj
 def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                       n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64, condition_type='graph'):
 
-    save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'
+    train_split_path = './network/cvae_graph/whole_city/train_split'
+    val_split_path = './network/cvae_graph/whole_city/val_split'
+    test_split_path = './network/cvae_graph/whole_city/test_split'
 
-    gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
-    random.shuffle(gpickle_files)  # 파일 목록을 무작위로 섞기
+    with open(train_split_path, 'rb') as f:
+        train_split = pickle.load(f)
+    with open(val_split_path, 'rb') as f:
+        val_split = pickle.load(f)
+    with open(test_split_path, 'rb') as f:
+        test_split = pickle.load(f)
 
-    # 분할 지점 계산
-    total_files = len(gpickle_files)
-    train_end = int(total_files * train_ratio)
-    val_end = train_end + int(total_files * val_ratio)
-    print(total_files, train_end, val_end)
-
-    # 각 데이터셋에 대한 파일 목록
-    train_files = gpickle_files[:train_end]
-    val_files = gpickle_files[train_end:val_end]
-    test_files = gpickle_files[val_end:]
-
-    # 폴더 생성 (존재하지 않을 경우)
-    for folder in ['train', 'val', 'test']:
-        os.makedirs(os.path.join(save_path, folder), exist_ok=True)
-
-    # 파일 묶음을 해당 폴더로 이동
-    for file_set in [train_files, val_files, test_files]:
-        for gpickle_file in tqdm(file_set):
-            base_filename = os.path.splitext(gpickle_file)[0]
-            pkl_file = base_filename + '.pkl'
-
-            target_folder = 'train' if gpickle_file in train_files else 'val' if gpickle_file in val_files else 'test'
-            shutil.move(os.path.join(save_path, gpickle_file),
-                        os.path.join(save_path, target_folder, gpickle_file))
-            shutil.move(os.path.join(save_path, pkl_file), os.path.join(save_path, target_folder, pkl_file))
+    print(train_split)
+    print(val_split)
+    print(test_split)
+    # save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'
+    #
+    # gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
+    # random.shuffle(gpickle_files)  # 파일 목록을 무작위로 섞기
+    #
+    # # 분할 지점 계산
+    # total_files = len(gpickle_files)
+    # train_end = int(total_files * train_ratio)
+    # val_end = train_end + int(total_files * val_ratio)
+    # print(total_files, train_end, val_end)
+    #
+    # # 각 데이터셋에 대한 파일 목록
+    # train_files = gpickle_files[:train_end]
+    # val_files = gpickle_files[train_end:val_end]
+    # test_files = gpickle_files[val_end:]
+    #
+    # # 폴더 생성 (존재하지 않을 경우)
+    # for folder in ['train', 'val', 'test']:
+    #     os.makedirs(os.path.join(save_path, folder), exist_ok=True)
+    #
+    # # 파일 묶음을 해당 폴더로 이동
+    # for file_set in [train_files, val_files, test_files]:
+    #     for gpickle_file in tqdm(file_set):
+    #         base_filename = os.path.splitext(gpickle_file)[0]
+    #         pkl_file = base_filename + '.pkl'
+    #
+    #         target_folder = 'train' if gpickle_file in train_files else 'val' if gpickle_file in val_files else 'test'
+    #         shutil.move(os.path.join(save_path, gpickle_file),
+    #                     os.path.join(save_path, target_folder, gpickle_file))
+    #         shutil.move(os.path.join(save_path, pkl_file), os.path.join(save_path, target_folder, pkl_file))
 
 
 if __name__ == '__main__':
