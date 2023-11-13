@@ -31,8 +31,8 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
 
     train_result = all(elem in gpickle_files for elem in train_split)
-    val_result = all(elem in gpickle_files for elem in train_split)
-    test_result = all(elem in gpickle_files for elem in train_split)
+    val_result = all(elem in gpickle_files for elem in val_split)
+    test_result = all(elem in gpickle_files for elem in test_split)
 
     print(train_result)
     print(val_result)
