@@ -130,6 +130,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     ax2.set_axis_off()  # 축 표기 제거
     save_path_2 = os.path.join(directory, "ground_truth_" + str(idx) + ".png")
     ax2.figure.savefig(save_path_2, dpi=300, bbox_inches='tight')
+    print(save_path_1)
 
 def test_plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
     node_x = []
