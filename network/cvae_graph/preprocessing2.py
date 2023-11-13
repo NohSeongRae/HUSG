@@ -49,21 +49,20 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     print(val_result)
     print(test_result)
 
-    #
-    # # 폴더 생성 (존재하지 않을 경우)
-    # for folder in ['train', 'val', 'test']:
-    #     os.makedirs(os.path.join(save_path, folder), exist_ok=True)
-    #
-    # # 파일 묶음을 해당 폴더로 이동
-    # for file_set in [train_files, val_files, test_files]:
-    #     for gpickle_file in tqdm(file_set):
-    #         base_filename = os.path.splitext(gpickle_file)[0]
-    #         pkl_file = base_filename + '.pkl'
-    #
-    #         target_folder = 'train' if gpickle_file in train_files else 'val' if gpickle_file in val_files else 'test'
-    #         shutil.move(os.path.join(save_path, gpickle_file),
-    #                     os.path.join(save_path, target_folder, gpickle_file))
-    #         shutil.move(os.path.join(save_path, pkl_file), os.path.join(save_path, target_folder, pkl_file))
+    # 폴더 생성 (존재하지 않을 경우)
+    for folder in ['train', 'val', 'test']:
+        os.makedirs(os.path.join(save_path, folder), exist_ok=True)
+
+    # 파일 묶음을 해당 폴더로 이동
+    for file_set in [train_split, val_split, test_split]:
+        for gpickle_file in tqdm(file_set):
+            base_filename = os.path.splitext(gpickle_file)[0]
+            pkl_file = base_filename + '.pkl'
+
+            target_folder = 'train' if gpickle_file in train_split else 'val' if gpickle_file in val_split else 'test'
+            shutil.move(os.path.join(save_path, gpickle_file),
+                        os.path.join(save_path, target_folder, gpickle_file))
+            shutil.move(os.path.join(save_path, pkl_file), os.path.join(save_path, target_folder, pkl_file))
 
 
 if __name__ == '__main__':
