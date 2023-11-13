@@ -32,8 +32,11 @@ class GraphDataset(Dataset):
                 count += 1
         self.data_length = count
 
+        self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
+
     def get(self, idx):
-        load_path = self.folder_path + '/' + str(idx) + '.gpickle'
+        # load_path = self.folder_path + '/' + str(idx) + '.gpickle'
+        load_path = self.gpickle_files[idx]
         with open(load_path, 'rb') as f:
             self.graph = pickle.load(f)
 
