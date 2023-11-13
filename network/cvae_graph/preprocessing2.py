@@ -34,6 +34,12 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     val_result = all(elem in gpickle_files for elem in val_split)
     test_result = all(elem in gpickle_files for elem in test_split)
 
+    print(np.array(train_split))
+    print(np.array(val_split))
+    print(np.array(test_split))
+
+    print(np.array(gpickle_files))
+
     print(train_result)
     print(val_result)
     print(test_result)
