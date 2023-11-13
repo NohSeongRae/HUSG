@@ -62,6 +62,13 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     print(np.array(train_files), np.array(train_files).shape)
     print(np.array(val_files), np.array(val_files).shape)
     print(np.array(test_files), np.array(test_files).shape)
+
+    with open(train_split_path, 'wb') as file:
+        pickle.dump(train_files, file)
+    with open(val_split_path, 'wb') as file:
+        pickle.dump(val_files, file)
+    with open(test_split_path, 'wb') as file:
+        pickle.dump(test_files, file)
     #
     # # 폴더 생성 (존재하지 않을 경우)
     # for folder in ['train', 'val', 'test']:
