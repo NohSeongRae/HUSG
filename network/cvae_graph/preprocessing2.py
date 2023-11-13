@@ -29,6 +29,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'
 
     gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
+    gpickle_files = [s.replace(".geojson", "") for s in gpickle_files]
 
     train_result = all(elem in gpickle_files for elem in train_split)
     val_result = all(elem in gpickle_files for elem in val_split)
