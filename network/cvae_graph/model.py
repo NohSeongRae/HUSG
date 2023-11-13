@@ -15,7 +15,7 @@ class ResNet34(nn.Module):
         self.model.fc = nn.Linear(num_features, bottleneck)
 
     def forward(self, mask):
-        print(mask.shape)
+        mask = mask.view(-1, 3, 224, 224)
         return self.model(mask)
 
 class BoundaryMaskEncoder(nn.Module):
