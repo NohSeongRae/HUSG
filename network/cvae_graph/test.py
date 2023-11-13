@@ -64,7 +64,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             if idx >= 999:
                 break
 
-            data, polygon = data[0], data[1]
+            data, polygon = data
+
             print(polygon)
             # Get the source and target sequences from the batch
             data = data.to(device=device)

@@ -120,7 +120,7 @@ class GraphDataset(Dataset):
             with open(load_path, 'rb') as f:
                 polygon = pickle.load(f)
 
-            return [data, polygon]
+            return (data, polygon)
     def len(self):
 
         return self.data_length
