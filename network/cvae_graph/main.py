@@ -358,8 +358,6 @@ class Trainer:
 
 
 if __name__ == '__main__':
-    os.environ['MASTER_PORT'] = find_free_port()
-    print(os.environ['MASTER_PORT'])
     # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
@@ -434,7 +432,6 @@ if __name__ == '__main__':
             dist.init_process_group('nccl')
 
     if opt.local_rank == 0:
-        wandb.run.name = 'cvae init'
         wandb.run.save()
 
     # Create a Trainer instance and start the training process
