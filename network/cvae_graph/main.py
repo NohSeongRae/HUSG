@@ -7,7 +7,6 @@ import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
-from transformers.optimization import AdamW, get_cosine_schedule_with_warmup
 import torch.distributed as dist
 import matplotlib.pyplot as plt
 
@@ -25,7 +24,7 @@ class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
                  pos_weight, size_weight, theta_weight, kl_weight, distance_weight,
-                 condition_type, convlayer):
+                 condition_type, convlayer, weight_decay):
         """
         Initialize the trainer with the specified parameters.
 
@@ -49,6 +48,7 @@ class Trainer:
         self.local_rank = local_rank
         self.save_dir_path = save_dir_path
         self.lr = lr
+        self.weight_decay = weight_decay
         self.T = T
         self.d_feature = d_feature
         self.d_latent = d_latent
@@ -88,57 +88,51 @@ class Trainer:
 
         base_batch_size = 16
         new_batch_size = self.batch_size
-        self.lr = self.lr*(new_batch_size/base_batch_size)
+        self.lr = self.lr * (new_batch_size / base_batch_size)
 
         # optimizer
-        param_optimizer = list(self.cvae.named_parameters())
-        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-        optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer if not any(
-                nd in n for nd in no_decay)], 'weight_decay': 0.01},
-            {'params': [p for n, p in param_optimizer if any(
-                nd in n for nd in no_decay)], 'weight_decay': 0.0}
-        ]
-        self.optimizer = AdamW(optimizer_grouped_parameters, lr=self.lr, correct_bias=False,
-                               no_deprecation_warning=True)
+        self.optimizer = torch.optim.Adam(self.cvae.module.parameters(),
+                                          lr=self.lr,
+                                          weight_decay=self.weight_decay,
+                                          betas=(0.9, 0.98))
 
         # scheduler
-        data_len = len(self.train_dataloader)
-        num_train_steps = int(data_len / batch_size * self.max_epoch)
-        num_warmup_steps = int(num_train_steps * 0.1)
-        self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, num_warmup_steps=num_warmup_steps,
-                                                         num_training_steps=num_train_steps)
+        # data_len = len(self.train_dataloader)
+        # num_train_steps = int(data_len / batch_size * self.max_epoch)
+        # num_warmup_steps = int(num_train_steps * 0.1)
+        # self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, num_warmup_steps=num_warmup_steps,
+        #                                                  num_training_steps=num_train_steps)
 
     def recon_pos_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
-            return recon_loss.mean() * self.pos_weight
+            return recon_loss.mean()
 
         recon_loss = recon_loss * mask
-        return recon_loss.sum() / mask.sum() * self.pos_weight
+        return recon_loss.sum() / mask.sum()
 
     def recon_size_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
-            return recon_loss.mean() * self.size_weight
+            return recon_loss.mean()
 
         recon_loss = recon_loss * mask
-        return recon_loss.sum() / mask.sum() * self.size_weight
+        return recon_loss.sum() / mask.sum()
 
     def recon_theta_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
-            return recon_loss.mean() * self.theta_weight
+            return recon_loss.mean()
 
         recon_loss = recon_loss * mask
-        return recon_loss.sum() / mask.sum() * self.theta_weight
+        return recon_loss.sum() / mask.sum()
 
     def kl_loss(self, mu, log_var):
         kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
-        return kl_loss * self.kl_weight
+        return kl_loss
 
     def distance_loss(self, pred, trg, mask, edge_index):
         if mask is not None:
@@ -159,11 +153,12 @@ class Trainer:
         loss = torch.sum(torch.abs(actual_distances - target_distances))
 
         # 배치의 평균 손실을 반환합니다.
-        return loss / len(start_nodes) * self.distance_weight
+        return loss / len(start_nodes)
 
     def train(self):
         """Training loop for the cvae model."""
         epoch_start = 0
+        min_loss = 999
 
         if self.use_checkpoint:
             checkpoint = torch.load("./models/cvae/epoch_" + str(self.checkpoint_epoch) + ".pth")
@@ -203,12 +198,14 @@ class Trainer:
                 loss_distance = self.distance_loss(output_pos, gt_feature.detach()[:, :2],
                                                    mask, data.edge_index.detach())
 
-                loss_total = loss_pos + loss_size + loss_theta + loss_kl + loss_distance
+                loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
+                             loss_theta * self.theta_weight + loss_kl * self.kl_weight + \
+                             loss_distance * self.distance_weight
 
                 # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
-                self.scheduler.step()
+                # self.scheduler.step()
 
                 # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
                 dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
@@ -302,6 +299,24 @@ class Trainer:
                             wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
                             wandb.log({"Validation distance loss": loss_distance_mean}, step=epoch + 1)
 
+                            loss_total = loss_pos_mean + loss_size_mean + loss_theta_mean + loss_kl_mean + loss_distance_mean
+                            wandb.log({"Validation total loss": loss_total}, step=epoch + 1)
+
+                            if min_loss > loss_total:
+                                min_loss = loss_total
+                                # 체크포인트 데이터 준비
+                                checkpoint = {
+                                    'epoch': epoch,
+                                    'model_state_dict': self.cvae.module.state_dict(),
+                                    'optimizer_state_dict': self.optimizer.state_dict(),
+                                }
+
+                                save_path = os.path.join("./models", self.save_dir_path)
+                                if not os.path.exists(save_path):
+                                    os.makedirs(save_path)
+                                torch.save(checkpoint, os.path.join(save_path, "epoch_best.pth"))
+
+
                 self.cvae.module.train()
 
             if (epoch + 1) % self.save_epoch == 0:
@@ -317,6 +332,7 @@ class Trainer:
                     if not os.path.exists(save_path):
                         os.makedirs(save_path)
                     torch.save(checkpoint, os.path.join(save_path, "epoch_" + str(epoch + 1) + ".pth"))
+
 
 if __name__ == '__main__':
     # Set the argparse
@@ -338,6 +354,7 @@ if __name__ == '__main__':
     parser.add_argument("--local-rank", type=int)
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
     parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
+    parser.add_argument("--weight_decay", type=float, default=5e-4, help="save dir path")
     parser.add_argument("--pos_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--size_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
@@ -389,6 +406,6 @@ if __name__ == '__main__':
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
                       pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
                       kl_weight=opt.kl_weight, distance_weight=opt.distance_weight, condition_type=opt.condition_type,
-                      convlayer=opt.convlayer)
+                      convlayer=opt.convlayer, weight_decay=opt.weight_decay)
 
     trainer.train()
