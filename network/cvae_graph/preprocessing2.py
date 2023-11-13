@@ -12,9 +12,9 @@ from torch_geometric.utils import dense_to_sparse, to_dense_adj
 def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                       n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64, condition_type='graph'):
 
-    train_split_path = './network/cvae_graph/whole_city/train_split'
-    val_split_path = './network/cvae_graph/whole_city/val_split'
-    test_split_path = './network/cvae_graph/whole_city/test_split'
+    train_split_path = './network/cvae_graph/whole_city/train_split.pkl'
+    val_split_path = './network/cvae_graph/whole_city/val_split.pkl'
+    test_split_path = './network/cvae_graph/whole_city/test_split.pkl'
 
     with open(train_split_path, 'rb') as f:
         train_split = pickle.load(f)
