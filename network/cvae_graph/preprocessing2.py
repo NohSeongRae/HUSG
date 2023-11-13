@@ -43,8 +43,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     print(np.array(train_split), np.array(train_split).shape)
     print(np.array(val_split), np.array(val_split).shape)
     print(np.array(test_split), np.array(test_split).shape)
-
-    print(np.array(gpickle_files))
+    print(np.array(gpickle_files), np.array(gpickle_files).shape)
 
     print(train_result)
     print(val_result)
