@@ -23,11 +23,18 @@ import wandb
 import socket
 from contextlib import closing
 
-def find_free_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
+
+def is_port_in_use(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
+
+
+def find_free_port(starting_port=1024):
+    port = starting_port
+    while is_port_in_use(port):
+        port += 1
+    return port
+
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
@@ -333,7 +340,6 @@ class Trainer:
                                 if early_stop_count >= self.max_epoch / 10:
                                     break
 
-
                 self.cvae.module.train()
 
             if (epoch + 1) % self.save_epoch == 0:
@@ -352,9 +358,6 @@ class Trainer:
 
 
 if __name__ == '__main__':
-    # 사용 가능한 포트 찾기
-    free_port = find_free_port()
-
     # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
@@ -424,9 +427,11 @@ if __name__ == '__main__':
     if not dist.is_initialized():
         if torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu') == "cuda:0":
             dist.init_process_group("gloo")
-
         else:
-            dist.init_process_group("nccl")
+            dist.init_process_group(
+                backend='nccl',  # 또는 'gloo', 'mpi' 등을 사용할 수 있습니다.
+                init_method=f'tcp://127.0.0.1:{find_free_port()}'
+            )
 
     if opt.local_rank == 0:
         wandb.run.name = 'cvae init'
