@@ -103,7 +103,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
-    for idx, building_polygon in enumerate(building_polygons):
+    for building_polygon in building_polygons:
         x, y = building_polygon
         ax2.plot(x, y, color='k', label='Rotated Box')
 
