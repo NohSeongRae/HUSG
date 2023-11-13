@@ -1,5 +1,6 @@
 import sys
 import os
+from datetime import datetime
 import argparse
 import torch
 import torch.nn as nn
@@ -373,9 +374,18 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
-    # change save dir path
-    # save_dir_path + condition_type + convlayer + batch_size + T + d_feature + d_latent + n_head + lr + weight_decay + pos_weight + size_weight + theta_weight + kl_weight + distance_wegiht
-    opt.save_dir_path = f'{opt.save_dir_path}_condition_type_{opt.condition_type}_convlyaer_type_{opt.convlayer}'
+    # 현재 시간을 기반으로 폴더 이름 생성
+    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    opt.save_dir_path = f"{opt.save_dir_path}_{current_time}"
+
+    save_path = os.path.join("./models", opt.save_dir_path)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+
+    config_file_path = os.path.join(save_path, "config.txt")
+    with open(config_file_path, "w") as f:
+        for arg in vars(opt):
+            f.write(f"{arg}: {getattr(opt, arg)}\n")
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     if opt.local_rank == 0:
