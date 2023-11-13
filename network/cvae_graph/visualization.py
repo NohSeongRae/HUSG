@@ -62,7 +62,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index):
+def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, building_polygons=None):
     # Create a figure and axes
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
@@ -94,9 +94,10 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     #     rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
     #     ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
-    filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
-    with open(filepath, 'rb') as f:
-        building_polygons = pickle.load(f)
+    if building_polygons == None:
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
+        with open(filepath, 'rb') as f:
+            building_polygons = pickle.load(f)
 
     for idx, building_polygon in enumerate(building_polygons):
         x, y = building_polygon

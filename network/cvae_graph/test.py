@@ -66,7 +66,6 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
             data, polygon = data
 
-            print(polygon)
             # Get the source and target sequences from the batch
             data = data.to(device=device)
             output_pos, output_size, output_theta = cvae.test(data)
@@ -92,7 +91,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      data.condition.detach().cpu().numpy(),
                      idx + 1,
                      condition_type,
-                     data.edge_index.detach().cpu().numpy())
+                     data.edge_index.detach().cpu().numpy(),
+                     polygon)
 
             elif condition_type == 'graph':
                 plot(output_pos.detach().cpu().numpy(),
