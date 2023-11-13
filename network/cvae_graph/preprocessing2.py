@@ -26,11 +26,19 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     print(train_split)
     print(val_split)
     print(test_split)
-    # save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'
-    #
-    # gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
-    # random.shuffle(gpickle_files)  # 파일 목록을 무작위로 섞기
-    #
+
+    save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'
+
+    gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
+
+    train_result = all(elem in gpickle_files for elem in train_split)
+    val_result = all(elem in gpickle_files for elem in train_split)
+    test_result = all(elem in gpickle_files for elem in train_split)
+
+    print(train_result)
+    print(val_result)
+    print(test_result)
+
     # # 분할 지점 계산
     # total_files = len(gpickle_files)
     # train_end = int(total_files * train_ratio)
