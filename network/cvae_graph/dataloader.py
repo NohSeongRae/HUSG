@@ -20,8 +20,10 @@ class GraphDataset(Dataset):
 
         if condition_type == 'graph':
             self.folder_path = '../../../..//local_datasets/graph_condition_train_datasets/' + self.data_type
-        else:
+        elif condition_type == 'image':
             self.folder_path = '../../../..//local_datasets/image_condition_train_datasets/' + self.data_type
+        elif condition_type == 'image_resnet34':
+            self.folder_path = '../../../..//local_datasets/image_resnet34_condition_train_datasets/' + self.data_type
         file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
 
         count = 0
@@ -47,7 +49,7 @@ class GraphDataset(Dataset):
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
-            if self.condition_type == 'image':
+            if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
             else:
                 condition_graph = graph.graph['condition']
