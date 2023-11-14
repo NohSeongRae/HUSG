@@ -37,9 +37,15 @@ class GraphDataset(Dataset):
     def get(self, idx):
         if self.data_type == 'train' or self.data_type == 'val':
             # load_path = self.folder_path + '/' + str(idx) + '.gpickle'
-            load_path = self.folder_path + '/' + self.gpickle_files[idx]
-            with open(load_path, 'rb') as f:
-                self.graph = pickle.load(f)
+            try:
+                load_path = self.folder_path + '/' + self.gpickle_files[idx]
+                with open(load_path, 'rb') as f:
+                    self.graph = pickle.load(f)
+            except:
+                self.folder_path.replace('/data2', '')
+                load_path = self.folder_path + '/' + self.gpickle_files[idx]
+                with open(load_path, 'rb') as f:
+                    self.graph = pickle.load(f)
 
             # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
             graph = self.graph
