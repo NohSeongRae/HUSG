@@ -44,7 +44,7 @@ def kl_loss(mu, log_var):
     return kl_loss
 
 
-def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condition_type):
+def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condition_type, convlayer):
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     # Subsequent initializations will use the already loaded full dataset
@@ -53,7 +53,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
     # Initialize the Transformer model
     cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
-                     condition_type=condition_type).to(device=device)
+                     condition_type=condition_type, convlayer=convlayer).to(device=device)
 
     checkpoint = torch.load("./models/" + save_dir_path + "/epoch_" + str(checkpoint_epoch) + ".pth")
     cvae.load_state_dict(checkpoint['model_state_dict'])
@@ -136,4 +136,4 @@ if __name__ == '__main__':
 
     test(d_feature=opt.d_feature, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
          checkpoint_epoch=opt.checkpoint_epoch, save_dir_path=opt.save_dir_path,
-         condition_type=opt.condition_type)
+         condition_type=opt.condition_type, convlayer=opt.convlayer)
