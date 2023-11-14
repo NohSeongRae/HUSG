@@ -401,14 +401,15 @@ if __name__ == '__main__':
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     opt.save_dir_path = f"{opt.save_dir_path}_{current_time}"
 
-    save_path = os.path.join("./models", opt.save_dir_path)
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+    if opt.local_rank == 0:
+        save_path = os.path.join("./models", opt.save_dir_path)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
 
-    config_file_path = os.path.join(save_path, "config.txt")
-    with open(config_file_path, "w") as f:
-        for arg in vars(opt):
-            f.write(f"{arg}: {getattr(opt, arg)}\n")
+        config_file_path = os.path.join(save_path, "config.txt")
+        with open(config_file_path, "w") as f:
+            for arg in vars(opt):
+                f.write(f"{arg}: {getattr(opt, arg)}\n")
 
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     if opt.local_rank == 0:
