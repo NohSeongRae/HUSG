@@ -27,9 +27,16 @@ class GraphDataset(Dataset):
         file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
 
         count = 0
-        for filename in os.listdir(self.folder_path):
-            if filename.endswith(file_extension):
-                count += 1
+        try:
+            for filename in os.listdir(self.folder_path):
+                if filename.endswith(file_extension):
+                    count += 1
+        except:
+            self.folder_path = self.folder_path.replace('/data2', '')
+            for filename in os.listdir(self.folder_path):
+                if filename.endswith(file_extension):
+                    count += 1
+
         self.data_length = count
 
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
@@ -37,15 +44,9 @@ class GraphDataset(Dataset):
     def get(self, idx):
         if self.data_type == 'train' or self.data_type == 'val':
             # load_path = self.folder_path + '/' + str(idx) + '.gpickle'
-            try:
-                load_path = self.folder_path + '/' + self.gpickle_files[idx]
-                with open(load_path, 'rb') as f:
-                    self.graph = pickle.load(f)
-            except:
-                self.folder_path.replace('/data2', '')
-                load_path = self.folder_path + '/' + self.gpickle_files[idx]
-                with open(load_path, 'rb') as f:
-                    self.graph = pickle.load(f)
+            load_path = self.folder_path + '/' + self.gpickle_files[idx]
+            with open(load_path, 'rb') as f:
+                self.graph = pickle.load(f)
 
             # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
             graph = self.graph
