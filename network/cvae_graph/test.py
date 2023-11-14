@@ -92,7 +92,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      idx + 1,
                      condition_type,
                      data.edge_index.detach().cpu().numpy(),
-                     polygon)
+                     polygon,
+                     save_dir_path)
 
             elif condition_type == 'graph':
                 plot(output_pos.detach().cpu().numpy(),
@@ -104,7 +105,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      data.condition[0].condition_street_feature.detach().cpu().numpy(),
                      idx + 1,
                      condition_type,
-                     data.edge_index.detach().cpu().numpy())
+                     data.edge_index.detach().cpu().numpy(),
+                     save_dir_path)
 
 
 if __name__ == '__main__':

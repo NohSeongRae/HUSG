@@ -62,7 +62,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_idx=None):
+def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_idx=None, save_dir_path=''):
     # Create a figure and axes
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
@@ -115,7 +115,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
 
-    directory = f"./images_{condition_type}"
+    directory = f"./images_{condition_type}/{save_dir_path}/"
     if not os.path.exists(directory):
         os.makedirs(directory)
 
