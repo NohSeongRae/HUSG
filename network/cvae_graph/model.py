@@ -8,7 +8,7 @@ import torchvision.models as models
 class ResNet34(nn.Module):
     def __init__(self, bottleneck):
         super(ResNet34, self).__init__()
-        self.model = models.resnet34(pretrained=True)
+        self.model = models.resnet34(weights='ResNet34_Weights.IMAGENET1K_V1')
 
         # 마지막 FC 층을 원하는 출력 크기로 교체
         num_features = self.model.fc.in_features

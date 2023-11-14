@@ -431,9 +431,6 @@ if __name__ == '__main__':
         else:
             dist.init_process_group('nccl')
 
-    if opt.local_rank == 0:
-        wandb.run.save()
-
     # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch,
                       d_feature=opt.d_feature, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
