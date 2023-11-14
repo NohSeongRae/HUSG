@@ -124,9 +124,6 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
-    # change save dir path
-    opt.save_dir_path = f'{opt.save_dir_path}_condition_type_{opt.condition_type}_convlyaer_type_{opt.convlayer}'
-
     # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
         print(f"{arg}: {getattr(opt, arg)}")
