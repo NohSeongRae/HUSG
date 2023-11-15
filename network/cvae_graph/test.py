@@ -55,6 +55,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
                      condition_type=condition_type, convlayer=convlayer).to(device=device)
 
+    if checkpoint_epoch == 0:
+        checkpoint_epoch = 'best'
     checkpoint = torch.load("./models/" + save_dir_path + "/epoch_" + str(checkpoint_epoch) + ".pth")
     cvae.load_state_dict(checkpoint['model_state_dict'])
 
