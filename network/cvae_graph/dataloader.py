@@ -38,7 +38,15 @@ class GraphDataset(Dataset):
                     count += 1
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
 
-        if data_type == 'test':
+        if data_type == 'train':
+            self.train_split_path = 'network/cvae_graph/whole_city/train_split.pkl'
+            with open(self.train_split_path, 'rb') as f:
+                self.gpickle_files = pickle.load(f)
+        elif data_type == 'val':
+            self.val_split_path = 'network/cvae_graph/whole_city/val_split.pkl'
+            with open(self.val_split_path, 'rb') as f:
+                self.gpickle_files = pickle.load(f)
+        elif data_type == 'test':
             self.test_split_path = 'network/cvae_graph/whole_city/test_split.pkl'
             with open(self.test_split_path, 'rb') as f:
                 self.gpickle_files = pickle.load(f)
