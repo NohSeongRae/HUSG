@@ -72,11 +72,14 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     #     ax1.imshow(condition[0], cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
     #     ax2.imshow(condition[0], cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
 
+    pred_output_list = []
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
             continue
 
         x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale
+        pred_output_list.append([x, y, w, h, theta])
+
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
 
@@ -85,18 +88,12 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
 
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
-    # for i in range(len(pos)):
-    #     if building_exist_mask[i] == 0:
-    #         continue
-    #
-    #     x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
-    #     semantic = gt_semantics[i]
-    #     points = get_bbox_corners(x, y, w, h)
-    #     rotated_points = rotate_points_around_center(points, [x, y], theta)
-    #
-    #     rotated_points = np.array(rotated_points)
-    #     rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-    #     ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
+    gt_output_list = []
+    for i in range(len(pos)):
+        if building_exist_mask[i] == 0:
+            continue
+        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
+        gt_output_list.append([x, y, w, h, theta])
 
     if polygon_path == None:
         filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
@@ -134,6 +131,13 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     ax2.set_axis_off()  # 축 표기 제거
     save_path_2 = os.path.join(directory, "ground_truth_" + str(idx) + ".png")
     ax2.figure.savefig(save_path_2, dpi=300, bbox_inches='tight')
+
+    with open(save_path_1.replace('png', '.pkl'), 'wb') as file:
+        pickle.dump(pred_output_list, file)
+
+    with open(save_path_2.replace('png', '.pkl'), 'wb') as file:
+        pickle.dump(gt_output_list, file)
+
     print(save_path_1)
 
 def test_plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
