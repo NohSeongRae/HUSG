@@ -138,9 +138,6 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     with open(save_path_2.replace('png', '.pkl'), 'wb') as file:
         pickle.dump(gt_output_list, file)
 
-    print(pred_output_list)
-    print(gt_output_list)
-
     print(save_path_1)
 
 def test_plot(pos, size, rot, semantics, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, is_chunk_graph, edge_index):
