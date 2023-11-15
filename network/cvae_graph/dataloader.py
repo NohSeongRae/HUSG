@@ -36,10 +36,17 @@ class GraphDataset(Dataset):
             for filename in os.listdir(self.folder_path):
                 if filename.endswith(file_extension):
                     count += 1
-
-        self.data_length = count
-
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
+
+        if data_type == 'test':
+            self.test_split_path = 'network/cvae_graph/test_split.pkl'
+            with open(self.test_split_path, 'rb') as f:
+                self.gpickle_files = pickle.load(f)
+
+            for i in range(len(self.gpickle_files)):
+                self.gpickle_files[i] = self.folder_path + self.gpickle_files[i]
+
+        self.data_length = len(self.gpickle_files)
 
     def get(self, idx):
         if self.data_type == 'train' or self.data_type == 'val':
@@ -123,8 +130,8 @@ class GraphDataset(Dataset):
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
-            polygon_idx = self.gpickle_files[idx].replace('.gpickle', '')
-            return (data, polygon_idx)
+            polygon_path = self.gpickle_files[idx].replace('.gpickle', '.pkl')
+            return (data, polygon_path)
     def len(self):
 
         return self.data_length

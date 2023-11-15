@@ -62,15 +62,15 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_idx=None, save_dir_path=''):
+def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path=''):
     # Create a figure and axes
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     rotation_scale = 45
 
-    if condition_type == 'image_resnet34':
-        ax1.imshow(condition[0], cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
-        ax2.imshow(condition[0], cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
+    # if condition_type == 'image_resnet34':
+    #     ax1.imshow(condition[0], cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
+    #     ax2.imshow(condition[0], cmap='gray', extent=[0, 1, 0, 1], alpha=0.5)
 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
@@ -98,12 +98,12 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     #     rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
     #     ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
-    if polygon_idx == None:
+    if polygon_path == None:
         filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
     else:
-        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(polygon_idx[0]) + '.pkl'
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + polygon_path[0] + '.pkl'
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
