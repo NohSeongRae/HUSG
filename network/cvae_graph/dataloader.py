@@ -44,6 +44,7 @@ class GraphDataset(Dataset):
                 self.gpickle_files = pickle.load(f)
 
             for i in range(len(self.gpickle_files)):
+                print(self.gpickle_files[i])
                 self.gpickle_files[i] = self.folder_path + self.gpickle_files[i]
 
         self.data_length = len(self.gpickle_files)
