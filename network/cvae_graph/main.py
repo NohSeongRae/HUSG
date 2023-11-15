@@ -335,7 +335,7 @@ class Trainer:
 
                                 early_stop_count = 0
                             else:
-                                # early_stop_count += 1
+                                early_stop_count += 1
 
                                 if early_stop_count >= self.max_epoch / 10:
                                     break
