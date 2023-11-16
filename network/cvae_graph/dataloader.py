@@ -89,11 +89,9 @@ class GraphDataset(Dataset):
 
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
-            print(edge_index)
 
             mask = ((building_masks[edge_index[0]] == 1) & (building_masks[edge_index[1]] == 1)).squeeze(-1)
             edge_index = edge_index[:, mask]
-            print(edge_index)
 
             # PyG 데이터 객체를 생성합니다.
             data = Data(node_features=node_features, node_semantics=node_semantics,
