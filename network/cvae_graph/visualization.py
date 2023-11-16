@@ -143,12 +143,12 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
         pickle.dump(gt_output_list, file)
 
-    with open(save_path_2.replace('.png', '.gpickle'), 'wb') as file:
-        pickle.dump(gpickle_file, file)
-
-    save_path_2 = os.path.join(directory, "real_polygon_" + str(idx) + ".png")
-    with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
-        pickle.dump(building_polygons, file)
+    # with open(save_path_2.replace('.png', '.gpickle'), 'wb') as file:
+    #     pickle.dump(gpickle_file, file)
+    #
+    # save_path_2 = os.path.join(directory, "real_polygon_" + str(idx) + ".png")
+    # with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
+    #     pickle.dump(building_polygons, file)
 
     print(save_path_1)
 
