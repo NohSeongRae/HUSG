@@ -62,7 +62,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path=''):
+def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path='', data_path=None):
     # Create a figure and axes
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
@@ -104,6 +104,11 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
+    if data_path != None:
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + data_path[0]
+        with open(filepath, 'rb') as f:
+            gpickle_file = pickle.load(f)
+
     for building_polygon in building_polygons:
         x, y = building_polygon
         ax2.plot(x, y, color='k', label='Rotated Box')
@@ -132,11 +137,18 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     save_path_2 = os.path.join(directory, "ground_truth_" + str(idx) + ".png")
     ax2.figure.savefig(save_path_2, dpi=300, bbox_inches='tight')
 
-    with open(save_path_1.replace('png', '.pkl'), 'wb') as file:
+    with open(save_path_1.replace('.png', '.pkl'), 'wb') as file:
         pickle.dump(pred_output_list, file)
 
-    with open(save_path_2.replace('png', '.pkl'), 'wb') as file:
+    with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
         pickle.dump(gt_output_list, file)
+
+    with open(save_path_2.replace('.png', '.gpickle'), 'wb') as file:
+        pickle.dump(gpickle_file, file)
+
+    save_path_2 = os.path.join(directory, "real_polygon_" + str(idx) + ".png")
+    with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
+        pickle.dump(building_polygons, file)
 
     print(save_path_1)
 

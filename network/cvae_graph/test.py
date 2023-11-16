@@ -63,7 +63,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     cvae.eval()
     with torch.no_grad():
         for idx, data in enumerate(tqdm(test_dataloader)):
-            data, polygon = data
+            data, polygon_path, data_path  = data
 
             # Get the source and target sequences from the batch
             data = data.to(device=device)
@@ -91,8 +91,9 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      idx + 1,
                      condition_type,
                      data.edge_index.detach().cpu().numpy(),
-                     polygon,
-                     save_dir_path)
+                     polygon_path,
+                     save_dir_path,
+                     data_path)
 
             elif condition_type == 'graph':
                 plot(output_pos.detach().cpu().numpy(),
@@ -105,8 +106,9 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      idx + 1,
                      condition_type,
                      data.edge_index.detach().cpu().numpy(),
-                     polygon,
-                     save_dir_path)
+                     polygon_path,
+                     save_dir_path,
+                     data_path)
 
 
 if __name__ == '__main__':
