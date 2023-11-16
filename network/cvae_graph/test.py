@@ -105,6 +105,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      idx + 1,
                      condition_type,
                      data.edge_index.detach().cpu().numpy(),
+                     polygon,
                      save_dir_path)
 
 
