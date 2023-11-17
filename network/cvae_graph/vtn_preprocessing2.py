@@ -30,49 +30,19 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         test_split.sort()
 
     save_path = './network/cvae_graph/vtn_train_datasets/'
-
-    gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
-    for gpickle_file in gpickle_files:
-        os.rename(os.path.join(save_path, gpickle_file), os.path.join(save_path, gpickle_file.replace(".geojson", "").replace("boundaries", "buildings")))
-    gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
-    random.shuffle(gpickle_files)  # 파일 목록을 무작위로 섞기
-
-    pkl_files = [f for f in os.listdir(save_path) if f.endswith('.pkl')]
-    for pkl_file in pkl_files:
-        os.rename(os.path.join(save_path, pkl_file), os.path.join(save_path, pkl_file.replace(".geojson", "").replace("boundaries", "buildings")))
     pkl_files = [f for f in os.listdir(save_path) if f.endswith('.pkl')]
 
     print(np.array(train_split), np.array(train_split).shape)
     print(np.array(val_split), np.array(val_split).shape)
     print(np.array(test_split), np.array(test_split).shape)
-    print(np.array(gpickle_files), np.array(gpickle_files).shape)
 
-    train_result = all(elem in gpickle_files for elem in train_split)
-    val_result = all(elem in gpickle_files for elem in val_split)
-    test_result = all(elem in gpickle_files for elem in test_split)
+    train_result = all(elem in pkl_files for elem in train_split)
+    val_result = all(elem in pkl_files for elem in val_split)
+    test_result = all(elem in pkl_files for elem in test_split)
 
     print(train_result)
     print(val_result)
     print(test_result)
-
-    # # 분할 지점 계산
-    # total_files = len(gpickle_files)
-    # train_end = int(total_files * train_ratio)
-    # val_end = train_end + int(total_files * val_ratio)
-    # print(total_files, train_end, val_end)
-    # # 각 데이터셋에 대한 파일 목록
-    # train_files = gpickle_files[:train_end]
-    # val_files = gpickle_files[train_end:val_end]
-    # test_files = gpickle_files[val_end:]
-    # print(np.array(train_files), np.array(train_files).shape)
-    # print(np.array(val_files), np.array(val_files).shape)
-    # print(np.array(test_files), np.array(test_files).shape)
-    # with open(train_split_path, 'wb') as file:
-    #     pickle.dump(train_files, file)
-    # with open(val_split_path, 'wb') as file:
-    #     pickle.dump(val_files, file)
-    # with open(test_split_path, 'wb') as file:
-    #     pickle.dump(test_files, file)
 
     # 폴더 생성 (존재하지 않을 경우)
     for folder in ['train', 'val', 'test']:
