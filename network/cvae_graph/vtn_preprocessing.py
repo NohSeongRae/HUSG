@@ -55,6 +55,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 print(source_file_names[idx], idx, node_features[idx][:, :2])
                 continue
 
+            if 'cemetery' in building_semantics[idx][:] or 'seating' in building_semantics[idx][:]:
+                continue
+
             node_feature = []
             for i in range(len(node_features[idx])):
                 if i < n_chunk:
