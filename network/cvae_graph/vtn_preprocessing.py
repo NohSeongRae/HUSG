@@ -62,6 +62,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                 else:
                     node_feature.append([1] + node_features[idx].tolist())
 
+            node_feature = np.array(node_feature)
+            print(node_feature)
+
             save_path = './network/cvae_graph/vtn_train_datasets/'
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
