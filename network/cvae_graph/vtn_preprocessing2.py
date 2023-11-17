@@ -18,15 +18,15 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
     with open(train_split_path, 'rb') as f:
         train_split = pickle.load(f)
-        train_split = [s.replace("geojson", "gpickle") for s in train_split]
+        train_split = [s.replace("geojson", "pkl") for s in train_split]
         train_split.sort()
     with open(val_split_path, 'rb') as f:
         val_split = pickle.load(f)
-        val_split = [s.replace("geojson", "gpickle") for s in val_split]
+        val_split = [s.replace("geojson", "pkl") for s in val_split]
         val_split.sort()
     with open(test_split_path, 'rb') as f:
         test_split = pickle.load(f)
-        test_split = [s.replace("geojson", "gpickle") for s in test_split]
+        test_split = [s.replace("geojson", "pkl") for s in test_split]
         test_split.sort()
 
     save_path = './network/cvae_graph/vtn_train_datasets/'
