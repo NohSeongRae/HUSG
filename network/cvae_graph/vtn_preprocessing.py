@@ -46,6 +46,13 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         with open(filepath, 'rb') as f:
             mask_file_names = pickle.load(f)
 
+        idx = 0
+        while idx < len(node_features):
+            if source_file_names[idx].split('/')[-1] != mask_file_names[idx]:
+                del mask_file_names[idx]
+            else:
+                idx += 1
+
         for idx in range(len(node_features)):
             n_node = len(node_features[idx])
             n_building = len(building_semantics[idx])
