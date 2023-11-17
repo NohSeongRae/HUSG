@@ -30,7 +30,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
         test_split.sort()
 
     save_path = './network/cvae_graph/vtn_train_datasets/'
-    pkl_files = [f for f in os.listdir(save_path) if f.endswith('.pkl')]
+    pkl_files = [f for f in os.listdir(save_path) if f.endswith('.pkl')].sort()
 
     print(np.array(train_split), np.array(train_split).shape)
     print(np.array(val_split), np.array(val_split).shape)
