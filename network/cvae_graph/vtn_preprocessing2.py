@@ -85,7 +85,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             pkl_file = base_filename + '.pkl'
 
             target_folder = 'train' if gpickle_file in train_split else 'val' if gpickle_file in val_split else 'test'
-            shutil.move(os.path.join(save_path, gpickle_file), os.path.join(save_path, target_folder, gpickle_file))
+            # shutil.move(os.path.join(save_path, gpickle_file), os.path.join(save_path, target_folder, gpickle_file))
             shutil.move(os.path.join(save_path, pkl_file), os.path.join(save_path, target_folder, pkl_file))
 
 
