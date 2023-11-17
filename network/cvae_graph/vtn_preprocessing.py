@@ -58,9 +58,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             node_feature = []
             for i in range(len(node_features[idx])):
                 if i < n_chunk:
-                    node_feature.append([0] + node_features[idx].tolist())
+                    node_feature.append([0] + node_features[idx][i].tolist())
                 else:
-                    node_feature.append([1] + node_features[idx].tolist())
+                    node_feature.append([1] + node_features[idx][i].tolist())
 
             node_feature = np.array(node_feature)
             print(node_feature)
