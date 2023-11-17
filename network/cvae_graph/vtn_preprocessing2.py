@@ -52,6 +52,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     # 파일 묶음을 해당 폴더로 이동
     for file_set in [train_split, val_split, test_split]:
         for gpickle_file in tqdm(file_set):
+            gpickle_file = gpickle_file.replace('gpickle', 'pkl')
             base_filename = os.path.splitext(gpickle_file)[0]
             pkl_file = base_filename + '.pkl'
 
