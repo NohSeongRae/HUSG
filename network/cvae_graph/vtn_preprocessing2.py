@@ -31,9 +31,10 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
     save_path = './network/cvae_graph/vtn_train_datasets/'
     pkl_files = [f for f in os.listdir(save_path) if f.endswith('.pkl')]
+    for pkl_file in pkl_files:
+        os.rename(os.path.join(save_path, pkl_file), os.path.join(save_path, pkl_file.replace(".geojson", "").replace("boundaries", "buildings")))
+    pkl_files = [f for f in os.listdir(save_path) if f.endswith('.pkl')]
     pkl_files.sort()
-    for i in range(len(pkl_files)):
-        pkl_files[i] = pkl_files[i].replace('.geojson', '')
 
     print(np.array(train_split), np.array(train_split).shape)
     print(np.array(val_split), np.array(val_split).shape)
