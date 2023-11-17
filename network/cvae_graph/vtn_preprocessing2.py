@@ -35,6 +35,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     print(np.array(train_split), np.array(train_split).shape)
     print(np.array(val_split), np.array(val_split).shape)
     print(np.array(test_split), np.array(test_split).shape)
+    print(np.array(pkl_files), np.array(pkl_files).shape)
 
     train_result = all(elem in pkl_files for elem in train_split)
     val_result = all(elem in pkl_files for elem in val_split)
