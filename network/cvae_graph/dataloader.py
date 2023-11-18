@@ -54,7 +54,7 @@ class GraphDataset(Dataset):
         self.data_length = len(self.gpickle_files)
 
     def get(self, idx):
-        if self.data_type == 'train':
+        if self.data_type == 'train' or self.data_type == 'val':
             # load_path = self.folder_path + '/' + str(idx) + '.gpickle'
             load_path = self.folder_path + '/' + self.gpickle_files[idx]
             with open(load_path, 'rb') as f:
