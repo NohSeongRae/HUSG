@@ -102,15 +102,15 @@ class GraphDataset(Dataset):
 
             # 그래프를 PyG 데이터 객체로 변환합니다.
             # 노드 특성과 엣지 인덱스를 추출합니다.
-            node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
+            node_features = torch.tensor(np.array([[graph.nodes[node]['posx'], graph.nodes[node]['posy'],
+                                                    graph.nodes[node]['size_x'], graph.nodes[node]['size_y'], 0
+                                                    ] for node in graph.nodes()]),
                                          dtype=torch.float32)
-            node_semantics = torch.tensor(np.array([graph.nodes[node]['node_semantics'] for node in graph.nodes()]),
-                                          dtype=torch.long)
-            building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
+            building_masks = torch.tensor(np.array([graph.nodes[node]['exist'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
-                condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
+                condition = torch.tensor(np.array(graph.graph['binary_mask']), dtype=torch.float32)
             else:
                 condition_graph = graph.graph['condition']
                 condition_edge_index = nx.to_scipy_sparse_matrix(condition_graph).tocoo()
@@ -127,16 +127,8 @@ class GraphDataset(Dataset):
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            mask = ((building_masks[edge_index[0]] == 1) & (building_masks[edge_index[1]] == 1)).squeeze(-1)
-            building_edge_index = edge_index[:, mask]
-
-            mask = ((building_masks[edge_index[0]] == 0) & (building_masks[edge_index[1]] == 0)).squeeze(-1)
-            street_edge_index = edge_index[:, mask]
-
-            edge_index = torch.cat([building_edge_index, street_edge_index], dim=1)
-
             # PyG 데이터 객체를 생성합니다.
-            data = Data(node_features=node_features, node_semantics=node_semantics,
+            data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
