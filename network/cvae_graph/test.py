@@ -48,7 +48,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     # Subsequent initializations will use the already loaded full dataset
-    test_dataset = GraphDataset(data_type='test', condition_type=condition_type)
+    test_dataset = GraphDataset(data_type='val', condition_type=condition_type)
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     # Initialize the Transformer model

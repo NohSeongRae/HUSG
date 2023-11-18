@@ -23,7 +23,7 @@ class GraphDataset(Dataset):
         elif condition_type == 'image':
             self.folder_path = '../../../../data2/local_datasets/image_condition_train_datasets/' + self.data_type
         elif condition_type == 'image_resnet34':
-            self.folder_path = '../../../../data2/local_datasets/image_resnet34_condition_train_datasets/val'
+            self.folder_path = '../../../../data2/local_datasets/image_resnet34_condition_train_datasets/' + self.data_type
         file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
 
         count = 0
@@ -47,14 +47,14 @@ class GraphDataset(Dataset):
             with open(self.val_split_path, 'rb') as f:
                 self.gpickle_files = pickle.load(f)
         elif data_type == 'test':
-            self.test_split_path = 'network/cvae_graph/whole_city/val_split.pkl'
+            self.test_split_path = 'network/cvae_graph/whole_city/test_split.pkl'
             with open(self.test_split_path, 'rb') as f:
                 self.gpickle_files = pickle.load(f)
 
         self.data_length = len(self.gpickle_files)
 
     def get(self, idx):
-        if self.data_type == 'train' or self.data_type == 'val':
+        if self.data_type == 'train':
             # load_path = self.folder_path + '/' + str(idx) + '.gpickle'
             load_path = self.folder_path + '/' + self.gpickle_files[idx]
             with open(load_path, 'rb') as f:
