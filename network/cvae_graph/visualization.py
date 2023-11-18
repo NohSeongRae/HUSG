@@ -63,7 +63,6 @@ def rotate_points_around_center(points, center, theta_deg):
     return rotated_points
 
 def plot(pos, size, rot, building_exist_mask, gt_features, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path='', data_path=None):
-    print(data_path)
     directory = f"./images_{condition_type}/{save_dir_path}/"
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -116,7 +115,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, condition, idx, condi
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
     else:
-        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + polygon_path[0]
+        filepath = '../../../../local_datasets/global_mapper/global_mapper/' + data_path[0]
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
