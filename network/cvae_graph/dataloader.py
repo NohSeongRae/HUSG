@@ -27,9 +27,7 @@ class GraphDataset(Dataset):
         file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
         self.folder_path = '../../../../local_datasets/global_mapper/global_mapper/'
 
-        city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
-                      "philadelphia"]
-        city_names = ["brasov", "bologna", "belgrade", "barcelona", "athens", "annecy"]
+        city_names = ["philadelphia"]
 
         self.gpickle_files = []
         for city in city_names:
