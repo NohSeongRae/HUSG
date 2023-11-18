@@ -72,7 +72,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
         file_name = [data_path[0]]
         print(file_name)
 
-        if 'stockholm' in file_name:
+        if 'stockholm' in file_name[0]:
             print('It is stockholm')
             return
 
