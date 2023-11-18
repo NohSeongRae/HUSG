@@ -63,6 +63,21 @@ def rotate_points_around_center(points, center, theta_deg):
     return rotated_points
 
 def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path='', data_path=None):
+    directory = f"./images_{condition_type}/{save_dir_path}/"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    save_path_2 = os.path.join(directory, "file_name_" + str(idx) + ".png")
+    with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
+        file_name = [data_path[0]]
+        print(file_name)
+
+        if 'stockholm' in file_name:
+            print('It is stockholm')
+            return
+
+        pickle.dump(file_name, file)
+
     # Create a figure and axes
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))  # 한 개의 서브플롯만 생성
@@ -117,10 +132,6 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
 
-    directory = f"./images_{condition_type}/{save_dir_path}/"
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
     # ax1 (예측) 이미지 저장
     ax1.set_aspect('equal', adjustable='box')
     ax1.set_xlim([0.0, 1.0])
@@ -149,12 +160,6 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
     save_path_2 = os.path.join(directory, "real_polygon_" + str(idx) + ".png")
     with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
         pickle.dump(building_polygons, file)
-
-    save_path_2 = os.path.join(directory, "file_name_" + str(idx) + ".png")
-    with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
-        file_name = [data_path[0]]
-        print(file_name)
-        pickle.dump(file_name, file)
 
     print(save_path_1)
 
