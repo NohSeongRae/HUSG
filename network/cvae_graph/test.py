@@ -67,7 +67,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
             # Get the source and target sequences from the batch
             data = data.to(device=device)
-            output_pos, output_size, output_theta = cvae.test(data)
+            output_pos, output_size, output_theta, _, _ = cvae(data)
 
             # # Compute the losses using the generated sequence
             # loss_pos = recon_pos_loss(output_pos, data.building_feature[:, :2], data.building_mask)
