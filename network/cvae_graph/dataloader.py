@@ -29,7 +29,7 @@ class GraphDataset(Dataset):
 
         city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
                       "philadelphia"]
-        city_names = ["edinburgh", "dublin", "budapest", "brasov", "bologna", "belgrade", "barcelona", "athens", "annecy"]
+        city_names = ["brasov", "bologna", "belgrade", "barcelona", "athens", "annecy"]
 
         self.gpickle_files = []
         for city in city_names:
