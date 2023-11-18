@@ -125,6 +125,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, condition, idx, condi
             gpickle_file = pickle.load(f)
 
     for building_polygon in building_polygons:
+        print(building_polygon)
         x, y = building_polygon
         ax2.plot(x, y, color='k', label='Rotated Box')
 
