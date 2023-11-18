@@ -25,31 +25,26 @@ class GraphDataset(Dataset):
         elif condition_type == 'image_resnet34':
             self.folder_path = '../../../../data2/local_datasets/image_resnet34_condition_train_datasets/' + self.data_type
         file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
+        self.folder_path = '../../../../local_datasets/global_mapper/global_mapper/'
 
-        count = 0
-        try:
-            for filename in os.listdir(self.folder_path):
-                if filename.endswith(file_extension):
-                    count += 1
-        except:
-            self.folder_path = self.folder_path.replace('/data2', '')
-            for filename in os.listdir(self.folder_path):
-                if filename.endswith(file_extension):
-                    count += 1
-        self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
-
-        if data_type == 'train':
-            self.train_split_path = 'network/cvae_graph/whole_city/train_split.pkl'
-            with open(self.train_split_path, 'rb') as f:
-                self.gpickle_files = pickle.load(f)
-        elif data_type == 'val':
-            self.val_split_path = 'network/cvae_graph/whole_city/val_split.pkl'
-            with open(self.val_split_path, 'rb') as f:
-                self.gpickle_files = pickle.load(f)
-        elif data_type == 'test':
-            self.test_split_path = 'network/cvae_graph/whole_city/test_split.pkl'
-            with open(self.test_split_path, 'rb') as f:
-                self.gpickle_files = pickle.load(f)
+        city_names = ["atlanta", "dallas", "houston", "lasvegas", "littlerock",
+                      "philadelphia"]
+        self.gpickle_files = []
+        for city in city_names:
+            self.gpickle_files += [f for f in os.listdir(self.folder_path + city) if f.endswith('.gpickle')]
+        #
+        # if data_type == 'train':
+        #     self.train_split_path = 'network/cvae_graph/whole_city/train_split.pkl'
+        #     with open(self.train_split_path, 'rb') as f:
+        #         self.gpickle_files = pickle.load(f)
+        # elif data_type == 'val':
+        #     self.val_split_path = 'network/cvae_graph/whole_city/val_split.pkl'
+        #     with open(self.val_split_path, 'rb') as f:
+        #         self.gpickle_files = pickle.load(f)
+        # elif data_type == 'test':
+        #     self.test_split_path = 'network/cvae_graph/whole_city/test_split.pkl'
+        #     with open(self.test_split_path, 'rb') as f:
+        #         self.gpickle_files = pickle.load(f)
 
         self.data_length = len(self.gpickle_files)
 
@@ -65,11 +60,13 @@ class GraphDataset(Dataset):
 
             # 그래프를 PyG 데이터 객체로 변환합니다.
             # 노드 특성과 엣지 인덱스를 추출합니다.
-            node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
+            node_features = torch.tensor(np.array([[graph.nodes[node]['posx'], graph.nodes[node]['posy'],
+                                                    graph.nodes[node]['size_x'], graph.nodes[node]['size_y'], 0
+                                                    ] for node in graph.nodes()]),
                                          dtype=torch.float32)
             node_semantics = torch.tensor(np.array([graph.nodes[node]['node_semantics'] for node in graph.nodes()]),
                                           dtype=torch.long)
-            building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
+            building_masks = torch.tensor(np.array([graph.nodes[node]['exist'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
