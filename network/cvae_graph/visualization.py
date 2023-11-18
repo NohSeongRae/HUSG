@@ -120,7 +120,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, condition, idx, condi
             building_polygons = pickle.load(f)
 
     if data_path != None:
-        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + data_path[0]
+        filepath = '../../../../local_datasets/global_mapper/global_mapper/' + data_path[0]
         with open(filepath, 'rb') as f:
             gpickle_file = pickle.load(f)
 
