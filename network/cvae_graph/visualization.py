@@ -123,7 +123,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, condition, idx, condi
         filepath = '../../../../local_datasets/global_mapper/global_mapper/' + data_path[0]
         with open(filepath, 'rb') as f:
             gpickle_file = pickle.load(f)
-
+    print(building_polygons)
     for building_polygon in building_polygons:
         print(building_polygon)
         x, y = building_polygon
