@@ -68,7 +68,7 @@ class GraphDataset(Dataset):
                                           dtype=torch.long)
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
-                condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
+                condition = torch.tensor(np.array(graph.graph['binary_mask']), dtype=torch.float32)
             else:
                 condition_graph = graph.graph['condition']
                 condition_edge_index = nx.to_scipy_sparse_matrix(condition_graph).tocoo()
