@@ -204,7 +204,7 @@ class Trainer:
                 data = data.to(device=self.device)
                 output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
-                mask = data.building_mask.detach()
+                mask = data.building_mask.detach().unsqueeze(-1)
                 gt_feature = data.node_features
 
                 # Compute the losses
