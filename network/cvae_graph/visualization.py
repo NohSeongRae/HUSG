@@ -62,7 +62,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path='', data_path=None):
+def plot(pos, size, rot, building_exist_mask, gt_features, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path='', data_path=None):
     directory = f"./images_{condition_type}/{save_dir_path}/"
     if not os.path.exists(directory):
         os.makedirs(directory)
