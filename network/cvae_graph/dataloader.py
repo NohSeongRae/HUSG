@@ -31,7 +31,7 @@ class GraphDataset(Dataset):
                       "philadelphia"]
         self.gpickle_files = []
         for city in city_names:
-            self.gpickle_files += [f for f in os.listdir(self.folder_path + city) if f.endswith('.gpickle')]
+            self.gpickle_files += [city + '/' + f for f in os.listdir(self.folder_path + city) if f.endswith('.gpickle')]
         #
         # if data_type == 'train':
         #     self.train_split_path = 'network/cvae_graph/whole_city/train_split.pkl'
