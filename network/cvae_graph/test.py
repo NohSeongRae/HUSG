@@ -63,7 +63,10 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     cvae.eval()
     with torch.no_grad():
         for idx, data in enumerate(tqdm(test_dataloader)):
-            data, polygon_path, data_path  = data
+            data, polygon_path, data_path = data
+            if 'stockholm' in data_path:
+                print('It is stockholm')
+                continue
 
             # Get the source and target sequences from the batch
             data = data.to(device=device)
