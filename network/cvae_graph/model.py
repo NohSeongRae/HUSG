@@ -114,7 +114,7 @@ class GraphEncoder(nn.Module):
         super(GraphEncoder, self).__init__()
 
         self.bbox_fc = nn.Linear(5, feature_dim)
-        self.mask_embed = nn.Embedding(2, feature_dim)
+        # self.mask_embed = nn.Embedding(2, feature_dim)
         self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
 
         if convlayer == 'gat':
@@ -212,7 +212,7 @@ class GraphDecoder(nn.Module):
                 for _ in range(T - 1)
             ])
         else:
-            self.d_conv1 = self.convlayer(feature_dim + feature_dim + 320, feature_dim)
+            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim, feature_dim)
                 for _ in range(T - 1)
