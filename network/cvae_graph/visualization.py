@@ -62,7 +62,7 @@ def rotate_points_around_center(points, center, theta_deg):
 
     return rotated_points
 
-def plot(pos, size, rot, building_exist_mask, gt_features, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path='', data_path=None):
+def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, condition, idx, condition_type, edge_index, polygon_path=None, save_dir_path='', data_path=None):
     directory = f"./images_{condition_type}/{save_dir_path}/"
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -110,27 +110,23 @@ def plot(pos, size, rot, building_exist_mask, gt_features, condition, idx, condi
         x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
         gt_output_list.append([x, y, w, h, theta])
 
-        points = get_bbox_corners(x, y, w, h)
-        rotated_points = rotate_points_around_center(points, [x, y], theta)
-
-        rotated_points = np.array(rotated_points)
-        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
-
-        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
-
     if polygon_path == None:
         filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
     else:
-        filepath = '../../../../local_datasets/global_mapper/global_mapper/' + data_path[0]
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + polygon_path[0]
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
     if data_path != None:
-        filepath = '../../../../local_datasets/global_mapper/global_mapper/' + data_path[0]
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + data_path[0]
         with open(filepath, 'rb') as f:
             gpickle_file = pickle.load(f)
+
+    for building_polygon in building_polygons:
+        x, y = building_polygon
+        ax2.plot(x, y, color='k', label='Rotated Box')
 
     # Set the limits of the plot
     plt.xlim([0.0, 1.0])
