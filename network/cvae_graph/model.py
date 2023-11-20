@@ -50,7 +50,6 @@ class BoundaryMaskEncoder(nn.Module):
         mask = self.linear(mask)
         return mask
 
-
 class GraphConditionEncoder(nn.Module):
     def __init__(self, T, feature_dim, bottleneck, n_head, convlayer):
         super(GraphConditionEncoder, self).__init__()
@@ -108,14 +107,13 @@ class GraphConditionEncoder(nn.Module):
         latent = self.aggregate(g_embed)
         return latent
 
-
 class GraphEncoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, convlayer):
         super(GraphEncoder, self).__init__()
 
         self.bbox_fc = nn.Linear(5, feature_dim)
-        # self.mask_embed = nn.Embedding(2, feature_dim)
-        # self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
+        self.mask_embed = nn.Embedding(2, feature_dim)
+        self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -155,11 +153,11 @@ class GraphEncoder(nn.Module):
         node_feature = self.bbox_fc(node_feature)
         node_feature = F.relu(node_feature)
 
-        # node_mask = data.building_mask
-        # node_mask = self.mask_embed(node_mask).squeeze(1)
-        # node_mask = F.relu(node_mask)
+        node_mask = data.building_mask
+        node_mask = self.mask_embed(node_mask).squeeze(1)
+        node_mask = F.relu(node_mask)
 
-        # node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask], dim=1)))
+        node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask], dim=1)))
 
         n_embed_0 = node_feature
         g_embed_0 = self.global_pool(n_embed_0, data.batch)
@@ -182,7 +180,6 @@ class GraphEncoder(nn.Module):
 
         return mu, log_var
 
-
 class GraphDecoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer):
         super(GraphDecoder, self).__init__()
@@ -204,9 +201,9 @@ class GraphDecoder(nn.Module):
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
-        # self.mask_embed = nn.Embedding(2, feature_dim)
+        self.mask_embed = nn.Embedding(2, feature_dim)
         if convlayer == 'gat':
-            self.d_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
+            self.d_conv1 = self.convlayer(feature_dim + feature_dim + 320, feature_dim, heads=n_head)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
                 for _ in range(T - 1)
@@ -233,12 +230,12 @@ class GraphDecoder(nn.Module):
         z = self.dec_feature_init(z)
         z = z[batch]
 
-        # pos = self.node_order_within_batch(batch)
+        pos = self.node_order_within_batch(batch)
 
-        # node_mask = self.mask_embed(node_mask).squeeze(1)
-        # node_mask = F.relu(node_mask)
-        #
-        # z = torch.cat([z, node_mask], 1)
+        node_mask = self.mask_embed(node_mask).squeeze(1)
+        node_mask = F.relu(node_mask)
+
+        z = torch.cat([z, node_mask, pos], 1)
 
         d_embed_0 = F.relu(z)
         d_embed_t = F.relu(self.d_conv1(d_embed_0, edge_index))
@@ -265,7 +262,6 @@ class GraphDecoder(nn.Module):
 
         one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=320)
         return one_hot_order
-
 
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
