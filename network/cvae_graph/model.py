@@ -155,11 +155,11 @@ class GraphEncoder(nn.Module):
         node_feature = self.bbox_fc(node_feature)
         node_feature = F.relu(node_feature)
 
-        node_mask = data.building_mask
-        node_mask = self.mask_embed(node_mask).squeeze(1)
-        node_mask = F.relu(node_mask)
-
-        node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask], dim=1)))
+        # node_mask = data.building_mask
+        # node_mask = self.mask_embed(node_mask).squeeze(1)
+        # node_mask = F.relu(node_mask)
+        #
+        # node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask], dim=1)))
 
         n_embed_0 = node_feature
         g_embed_0 = self.global_pool(n_embed_0, data.batch)
@@ -204,9 +204,9 @@ class GraphDecoder(nn.Module):
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
-        self.mask_embed = nn.Embedding(2, feature_dim)
+        # self.mask_embed = nn.Embedding(2, feature_dim)
         if convlayer == 'gat':
-            self.d_conv1 = self.convlayer(feature_dim + feature_dim + 320, feature_dim, heads=n_head)
+            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim, heads=n_head)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
                 for _ in range(T - 1)
@@ -235,10 +235,10 @@ class GraphDecoder(nn.Module):
 
         pos = self.node_order_within_batch(batch)
 
-        node_mask = self.mask_embed(node_mask).squeeze(1)
-        node_mask = F.relu(node_mask)
+        # node_mask = self.mask_embed(node_mask).squeeze(1)
+        # node_mask = F.relu(node_mask)
 
-        z = torch.cat([z, node_mask, pos], 1)
+        z = torch.cat([z, pos], 1)
 
         d_embed_0 = F.relu(z)
         d_embed_t = F.relu(self.d_conv1(d_embed_0, edge_index))
