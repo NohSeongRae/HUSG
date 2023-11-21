@@ -199,7 +199,7 @@ class GraphDecoder(nn.Module):
 
         # self.mask_embed = nn.Embedding(2, feature_dim)
         if convlayer == 'gat':
-            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim, heads=n_head)
+            self.d_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
                 for _ in range(T - 1)
@@ -225,10 +225,6 @@ class GraphDecoder(nn.Module):
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
-
-        pos = self.node_order_within_batch(batch)
-
-        z = torch.cat([z, pos], 1)
 
         d_embed_0 = F.relu(z)
         d_embed_t = F.relu(self.d_conv1(d_embed_0, edge_index))
