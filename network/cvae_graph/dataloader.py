@@ -134,13 +134,7 @@ class GraphDataset(Dataset):
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            mask = ((building_masks[edge_index[0]] == 1) & (building_masks[edge_index[1]] == 1)).squeeze(-1)
-            building_edge_index = edge_index[:, mask]
-
-            mask = ((building_masks[edge_index[0]] == 0) & (building_masks[edge_index[1]] == 0)).squeeze(-1)
-            street_edge_index = edge_index[:, mask]
-
-            edge_index = torch.cat([building_edge_index, street_edge_index], dim=1)
+            node_features[:, 2:5] *= building_masks
 
             # PyG 데이터 객체를 생성합니다.
             data = Data(node_features=node_features, node_semantics=node_semantics,
