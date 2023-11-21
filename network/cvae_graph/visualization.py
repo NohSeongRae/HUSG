@@ -111,16 +111,16 @@ def plot(pos, size, rot, building_exist_mask, gt_features, gt_semantics, conditi
         gt_output_list.append([x, y, w, h, theta])
 
     if polygon_path == None:
-        filepath = f'../../../../data2/local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
     else:
-        filepath = f'../../../../data2/local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + polygon_path[0]
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + polygon_path[0]
         with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
     if data_path != None:
-        filepath = f'../../../../data2/local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + data_path[0]
+        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + data_path[0]
         with open(filepath, 'rb') as f:
             gpickle_file = pickle.load(f)
 
