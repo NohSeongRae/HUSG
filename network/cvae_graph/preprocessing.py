@@ -6,16 +6,10 @@ import argparse
 import os
 import networkx as nx
 import random
-from torch_geometric.utils import dense_to_sparse, to_dense_adj
 
-def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
-                      n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64, condition_type='graph'):
+def preprocesing_dataset(condition_type='graph'):
 
     dataset_path = '../../datasets/HUSG/'
-    # dataset_path = '../../datasets/HUSG/'
-    # dataset_path = '../mnt/2_transformer/train_dataset'
-    # dataset_path = 'Z:/iiixr-drive/Projects/2023_City_Team/2_transformer/train_dataset'
-    # dataset_path = os.path.join('Z:', 'iiixr-drive', 'Projects', '2023_City_Team', '2_transformer', 'train_dataset')
 
     city_names = ['annecy', 'athens', 'barcelona', 'belgrade',
                   'bologna', 'brasov', 'budapest', 'dublin',
@@ -23,7 +17,6 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
                   'milan', 'naples', 'nottingham', 'paris', 'porto',
                   'praha', 'seville', 'stockholm', 'tallinn', 'valencia',
                   'venice', 'verona', 'vienna', 'zurich']
-    # city_names = ["atlanta"]
 
     dataset_names = [
         'edge_indices',
@@ -156,34 +149,19 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
 
 
 if __name__ == '__main__':
-    # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
 
-    # Define the arguments with their descriptions
-    parser.add_argument("--train_ratio", type=float, default=0.8, help="Use checkpoint index.")
-    parser.add_argument("--val_ratio", type=float, default=0.1, help="Use checkpoint index.")
-    parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
-    parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
-    parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
-    parser.add_argument("--n_building", type=int, default=120, help="binary classification for building existence.")
-    parser.add_argument("--n_boundary", type=int, default=250, help="Number of boundary or token.")
-    parser.add_argument("--n_street", type=int, default=60, help="Number of boundary or token.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--condition_type", type=str, default="graph", help="Random seed for reproducibility across runs.")
 
     opt = parser.parse_args()
 
-    # Set the random seed for reproducibility
     random.seed(opt.seed)
     np.random.seed(opt.seed)
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed_all(opt.seed)
 
-    # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
         print(f"{arg}: {getattr(opt, arg)}")
 
-    preprocesing_dataset(train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
-                         n_street=opt.n_street, n_building=opt.n_building,
-                         n_boundary=opt.n_boundary, d_unit=opt.d_unit, d_street=opt.d_street,
-                         condition_type=opt.condition_type)
+    preprocesing_dataset(condition_type=opt.condition_type)

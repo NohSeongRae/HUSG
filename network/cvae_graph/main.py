@@ -1,4 +1,3 @@
-import sys
 import os
 from datetime import datetime
 import argparse
@@ -19,22 +18,6 @@ from model import GraphCVAE
 from dataloader import GraphDataset
 
 import wandb
-
-import socket
-from contextlib import closing
-
-
-def is_port_in_use(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
-
-
-def find_free_port(starting_port=1024):
-    port = starting_port
-    while is_port_in_use(port):
-        port += 1
-    return str(port)
-
 
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
@@ -79,24 +62,20 @@ class Trainer:
 
         print('local_rank', self.local_rank)
 
-        # Set the device for training (either GPU or CPU based on availability)
         self.device = torch.device(f'cuda:{self.local_rank}') if torch.cuda.is_available() else torch.device('cpu')
 
-        # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = GraphDataset(data_type='train',
                                           condition_type=condition_type)
         self.train_sampler = DistributedSampler(dataset=self.train_dataset, rank=rank, shuffle=True)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size,
                                            sampler=self.train_sampler, num_workers=8, pin_memory=True)
 
-        # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = GraphDataset(data_type='val',
                                         condition_type=condition_type)
         self.val_sampler = DistributedSampler(dataset=self.val_dataset, rank=rank, shuffle=False)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size,
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
-        # Initialize the Transformer model
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
                               condition_type=condition_type,
                               convlayer=convlayer).to(device=self.device)
@@ -106,18 +85,10 @@ class Trainer:
         new_batch_size = self.batch_size
         self.lr = self.lr * (new_batch_size / base_batch_size)
 
-        # optimizer
         self.optimizer = torch.optim.Adam(self.cvae.module.parameters(),
                                           lr=self.lr,
                                           weight_decay=self.weight_decay,
                                           betas=(0.9, 0.98))
-
-        # scheduler
-        # data_len = len(self.train_dataloader)
-        # num_train_steps = int(data_len / batch_size * self.max_epoch)
-        # num_warmup_steps = int(num_train_steps * 0.1)
-        # self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, num_warmup_steps=num_warmup_steps,
-        #                                                  num_training_steps=num_train_steps)
 
     def recon_pos_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
@@ -152,27 +123,20 @@ class Trainer:
 
     def distance_loss(self, pred, trg, mask, edge_index):
         if mask is not None:
-            # edge_index에서 선택된 노드들로만 구성된 엣지를 찾습니다.
             mask = ((mask[edge_index[0]] == 1) & (mask[edge_index[1]] == 1)).squeeze(-1)
             selected_edge_index = edge_index[:, mask]
 
-            # edge_index에서 시작 노드와 끝 노드의 인덱스를 가져옵니다.
             start_nodes, end_nodes = selected_edge_index
         else:
             start_nodes, end_nodes = edge_index
 
-        # 실제 좌표와 목표 좌표를 사용하여 거리를 계산합니다.
         actual_distances = torch.norm(pred[start_nodes] - pred[end_nodes], dim=-1)
         target_distances = torch.norm(trg[start_nodes] - trg[end_nodes], dim=-1)
 
-        # 거리 차이의 제곱을 계산합니다.
         loss = torch.sum(torch.abs(actual_distances - target_distances))
-
-        # 배치의 평균 손실을 반환합니다.
         return loss / len(start_nodes)
 
     def train(self):
-        """Training loop for the cvae model."""
         epoch_start = 0
         min_loss = 999
         early_stop_count = 0
@@ -186,28 +150,24 @@ class Trainer:
         if self.use_tensorboard:
             self.writer = SummaryWriter()
             if self.local_rank == 0:
-                wandb.watch(self.cvae.module, log='all')  # <--- 추가된 부분
+                wandb.watch(self.cvae.module, log='all')
 
         for epoch in range(epoch_start, self.max_epoch):
-            total_pos_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
-            total_size_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
-            total_theta_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
-            total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
-            total_distance_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+            total_pos_loss = torch.Tensor([0.0]).to(self.device)
+            total_size_loss = torch.Tensor([0.0]).to(self.device)
+            total_theta_loss = torch.Tensor([0.0]).to(self.device)
+            total_kl_loss = torch.Tensor([0.0]).to(self.device)
+            total_distance_loss = torch.Tensor([0.0]).to(self.device)
 
-            # Iterate over batches
             for data in tqdm(self.train_dataloader):
-                # Zero the gradients
                 self.optimizer.zero_grad()
 
-                # Get the model's predictions
                 data = data.to(device=self.device)
                 output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
                 mask = data.building_mask.detach()
                 gt_feature = data.node_features
 
-                # Compute the losses
                 loss_pos = self.recon_pos_loss(output_pos, gt_feature.detach()[:, :2], mask)
                 loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4], mask)
                 loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:], mask)
@@ -219,12 +179,9 @@ class Trainer:
                              loss_theta * self.theta_weight + loss_kl * self.kl_weight + \
                              loss_distance * self.distance_weight
 
-                # Backpropagation and optimization step
                 loss_total.backward()
                 self.optimizer.step()
-                # self.scheduler.step()
 
-                # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
                 dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
@@ -236,7 +193,6 @@ class Trainer:
                 total_kl_loss += loss_kl
                 total_distance_loss += loss_distance
 
-                # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
             if self.local_rank == 0:
                 loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
@@ -258,23 +214,20 @@ class Trainer:
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.cvae.module.eval()
-                total_pos_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
-                total_size_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
-                total_theta_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
-                total_kl_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
-                total_distance_loss = torch.Tensor([0.0]).to(self.device)  # <--- 추가된 부분
+                total_pos_loss = torch.Tensor([0.0]).to(self.device)
+                total_size_loss = torch.Tensor([0.0]).to(self.device)
+                total_theta_loss = torch.Tensor([0.0]).to(self.device)
+                total_kl_loss = torch.Tensor([0.0]).to(self.device)
+                total_distance_loss = torch.Tensor([0.0]).to(self.device)
 
                 with torch.no_grad():
-                    # Iterate over batches
                     for data in tqdm(self.val_dataloader):
-                        # Get the source and target sequences from the batch
                         data = data.to(device=self.device)
                         output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
 
                         mask = data.building_mask
                         gt_feature = data.node_features
 
-                        # Compute the losses using the generated sequence
                         loss_pos = self.recon_pos_loss(output_pos, gt_feature[:, :2], mask)
                         loss_size = self.recon_size_loss(output_size, gt_feature[:, 2:4], mask)
                         loss_theta = self.recon_theta_loss(output_theta, gt_feature[:, 4:], mask)
@@ -282,7 +235,6 @@ class Trainer:
                         loss_distance = self.distance_loss(output_pos, gt_feature[:, :2],
                                                            mask, data.edge_index)
 
-                        # 모든 GPU에서 손실 값을 합산 <-- 수정된 부분
                         dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
@@ -294,7 +246,6 @@ class Trainer:
                         total_kl_loss += loss_kl
                         total_distance_loss += loss_distance
 
-                        # 첫 번째 GPU에서만 평균 손실을 계산하고 출력 <-- 수정된 부분
                     if self.local_rank == 0:
                         loss_pos_mean = total_pos_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_size_mean = total_size_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
@@ -321,7 +272,6 @@ class Trainer:
 
                             if min_loss > loss_total:
                                 min_loss = loss_total
-                                # 체크포인트 데이터 준비
                                 checkpoint = {
                                     'epoch': epoch,
                                     'model_state_dict': self.cvae.module.state_dict(),
@@ -336,14 +286,12 @@ class Trainer:
                                 early_stop_count = 0
                             else:
                                 early_stop_count += 1
-
                                 if early_stop_count >= self.max_epoch / 10:
                                     break
 
                 self.cvae.module.train()
 
             if (epoch + 1) % self.save_epoch == 0:
-                # 체크포인트 데이터 준비
                 checkpoint = {
                     'epoch': epoch,
                     'model_state_dict': self.cvae.module.state_dict(),
@@ -358,10 +306,8 @@ class Trainer:
 
 
 if __name__ == '__main__':
-    # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
-    # Define the arguments with their descriptions
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=500, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
@@ -388,16 +334,13 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
 
-    # wandb 로그인 및 초기화
     if opt.local_rank == 0:
         wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
         wandb.init(project='cvae_graph', config=vars(opt))
 
-        # wandb Sweep을 통해 업데이트된 하이퍼파라미터 사용
         for key, value in wandb.config.items():
             setattr(opt, key, value)
 
-    # 현재 시간을 기반으로 폴더 이름 생성
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     opt.save_dir_path = f"{opt.save_dir_path}_{current_time}"
 
@@ -411,18 +354,15 @@ if __name__ == '__main__':
             for arg in vars(opt):
                 f.write(f"{arg}: {getattr(opt, arg)}\n")
 
-    # Convert namespace to dictionary and iterate over it to print all key-value pairs
     if opt.local_rank == 0:
         for arg in vars(opt):
             print(f"{arg}: {getattr(opt, arg)}")
 
-    # Set the random seed for reproducibility
     random.seed(opt.seed)
     np.random.seed(opt.seed)
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed_all(opt.seed)
 
-    # ddp
     rank = opt.local_rank
     torch.cuda.set_device(rank)
     if not dist.is_initialized():
@@ -432,7 +372,6 @@ if __name__ == '__main__':
         else:
             dist.init_process_group('nccl')
 
-    # Create a Trainer instance and start the training process
     trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch,
                       d_feature=opt.d_feature, d_latent=opt.d_latent, n_head=opt.n_head, T=opt.T,
                       use_tensorboard=opt.use_tensorboard,
@@ -445,6 +384,5 @@ if __name__ == '__main__':
 
     trainer.train()
 
-    # 종료 시 wandb 종료 (local_rank == 0 인 경우에만)
     if opt.local_rank == 0:
         wandb.finish()

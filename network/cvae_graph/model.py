@@ -10,7 +10,6 @@ class ResNet34(nn.Module):
         super(ResNet34, self).__init__()
         self.model = models.resnet34(weights='ResNet34_Weights.IMAGENET1K_V1')
 
-        # 마지막 FC 층을 원하는 출력 크기로 교체
         num_features = self.model.fc.in_features
         self.model.fc = nn.Linear(num_features, bottleneck)
 
@@ -26,20 +25,19 @@ class BoundaryMaskEncoder(nn.Module):
         self.inner_channel = inner_channel
 
         self.cnn_encoder = nn.Sequential(
-            nn.Conv2d(1, int(self.inner_channel / 8), 3, stride=1, padding=1),  # b, 16, 10, 10
+            nn.Conv2d(1, int(self.inner_channel / 8), 3, stride=1, padding=1),
             nn.ReLU(True),
-            nn.MaxPool2d(2, stride=2),  # b, 16, 5, 5
-            nn.Conv2d(int(self.inner_channel / 8), int(self.inner_channel / 4), 3, stride=1, padding=1),  # b, 8, 3, 3
+            nn.MaxPool2d(2, stride=2),
+            nn.Conv2d(int(self.inner_channel / 8), int(self.inner_channel / 4), 3, stride=1, padding=1),
             nn.ReLU(True),
-            nn.MaxPool2d(2, stride=2),  # b, 8, 2, 2
-            nn.Conv2d(int(self.inner_channel / 4), int(self.inner_channel / 2), 3, stride=1, padding=1),  # b, 8, 3, 3
+            nn.MaxPool2d(2, stride=2),
+            nn.Conv2d(int(self.inner_channel / 4), int(self.inner_channel / 2), 3, stride=1, padding=1),
             nn.ReLU(True),
-            nn.MaxPool2d(2, stride=2),  # b, 8, 2, 2
-            nn.Conv2d(int(self.inner_channel / 2), int(self.inner_channel), 3, stride=1, padding=1),  # b, 8, 3, 3
+            nn.MaxPool2d(2, stride=2),
+            nn.Conv2d(int(self.inner_channel / 2), int(self.inner_channel), 3, stride=1, padding=1),
             nn.ReLU(True),
-            nn.MaxPool2d(2, stride=2)  # b, 8, 2, 2
+            nn.MaxPool2d(2, stride=2)
         )
-
         channel_num = int((image_size / 2 ** 4) ** 2 * inner_channel)
         self.linear = nn.Linear(channel_num, bottleneck)
 
@@ -182,7 +180,6 @@ class GraphEncoder(nn.Module):
 
         return mu, log_var
 
-
 class GraphDecoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer):
         super(GraphDecoder, self).__init__()
@@ -206,7 +203,7 @@ class GraphDecoder(nn.Module):
 
         self.mask_embed = nn.Embedding(2, feature_dim)
         if convlayer == 'gat':
-            self.d_conv1 = self.convlayer(feature_dim + feature_dim, feature_dim, heads=n_head)
+            self.d_conv1 = self.convlayer(feature_dim + feature_dim + 320, feature_dim, heads=n_head)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
                 for _ in range(T - 1)
@@ -233,12 +230,12 @@ class GraphDecoder(nn.Module):
         z = self.dec_feature_init(z)
         z = z[batch]
 
-        # pos = self.node_order_within_batch(batch)
+        pos = self.node_order_within_batch(batch)
 
         node_mask = self.mask_embed(node_mask).squeeze(1)
         node_mask = F.relu(node_mask)
 
-        z = torch.cat([z, node_mask], 1)
+        z = torch.cat([z, node_mask, pos], 1)
 
         d_embed_0 = F.relu(z)
         d_embed_t = F.relu(self.d_conv1(d_embed_0, edge_index))

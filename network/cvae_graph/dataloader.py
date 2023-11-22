@@ -5,14 +5,8 @@ import numpy as np
 import pickle
 import os
 
-
 class GraphDataset(Dataset):
-    """
-    Dataset class for boundary data.
-    """
-
-    def __init__(self, data_type='train', transform=None, pre_transform=None,
-                 condition_type='graph'):
+    def __init__(self, data_type='train', transform=None, pre_transform=None, condition_type='graph'):
         super(GraphDataset, self).__init__(transform, pre_transform)
 
         self.condition_type = condition_type
@@ -24,7 +18,7 @@ class GraphDataset(Dataset):
             self.folder_path = '../../../../data2/local_datasets/image_condition_train_datasets/' + self.data_type
         elif condition_type == 'image_resnet34':
             self.folder_path = '../../../../data2/local_datasets/image_resnet34_condition_train_datasets/' + self.data_type
-        file_extension = '.gpickle'  # glob 패턴으로 확장자 설정
+        file_extension = '.gpickle'
 
         count = 0
         try:
@@ -55,16 +49,12 @@ class GraphDataset(Dataset):
 
     def get(self, idx):
         if self.data_type == 'train' or self.data_type == 'val':
-            # load_path = self.folder_path + '/' + str(idx) + '.gpickle'
             load_path = self.folder_path + '/' + self.gpickle_files[idx]
             with open(load_path, 'rb') as f:
                 self.graph = pickle.load(f)
 
-            # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
             graph = self.graph
 
-            # 그래프를 PyG 데이터 객체로 변환합니다.
-            # 노드 특성과 엣지 인덱스를 추출합니다.
             node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
                                          dtype=torch.float32)
             node_semantics = torch.tensor(np.array([graph.nodes[node]['node_semantics'] for node in graph.nodes()]),
@@ -90,23 +80,17 @@ class GraphDataset(Dataset):
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            # PyG 데이터 객체를 생성합니다.
             data = Data(node_features=node_features, node_semantics=node_semantics,
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
             return data
         else:
-            # load_path = self.folder_path + '/' + str(idx) + '.gpickle'
             load_path = self.folder_path + '/' + self.gpickle_files[idx]
             with open(load_path, 'rb') as f:
                 self.graph = pickle.load(f)
-
-            # 그래프 리스트에서 인덱스에 해당하는 그래프를 선택합니다.
             graph = self.graph
 
-            # 그래프를 PyG 데이터 객체로 변환합니다.
-            # 노드 특성과 엣지 인덱스를 추출합니다.
             node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
                                          dtype=torch.float32)
             node_semantics = torch.tensor(np.array([graph.nodes[node]['node_semantics'] for node in graph.nodes()]),
@@ -132,7 +116,6 @@ class GraphDataset(Dataset):
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            # PyG 데이터 객체를 생성합니다.
             data = Data(node_features=node_features, node_semantics=node_semantics,
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
@@ -140,5 +123,4 @@ class GraphDataset(Dataset):
             polygon_path = self.gpickle_files[idx].replace('.gpickle', '.pkl')
             return (data, polygon_path, self.gpickle_files[idx])
     def len(self):
-
         return self.data_length

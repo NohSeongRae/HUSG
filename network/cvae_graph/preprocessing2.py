@@ -4,14 +4,10 @@ import pickle
 from tqdm import tqdm
 import argparse
 import os
-import networkx as nx
 import random
 import shutil
-from torch_geometric.utils import dense_to_sparse, to_dense_adj
 
-def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
-                      n_street=60, n_building=120, n_boundary=200, d_unit=8, d_street=64, condition_type='graph'):
-
+def preprocesing_dataset(condition_type='graph'):
     train_split_path = './network/cvae_graph/whole_city/train_split.pkl'
     val_split_path = './network/cvae_graph/whole_city/val_split.pkl'
     test_split_path = './network/cvae_graph/whole_city/test_split.pkl'
@@ -35,7 +31,7 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     for gpickle_file in gpickle_files:
         os.rename(os.path.join(save_path, gpickle_file), os.path.join(save_path, gpickle_file.replace(".geojson", "").replace("boundaries", "buildings")))
     gpickle_files = [f for f in os.listdir(save_path) if f.endswith('.gpickle')]
-    random.shuffle(gpickle_files)  # 파일 목록을 무작위로 섞기
+    random.shuffle(gpickle_files)
 
     pkl_files = [f for f in os.listdir(save_path) if f.endswith('.pkl')]
     for pkl_file in pkl_files:
@@ -55,30 +51,9 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
     print(val_result)
     print(test_result)
 
-    # # 분할 지점 계산
-    # total_files = len(gpickle_files)
-    # train_end = int(total_files * train_ratio)
-    # val_end = train_end + int(total_files * val_ratio)
-    # print(total_files, train_end, val_end)
-    # # 각 데이터셋에 대한 파일 목록
-    # train_files = gpickle_files[:train_end]
-    # val_files = gpickle_files[train_end:val_end]
-    # test_files = gpickle_files[val_end:]
-    # print(np.array(train_files), np.array(train_files).shape)
-    # print(np.array(val_files), np.array(val_files).shape)
-    # print(np.array(test_files), np.array(test_files).shape)
-    # with open(train_split_path, 'wb') as file:
-    #     pickle.dump(train_files, file)
-    # with open(val_split_path, 'wb') as file:
-    #     pickle.dump(val_files, file)
-    # with open(test_split_path, 'wb') as file:
-    #     pickle.dump(test_files, file)
-
-    # 폴더 생성 (존재하지 않을 경우)
     for folder in ['train', 'val', 'test']:
         os.makedirs(os.path.join(save_path, folder), exist_ok=True)
 
-    # 파일 묶음을 해당 폴더로 이동
     for file_set in [train_split, val_split, test_split]:
         for gpickle_file in tqdm(file_set):
             base_filename = os.path.splitext(gpickle_file)[0]
@@ -88,36 +63,20 @@ def preprocesing_dataset(train_ratio=0.8, val_ratio=0.1, test_ratio=0.1,
             shutil.move(os.path.join(save_path, gpickle_file), os.path.join(save_path, target_folder, gpickle_file))
             shutil.move(os.path.join(save_path, pkl_file), os.path.join(save_path, target_folder, pkl_file))
 
-
 if __name__ == '__main__':
-    # Set the argparse
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
 
-    # Define the arguments with their descriptions
-    parser.add_argument("--train_ratio", type=float, default=0.8, help="Use checkpoint index.")
-    parser.add_argument("--val_ratio", type=float, default=0.1, help="Use checkpoint index.")
-    parser.add_argument("--test_ratio", type=float, default=0.1, help="Use checkpoint index.")
-    parser.add_argument("--d_street", type=int, default=64, help="Dimension of the model.")
-    parser.add_argument("--d_unit", type=int, default=8, help="Dimension of the model.")
-    parser.add_argument("--n_building", type=int, default=120, help="binary classification for building existence.")
-    parser.add_argument("--n_boundary", type=int, default=250, help="Number of boundary or token.")
-    parser.add_argument("--n_street", type=int, default=60, help="Number of boundary or token.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--condition_type", type=str, default="graph", help="Random seed for reproducibility across runs.")
 
     opt = parser.parse_args()
 
-    # Set the random seed for reproducibility
     random.seed(opt.seed)
     np.random.seed(opt.seed)
     torch.manual_seed(opt.seed)
     torch.cuda.manual_seed_all(opt.seed)
 
-    # Convert namespace to dictionary and iterate over it to print all key-value pairs
     for arg in vars(opt):
         print(f"{arg}: {getattr(opt, arg)}")
 
-    preprocesing_dataset(train_ratio=opt.train_ratio, val_ratio=opt.val_ratio, test_ratio=opt.test_ratio,
-                         n_street=opt.n_street, n_building=opt.n_building,
-                         n_boundary=opt.n_boundary, d_unit=opt.d_unit, d_street=opt.d_street,
-                         condition_type=opt.condition_type)
+    preprocesing_dataset(condition_type=opt.condition_type)
