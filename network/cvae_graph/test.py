@@ -39,11 +39,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      output_theta.detach().cpu().numpy(),
                      data.building_mask.detach().cpu().numpy(),
                      data.node_features.detach().cpu().numpy(),
-                     data.node_semantics.detach().cpu().numpy(),
                      data.condition.detach().cpu().numpy(),
-                     idx + 1,
                      condition_type,
-                     data.edge_index.detach().cpu().numpy(),
                      polygon_path,
                      save_dir_path,
                      data_path)
@@ -54,11 +51,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      output_theta.detach().cpu().numpy(),
                      data.building_mask.detach().cpu().numpy(),
                      data.node_features.detach().cpu().numpy(),
-                     data.node_semantics.detach().cpu().numpy(),
                      data.condition[0].condition_street_feature.detach().cpu().numpy(),
-                     idx + 1,
                      condition_type,
-                     data.edge_index.detach().cpu().numpy(),
                      polygon_path,
                      save_dir_path,
                      data_path)
