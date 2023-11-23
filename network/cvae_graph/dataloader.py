@@ -58,8 +58,6 @@ class GraphDataset(Dataset):
 
             node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
                                          dtype=torch.float32)
-            node_semantics = torch.tensor(np.array([graph.nodes[node]['node_semantics'] for node in graph.nodes()]),
-                                          dtype=torch.long)
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
@@ -81,7 +79,7 @@ class GraphDataset(Dataset):
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            data = Data(node_features=node_features, node_semantics=node_semantics,
+            data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
@@ -94,8 +92,6 @@ class GraphDataset(Dataset):
 
             node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
                                          dtype=torch.float32)
-            node_semantics = torch.tensor(np.array([graph.nodes[node]['node_semantics'] for node in graph.nodes()]),
-                                          dtype=torch.long)
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
@@ -117,7 +113,7 @@ class GraphDataset(Dataset):
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            data = Data(node_features=node_features, node_semantics=node_semantics,
+            data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
