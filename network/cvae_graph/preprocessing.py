@@ -22,7 +22,6 @@ def preprocesing_dataset(condition_type='graph'):
     dataset_names = [
         'edge_indices',
         'node_features',
-        'building_semantics',
         'insidemask',
         'boundary_filenames',
         'insidemask_filename',
@@ -41,25 +40,21 @@ def preprocesing_dataset(condition_type='graph'):
 
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[2] + '.pkl'
         with open(filepath, 'rb') as f:
-            building_semantics = pickle.load(f)
+            inside_masks = pickle.load(f)
 
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[3] + '.pkl'
         with open(filepath, 'rb') as f:
-            inside_masks = pickle.load(f)
+            source_file_names = pickle.load(f)
 
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[4] + '.pkl'
         with open(filepath, 'rb') as f:
-            source_file_names = pickle.load(f)
+            mask_file_names = pickle.load(f)
 
         filepath = dataset_path + '/' + city_name + '/' + dataset_names[5] + '.pkl'
         with open(filepath, 'rb') as f:
-            mask_file_names = pickle.load(f)
-
-        filepath = dataset_path + '/' + city_name + '/' + dataset_names[6] + '.pkl'
-        with open(filepath, 'rb') as f:
             building_polygons = pickle.load(f)
 
-        filepath = dataset_path + '/' + city_name + '/' + dataset_names[7] + '.pkl'
+        filepath = dataset_path + '/' + city_name + '/' + dataset_names[6] + '.pkl'
         with open(filepath, 'rb') as f:
             boundary_masks = pickle.load(f)
 
@@ -79,7 +74,7 @@ def preprocesing_dataset(condition_type='graph'):
             adj_matrix = nx.adjacency_matrix(graph).todense()
 
             n_node = graph.number_of_nodes()
-            n_building = len(building_semantics[idx])
+            n_building = len(building_polygons[idx])
             n_chunk = n_node - n_building
 
             if np.any((node_features[idx][:, :2] < -0.1) | (node_features[idx][:, :2] > 1.1)):
@@ -116,28 +111,6 @@ def preprocesing_dataset(condition_type='graph'):
             for node in graph.nodes():
                 graph.nodes[node]['building_masks'] = zeros[node]
 
-            semantic_list = [["shop", "supermarket", "restaurant", "tourism", "accommodation"],
-                             ["kindergarten", "school", "college", "university"],
-                             ["police_station", "ambulance_station", "fire_station"],
-                             ["bank", "bureau_de_change"],
-                             ["government_office", "embassy", "military", "post_office"],
-                             ["doctor", "dentist", "clinic", "hospital", "pharmacy", "alternative"],
-                             ["place_of_worship", "community_centre", "library", "historic", "toilet"],
-                             ["stadium", "swimming_pool", "pitch", "sport_centre"],
-                             ['residence']]
-
-            if 'cemetery' in building_semantics[idx][:] or 'seating' in building_semantics[idx][:]:
-                continue
-
-            for node in graph.nodes():
-                if node < n_chunk:
-                    graph.nodes[node]['node_semantics'] = 0
-                else:
-                    for i in range(len(semantic_list)):
-                        if building_semantics[idx][node - n_chunk] in semantic_list[i]:
-                            graph.nodes[node]['node_semantics'] = i + 1
-                            break
-
             save_path = './network/cvae_graph/' + condition_type + '_condition_train_datasets/'
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
@@ -147,7 +120,6 @@ def preprocesing_dataset(condition_type='graph'):
 
             with open(save_path + '/' + mask_file_names[idx] + '.pkl', 'wb') as f:
                 pickle.dump(building_polygons[idx], f)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
