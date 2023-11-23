@@ -46,6 +46,7 @@ class GraphDataset(Dataset):
                 self.gpickle_files = pickle.load(f)
 
         self.data_length = len(self.gpickle_files)
+        print(self.data_length)
 
     def get(self, idx):
         if self.data_type == 'train' or self.data_type == 'val':
