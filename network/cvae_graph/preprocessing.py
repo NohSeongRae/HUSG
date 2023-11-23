@@ -17,6 +17,7 @@ def preprocesing_dataset(condition_type='graph'):
                   'milan', 'naples', 'nottingham', 'paris', 'porto',
                   'praha', 'seville', 'stockholm', 'tallinn', 'valencia',
                   'venice', 'verona', 'vienna', 'zurich']
+    city_names = ['dallas']
 
     dataset_names = [
         'edge_indices',
