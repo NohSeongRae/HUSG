@@ -6,7 +6,7 @@ from scipy.stats import wasserstein_distance
 import pickle
 
 
-base = 'C:/Users/SeungWon Seo/Downloads/latent1024/cvae_graph_20231123_111944'
+base = 'C:/Users/SeungWon Seo/Downloads/feature512/cvae_graph_20231123_112104'
 path = ''
 path = os.path.join(base, path)
 
