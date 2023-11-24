@@ -45,6 +45,7 @@ class GraphDataset(Dataset):
             with open(self.test_split_path, 'rb') as f:
                 self.gpickle_files = pickle.load(f)
 
+        self.gpickle_files.sort()
         self.data_length = len(self.gpickle_files)
         print(self.data_length)
 
