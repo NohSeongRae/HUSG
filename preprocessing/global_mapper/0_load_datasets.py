@@ -142,13 +142,22 @@ def make_edge():
         for col in range(cols):
             node_index = row * cols + col  # 현재 노드의 인덱스
 
-            # 상하좌우 인접 노드의 인덱스 계산
-            neighbors = [
-                (row - 1, col),  # 상
-                # (row + 1, col),  # 하
-                # (row, col - 1),  # 좌
-                (row, col + 1)  # 우
-            ]
+            if row == 0 or row == rows - 1:
+                # 상하좌우 인접 노드의 인덱스 계산
+                neighbors = [
+                    (row - 1, col),  # 상
+                    (row + 1, col),  # 하
+                    (row, col - 1),  # 좌
+                    (row, col + 1)  # 우
+                ]
+            else:
+                # 상하좌우 인접 노드의 인덱스 계산
+                neighbors = [
+                    # (row - 1, col),  # 상
+                    # (row + 1, col),  # 하
+                    (row, col - 1),  # 좌
+                    (row, col + 1)  # 우
+                ]
 
             # edge_indices.append([node_index, node_index])
             for n_row, n_col in neighbors:
@@ -157,7 +166,6 @@ def make_edge():
                     neighbor_index = n_row * cols + n_col
                     # 간선 인덱스에 추가 (방향성이 없는 그래프 가정)
                     edge_indices.append([node_index, neighbor_index])
-
     return edge_indices
 
 def mapping(x_pos, y_pos):
@@ -227,10 +235,11 @@ for file_index in tqdm(range(120000)):
         boundary = data[0]
         buildings = data[1]
 
-    boundary = boundary.simplify(10, preserve_topology=True)
+    boundary = boundary.simplify(0.5, preserve_topology=True)
     scaled_mask, dx = insidemask(boundary)
 
     if abs(dx) == 0:
+        print('저장하지 않음')
         continue
 
     exterior_polyline = list(boundary.exterior.coords)[:-1]
@@ -245,9 +254,15 @@ for file_index in tqdm(range(120000)):
 
     ### get the medial axis of block
     medaxis = modified_skel_to_medaxis(longest_skel, boundary)
+    if medaxis == None:
+        print('저장하지 않음')
+        continue
 
     ### warp all building locations and sizes
     pos_xsorted, size_xsorted, xsort_idx, aspect_rto = warp_bldg_by_midaxis(buildings, boundary, medaxis)
+    if pos_xsorted.all() == None:
+        print('저장하지 않음')
+        continue
 
     x_pos = [coord[0] for coord in pos_xsorted]
     y_pos = [coord[1] for coord in pos_xsorted]
