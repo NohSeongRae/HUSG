@@ -95,7 +95,7 @@ class Trainer:
 
         if mask is None:
             return recon_loss.mean()
-
+        print(recon_loss.shape, mask.shape)
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum()
 
