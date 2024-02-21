@@ -168,8 +168,8 @@ class GraphDataset(Dataset):
         rows, cols = 5, 42
 
         # 행과 열에 대한 분할 점 계산
-        y_divisions = np.linspace(-1, 1, rows)[1: -1]
-        x_divisions = np.linspace(-1, 1, cols)[1: -1]
+        y_divisions = np.linspace(0, 1, rows)[1: -1]
+        x_divisions = np.linspace(0, 1, cols)[1: -1]
 
         # 모든 교차점의 x, y 좌표를 계산
         x_coords, y_coords = np.meshgrid(x_divisions, y_divisions)
@@ -181,8 +181,10 @@ class GraphDataset(Dataset):
         node_indices = np.zeros(120, dtype=int)
 
         used_indices = []
-        for idx, pos in enumerate(zip(node_features[:, 0], node_features[:, 1])):
-            x_pos, y_pos = pos
+        for idx, data in enumerate(zip(node_features[:, 0], node_features[:, 1], building_masks)):
+            x_pos, y_pos, mask = data
+            if mask == 0:
+                continue
 
             deltas = coordinates - np.array([x_pos, y_pos])
             dist_squared = np.sum(deltas ** 2, axis=1)
