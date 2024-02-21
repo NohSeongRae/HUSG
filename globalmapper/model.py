@@ -250,8 +250,8 @@ class GraphDecoder(nn.Module):
         output_theta = F.relu(self.dec_theta(d_embed_t))
         output_theta = self.fc_theta(output_theta)
 
-        output_exist = F.relu(self.dec_theta(d_embed_t))
-        output_exist = F.sigmoid(self.fc_theta(output_exist))
+        output_exist = F.relu(self.dec_exist(d_embed_t))
+        output_exist = F.sigmoid(self.fc_exist(output_exist))
 
         return output_pos, output_size, output_theta, output_exist
 
