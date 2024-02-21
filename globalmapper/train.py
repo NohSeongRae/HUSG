@@ -95,7 +95,7 @@ class Trainer:
 
         if mask is None:
             return recon_loss.mean()
-        print(recon_loss.shape, mask.shape)
+
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum()
 
@@ -178,7 +178,7 @@ class Trainer:
                 data = data.to(device=self.device)
                 output_pos, output_size, output_theta, output_exist, mu, log_var = self.cvae(data)
 
-                mask = data.exist_features.detach()
+                mask = data.exist_features.detach().unsqueeze(1)
                 gt_feature = data.node_features
                 gt_exist = data.exist_features
 
@@ -246,7 +246,7 @@ class Trainer:
                         data = data.to(device=self.device)
                         output_pos, output_size, output_theta, output_exist, mu, log_var = self.cvae(data)
 
-                        mask = data.exist_features
+                        mask = data.exist_features.unsqueeze(1)
                         gt_feature = data.node_features
                         gt_exist = data.exist_features
 
