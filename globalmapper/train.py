@@ -79,7 +79,7 @@ class Trainer:
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
                               condition_type=condition_type,
                               convlayer=convlayer).to(device=self.device)
-        self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank], find_unused_parameters=True)
+        self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
         base_batch_size = 16
         new_batch_size = self.batch_size
@@ -108,6 +108,11 @@ class Trainer:
     def recon_exist_loss(self, pred, trg):
         # pred와 trg 간의 binary cross entropy loss 계산
         recon_loss = F.binary_cross_entropy(pred.float(), trg.float().unsqueeze(1), reduction='none')
+
+        return recon_loss.mean()
+
+    def recon_exist_sum_loss(self, pred, trg):
+        recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         return recon_loss.mean()
 
@@ -161,13 +166,15 @@ class Trainer:
                 loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4])
                 loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:])
                 loss_exist = self.recon_exist_loss(output_exist, gt_exist.detach())
+                loss_exist_sum = self.recon_exist_sum_loss(torch.sum(torch.ge(output_exist, 0.5)),
+                                                           torch.sum(gt_exist.detach()))
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_distance = self.distance_loss(output_pos, gt_feature.detach()[:, :2],
                                                    data.edge_index.detach())# 각 손실 출력
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_theta * self.theta_weight + loss_kl * self.kl_weight + \
-                             loss_exist
+                             loss_exist + loss_exist_sum
 
                 loss_total.backward()
                 self.optimizer.step()
