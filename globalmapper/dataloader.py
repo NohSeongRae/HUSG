@@ -126,22 +126,12 @@ class GraphDataset(Dataset):
             for col in range(cols):
                 node_index = row * cols + col  # 현재 노드의 인덱스
 
-                if row == 0 or row == rows - 1:
-                    # 상하좌우 인접 노드의 인덱스 계산
-                    neighbors = [
-                        (row - 1, col),  # 상
-                        (row + 1, col),  # 하
-                        (row, col - 1),  # 좌
-                        (row, col + 1)  # 우
-                    ]
-                else:
-                    # 상하좌우 인접 노드의 인덱스 계산
-                    neighbors = [
-                        # (row - 1, col),  # 상
-                        # (row + 1, col),  # 하
-                        (row, col - 1),  # 좌
-                        (row, col + 1)  # 우
-                    ]
+                neighbors = [
+                    (row - 1, col),  # 상
+                    (row + 1, col),  # 하
+                    (row, col - 1),  # 좌
+                    (row, col + 1)  # 우
+                ]
 
                 # edge_indices.append([node_index, node_index])
                 for n_row, n_col in neighbors:
