@@ -70,7 +70,7 @@ class GraphDataset(Dataset):
             building_masks = torch.tensor(np.array([grid_graph.nodes[node]['building_masks'] for node in grid_graph.nodes()]),
                                           dtype=torch.long)
             exist_features = torch.tensor(np.array([grid_graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
-                                          dtype=torch.long)
+                                          dtype=torch.float32)
 
             edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)

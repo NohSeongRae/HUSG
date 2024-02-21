@@ -190,13 +190,6 @@ class Trainer:
                 loss_distance = self.distance_loss(output_pos, gt_feature.detach()[:, :2],
                                                    mask, data.edge_index.detach())# 각 손실 출력
 
-                print(f"Loss Position: {loss_pos.item()}")
-                print(f"Loss Size: {loss_size.item()}")
-                print(f"Loss Theta: {loss_theta.item()}")
-                print(f"Loss Exist: {loss_exist.item()}")
-                print(f"Loss KL: {loss_kl.item()}")
-                print(f"Loss Distance: {loss_distance.item()}")
-
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_theta * self.theta_weight + loss_kl * self.kl_weight + \
                              loss_distance * self.distance_weight + loss_exist
