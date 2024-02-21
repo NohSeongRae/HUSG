@@ -117,6 +117,18 @@ class Trainer:
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum()
 
+    def recon_exist_loss(self, pred, trg, mask):
+        # pred와 trg 간의 binary cross entropy loss 계산
+        recon_loss = F.binary_cross_entropy(pred, trg, reduction='none')
+
+        # mask가 제공되지 않은 경우
+        if mask is None:
+            return recon_loss.mean()
+
+        # mask 적용
+        recon_loss = recon_loss * mask
+        return recon_loss.sum() / mask.sum()
+
     def kl_loss(self, mu, log_var):
         kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
         return kl_loss
@@ -156,6 +168,7 @@ class Trainer:
             total_pos_loss = torch.Tensor([0.0]).to(self.device)
             total_size_loss = torch.Tensor([0.0]).to(self.device)
             total_theta_loss = torch.Tensor([0.0]).to(self.device)
+            total_exist_loss = torch.Tensor([0.0]).to(self.device)
             total_kl_loss = torch.Tensor([0.0]).to(self.device)
             total_distance_loss = torch.Tensor([0.0]).to(self.device)
 
@@ -163,21 +176,23 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 data = data.to(device=self.device)
-                output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
+                output_pos, output_size, output_theta, output_exist, mu, log_var = self.cvae(data)
 
                 mask = data.building_mask.detach()
                 gt_feature = data.node_features
+                gt_exist = data.exist_features
 
                 loss_pos = self.recon_pos_loss(output_pos, gt_feature.detach()[:, :2], mask)
                 loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4], mask)
                 loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:], mask)
+                loss_exist = self.recon_theta_loss(output_exist, gt_exist.detach(), mask)
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_distance = self.distance_loss(output_pos, gt_feature.detach()[:, :2],
                                                    mask, data.edge_index.detach())
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_theta * self.theta_weight + loss_kl * self.kl_weight + \
-                             loss_distance * self.distance_weight
+                             loss_distance * self.distance_weight + loss_exist
 
                 loss_total.backward()
                 self.optimizer.step()
@@ -185,11 +200,13 @@ class Trainer:
                 dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_exist, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_distance, op=dist.ReduceOp.SUM)
                 total_pos_loss += loss_pos
                 total_size_loss += loss_size
                 total_theta_loss += loss_theta
+                total_exist_loss += loss_exist
                 total_kl_loss += loss_kl
                 total_distance_loss += loss_distance
 
@@ -197,11 +214,13 @@ class Trainer:
                 loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_theta_mean = total_theta_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_exist_mean = total_exist_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_distance_mean = total_distance_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Pos: {loss_pos_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Size: {loss_size_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Theta: {loss_theta_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Exist: {loss_exist_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Distance: {loss_distance_mean:.4f}")
 
@@ -209,6 +228,7 @@ class Trainer:
                     wandb.log({"Train pos loss": loss_pos_mean}, step=epoch + 1)
                     wandb.log({"Train size loss": loss_size_mean}, step=epoch + 1)
                     wandb.log({"Train theta loss": loss_theta_mean}, step=epoch + 1)
+                    wandb.log({"Train exist loss": loss_exist_mean}, step=epoch + 1)
                     wandb.log({"Train kl loss": loss_kl_mean}, step=epoch + 1)
                     wandb.log({"Train distance loss": loss_distance_mean}, step=epoch + 1)
 
@@ -217,20 +237,23 @@ class Trainer:
                 total_pos_loss = torch.Tensor([0.0]).to(self.device)
                 total_size_loss = torch.Tensor([0.0]).to(self.device)
                 total_theta_loss = torch.Tensor([0.0]).to(self.device)
+                total_exist_loss = torch.Tensor([0.0]).to(self.device)
                 total_kl_loss = torch.Tensor([0.0]).to(self.device)
                 total_distance_loss = torch.Tensor([0.0]).to(self.device)
 
                 with torch.no_grad():
                     for data in tqdm(self.val_dataloader):
                         data = data.to(device=self.device)
-                        output_pos, output_size, output_theta, mu, log_var = self.cvae(data)
+                        output_pos, output_size, output_theta, output_exist, mu, log_var = self.cvae(data)
 
                         mask = data.building_mask
                         gt_feature = data.node_features
+                        gt_exist = data.exist_features
 
                         loss_pos = self.recon_pos_loss(output_pos, gt_feature[:, :2], mask)
                         loss_size = self.recon_size_loss(output_size, gt_feature[:, 2:4], mask)
                         loss_theta = self.recon_theta_loss(output_theta, gt_feature[:, 4:], mask)
+                        loss_exist = self.recon_theta_loss(output_exist, gt_exist, mask)
                         loss_kl = self.kl_loss(mu, log_var)
                         loss_distance = self.distance_loss(output_pos, gt_feature[:, :2],
                                                            mask, data.edge_index)
@@ -238,11 +261,13 @@ class Trainer:
                         dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_exist, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_distance, op=dist.ReduceOp.SUM)
                         total_pos_loss += loss_pos
                         total_size_loss += loss_size
                         total_theta_loss += loss_theta
+                        total_exist_loss += loss_exist
                         total_kl_loss += loss_kl
                         total_distance_loss += loss_distance
 
@@ -250,12 +275,14 @@ class Trainer:
                         loss_pos_mean = total_pos_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_size_mean = total_size_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_theta_mean = total_theta_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_exist_mean = total_exist_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_distance_mean = total_distance_loss.item() / (
                                 len(self.val_dataloader) * dist.get_world_size())
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Pos: {loss_pos_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Size: {loss_size_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Theta: {loss_theta_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Exist: {loss_exist_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss KL: {loss_kl_mean:.4f}")
                         print(
                             f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Distance: {loss_distance_mean:.4f}")
@@ -264,10 +291,11 @@ class Trainer:
                             wandb.log({"Validation pos loss": loss_pos_mean}, step=epoch + 1)
                             wandb.log({"Validation size loss": loss_size_mean}, step=epoch + 1)
                             wandb.log({"Validation theta loss": loss_theta_mean}, step=epoch + 1)
+                            wandb.log({"Validation exist loss": loss_exist_mean}, step=epoch + 1)
                             wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
                             wandb.log({"Validation distance loss": loss_distance_mean}, step=epoch + 1)
 
-                            loss_total = loss_pos_mean + loss_size_mean + loss_theta_mean + loss_kl_mean + loss_distance_mean
+                            loss_total = loss_pos_mean + loss_size_mean + loss_theta_mean + loss_kl_mean + loss_distance_mean + loss_exist_mean
                             wandb.log({"Validation total loss": loss_total}, step=epoch + 1)
 
                             if min_loss > loss_total:

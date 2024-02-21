@@ -112,8 +112,9 @@ class GraphEncoder(nn.Module):
         super(GraphEncoder, self).__init__()
 
         self.bbox_fc = nn.Linear(5, feature_dim)
+        self.exist_embed = nn.Embedding(2, feature_dim)
         self.mask_embed = nn.Embedding(2, feature_dim)
-        self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
+        self.node_fc = nn.Linear(feature_dim + feature_dim + feature_dim, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -157,7 +158,11 @@ class GraphEncoder(nn.Module):
         node_mask = self.mask_embed(node_mask).squeeze(1)
         node_mask = F.relu(node_mask)
 
-        node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask], dim=1)))
+        node_exist = data.exist_features
+        node_exist = self.mask_embed(node_exist).squeeze(1)
+        node_exist = F.relu(node_exist)
+
+        node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask, node_exist], dim=1)))
 
         n_embed_0 = node_feature
         g_embed_0 = self.global_pool(n_embed_0, data.batch)
@@ -225,6 +230,9 @@ class GraphDecoder(nn.Module):
         self.dec_theta = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_theta = nn.Linear(feature_dim, 1)
 
+        self.dec_exist = nn.Linear(feature_dim * n_head, feature_dim)
+        self.fc_exist = nn.Linear(feature_dim, 1)
+
     def forward(self, z, node_mask, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
@@ -251,7 +259,10 @@ class GraphDecoder(nn.Module):
         output_theta = F.relu(self.dec_theta(d_embed_t))
         output_theta = self.fc_theta(output_theta)
 
-        return output_pos, output_size, output_theta
+        output_exist = F.relu(self.dec_theta(d_embed_t))
+        output_exist = F.sigmoid(self.fc_theta(output_exist))
+
+        return output_pos, output_size, output_theta, output_exist
 
     def node_order_within_batch(self, batch):
         order_within_batch = torch.zeros_like(batch)
@@ -301,9 +312,9 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, edge_index, data.batch)
+        output_pos, output_size, output_theta, output_exist = self.decoder(z, data.building_mask, condition, edge_index, data.batch)
 
-        return output_pos, output_size, output_theta, mu, log_var
+        return output_pos, output_size, output_theta, output_exist, mu, log_var
 
     def test(self, data):
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
@@ -314,6 +325,6 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, data.edge_index, data.batch)
+        output_pos, output_size, output_theta, output_exist = self.decoder(z, data.building_mask, condition, data.edge_index, data.batch)
 
-        return output_pos, output_size, output_theta
+        return output_pos, output_size, output_theta, output_exist

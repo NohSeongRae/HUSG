@@ -64,14 +64,16 @@ class GraphDataset(Dataset):
                                  edge_index=condition_edge_index,
                                  num_nodes=condition_graph.number_of_nodes())
 
-            grid_graph = self.make_grid_graph(node_features)
+            grid_graph = self.make_grid_graph(node_features, building_masks)
             node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in grid_graph.nodes()]),
                                          dtype=torch.float32)
+            exist_features = torch.tensor(np.array([graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
+                                          dtype=torch.long)
 
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            data = Data(node_features=node_features,
+            data = Data(node_features=node_features, exist_features=exist_features,
                         building_mask=building_masks, condition=condition,
                         edge_index=edge_index, num_nodes=grid_graph.number_of_nodes())
 
@@ -159,7 +161,7 @@ class GraphDataset(Dataset):
 
         return graph_nodes_list
 
-    def make_grid_graph(self, node_features):
+    def make_grid_graph(self, node_features, building_masks):
         # 그리드 사이즈 + 2
         rows, cols = 5, 42
 
@@ -199,7 +201,11 @@ class GraphDataset(Dataset):
             if node_indices[node] > 0:
                 building_index = node_indices[node] - 1
                 G.nodes[node]['node_features'] = node_features[building_index]
+                G.nodes[node]['building_masks'] = building_masks[building_index]
+                G.nodes[node]['exist_features'] = 1
             else:
                 G.nodes[node]['node_features'] = np.zeros_like(node_features[0])
+                G.nodes[node]['building_masks'] = np.zeros_like(building_masks[0])
+                G.nodes[node]['exist_features'] = 0
 
         return G
