@@ -185,7 +185,7 @@ class Trainer:
                 loss_pos = self.recon_pos_loss(output_pos, gt_feature.detach()[:, :2], mask)
                 loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4], mask)
                 loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:], mask)
-                loss_exist = self.recon_theta_loss(output_exist, gt_exist.detach(), mask)
+                loss_exist = self.recon_exist_loss(output_exist, gt_exist.detach(), mask)
                 loss_kl = self.kl_loss(mu, log_var)
                 loss_distance = self.distance_loss(output_pos, gt_feature.detach()[:, :2],
                                                    mask, data.edge_index.detach())# 각 손실 출력
@@ -253,7 +253,7 @@ class Trainer:
                         loss_pos = self.recon_pos_loss(output_pos, gt_feature[:, :2], mask)
                         loss_size = self.recon_size_loss(output_size, gt_feature[:, 2:4], mask)
                         loss_theta = self.recon_theta_loss(output_theta, gt_feature[:, 4:], mask)
-                        loss_exist = self.recon_theta_loss(output_exist, gt_exist, mask)
+                        loss_exist = self.recon_exist_loss(output_exist, gt_exist, mask)
                         loss_kl = self.kl_loss(mu, log_var)
                         loss_distance = self.distance_loss(output_pos, gt_feature[:, :2],
                                                            mask, data.edge_index)
