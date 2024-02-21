@@ -162,6 +162,9 @@ class GraphEncoder(nn.Module):
         node_exist = self.mask_embed(node_exist).squeeze(1)
         node_exist = F.relu(node_exist)
 
+        print(data.node_features.shape, data.building_mask.shape, data.exist_features.shape)
+        print(node_feature.shape, node_mask.shape, node_exist.shape)
+
         node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask, node_exist], dim=1)))
 
         n_embed_0 = node_feature
