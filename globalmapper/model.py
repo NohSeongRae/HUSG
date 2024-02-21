@@ -201,15 +201,14 @@ class GraphDecoder(nn.Module):
 
         self.global_pool = torch_geometric.nn.global_max_pool
 
-        self.mask_embed = nn.Embedding(2, feature_dim)
         if convlayer == 'gat':
-            self.d_conv1 = self.convlayer(feature_dim + feature_dim + 320, feature_dim, heads=n_head)
+            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim, heads=n_head)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
                 for _ in range(T - 1)
             ])
         else:
-            self.d_conv1 = self.convlayer(feature_dim + feature_dim + 320, feature_dim)
+            self.d_conv1 = self.convlayer(feature_dim + 320, feature_dim)
             self.layer_stack = nn.ModuleList([
                 self.convlayer(feature_dim, feature_dim)
                 for _ in range(T - 1)
@@ -228,17 +227,14 @@ class GraphDecoder(nn.Module):
         self.dec_exist = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_exist = nn.Linear(feature_dim, 1)
 
-    def forward(self, z, node_mask, condition, edge_index, batch):
+    def forward(self, z, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
 
         pos = self.node_order_within_batch(batch)
 
-        node_mask = self.mask_embed(node_mask).squeeze(1)
-        node_mask = F.relu(node_mask)
-
-        z = torch.cat([z, node_mask, pos], 1)
+        z = torch.cat([z, pos], 1)
 
         d_embed_0 = F.relu(z)
         d_embed_t = F.relu(self.d_conv1(d_embed_0, edge_index))
@@ -307,7 +303,7 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta, output_exist = self.decoder(z, data.building_mask, condition, edge_index, data.batch)
+        output_pos, output_size, output_theta, output_exist = self.decoder(z, condition, edge_index, data.batch)
 
         return output_pos, output_size, output_theta, output_exist, mu, log_var
 
@@ -320,6 +316,6 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta, output_exist = self.decoder(z, data.building_mask, condition, data.edge_index, data.batch)
+        output_pos, output_size, output_theta, output_exist = self.decoder(z, condition, data.edge_index, data.batch)
 
         return output_pos, output_size, output_theta, output_exist
