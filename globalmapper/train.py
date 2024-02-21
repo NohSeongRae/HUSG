@@ -167,7 +167,7 @@ class Trainer:
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_theta * self.theta_weight + loss_kl * self.kl_weight + \
-                             loss_distance * self.distance_weight + loss_exist
+                             loss_exist
 
                 loss_total.backward()
                 self.optimizer.step()
