@@ -112,7 +112,7 @@ class Trainer:
         return recon_loss.mean()
 
     def recon_exist_sum_loss(self, pred, trg):
-        recon_loss = F.mse_loss(pred, trg, reduction='none')
+        recon_loss = F.mse_loss(pred.float(), trg.float(), reduction='none')
 
         return recon_loss.mean()
 
