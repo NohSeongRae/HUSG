@@ -8,7 +8,6 @@ import os
 from pyproj import Proj, Transformer
 from shapely.geometry import Point, Polygon
 
-# TODO
 # 미국 도시에 대해
 # normalize 후 돌리기
 
