@@ -119,7 +119,7 @@ class Trainer:
 
     def recon_exist_loss(self, pred, trg, mask):
         # pred와 trg 간의 binary cross entropy loss 계산
-        recon_loss = F.binary_cross_entropy(pred, trg.float(), reduction='none')
+        recon_loss = F.binary_cross_entropy(pred.float(), trg.float(), reduction='none')
 
         # mask가 제공되지 않은 경우
         if mask is None:
