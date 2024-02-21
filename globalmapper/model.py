@@ -113,8 +113,7 @@ class GraphEncoder(nn.Module):
 
         self.bbox_fc = nn.Linear(5, feature_dim)
         self.exist_embed = nn.Embedding(2, feature_dim)
-        self.mask_embed = nn.Embedding(2, feature_dim)
-        self.node_fc = nn.Linear(feature_dim + feature_dim + feature_dim, feature_dim)
+        self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -154,15 +153,11 @@ class GraphEncoder(nn.Module):
         node_feature = self.bbox_fc(node_feature)
         node_feature = F.relu(node_feature)
 
-        node_mask = data.building_mask
-        node_mask = self.mask_embed(node_mask).squeeze(1)
-        node_mask = F.relu(node_mask)
-
         node_exist = data.exist_features
         node_exist = self.mask_embed(node_exist).squeeze(1)
         node_exist = F.relu(node_exist)
 
-        node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_mask, node_exist], dim=1)))
+        node_feature = F.relu(self.node_fc(torch.cat([node_feature, node_exist], dim=1)))
 
         n_embed_0 = node_feature
         g_embed_0 = self.global_pool(n_embed_0, data.batch)

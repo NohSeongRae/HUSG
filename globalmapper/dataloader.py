@@ -67,16 +67,13 @@ class GraphDataset(Dataset):
             grid_graph = self.make_grid_graph(node_features, building_masks)
             node_features = torch.tensor(np.array([grid_graph.nodes[node]['node_features'] for node in grid_graph.nodes()]),
                                          dtype=torch.float32)
-            building_masks = torch.tensor(np.array([grid_graph.nodes[node]['building_masks'] for node in grid_graph.nodes()]),
-                                          dtype=torch.long)
             exist_features = torch.tensor(np.array([grid_graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
                                           dtype=torch.long)
 
             edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            data = Data(node_features=node_features, exist_features=exist_features,
-                        building_mask=building_masks, condition=condition,
+            data = Data(node_features=node_features, exist_features=exist_features, condition=condition,
                         edge_index=edge_index, num_nodes=grid_graph.number_of_nodes())
 
             return data
