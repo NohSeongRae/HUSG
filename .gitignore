@@ -8,5 +8,5 @@ out
 gen
 paths.py
 Heatmap/model/ubuntu_copy/
-preprocessing/global_mapper/raw_datasets/
+preprocessing/global_mapper/datasets/
 GlobalMapper-main/
