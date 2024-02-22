@@ -161,10 +161,10 @@ class GraphEncoder(nn.Module):
         shape_feature = data.shape_features
         shape_feature = F.relu(self.shape_fc(shape_feature))
 
-        iou_feature = data.iou_features
+        iou_feature = data.iou_features.unsqueeze(-1)
         iou_feature = F.relu(self.iou_fc(iou_feature))
 
-        node_exist = data.exist_features
+        node_exist = data.exist_features.unsqueeze(-1)
         node_exist = F.relu(self.exist_embed(node_exist))
 
         node_feature = F.relu(self.node_fc(torch.cat([pos_feature, size_feature, shape_feature, iou_feature, node_exist], dim=1)))
