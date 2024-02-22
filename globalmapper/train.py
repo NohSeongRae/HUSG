@@ -187,7 +187,7 @@ class Trainer:
                 loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
                 loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
                 loss_iou = self.recon_iou_loss(output_iou, data.iou_features.detach(), mask)
-                loss_shape = self.recon_shape_loss(output_shape, data.shape_features.detach()[:, 4:], mask)
+                loss_shape = self.recon_shape_loss(output_shape, data.shape_features.detach(), mask)
                 loss_exist = self.recon_exist_loss(output_exist, data.exist_features.detach())
                 loss_exist_sum = self.recon_exist_sum_loss(torch.sum(torch.ge(output_exist, 0.5)),
                                                            torch.sum(data.exist_features.detach()))
@@ -262,7 +262,7 @@ class Trainer:
                         loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
                         loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
                         loss_iou = self.recon_iou_loss(output_iou, data.iou_features.detach(), mask)
-                        loss_shape = self.recon_shape_loss(output_shape, data.shape_features.detach()[:, 4:], mask)
+                        loss_shape = self.recon_shape_loss(output_shape, data.shape_features.detach(), mask)
                         loss_exist = self.recon_exist_loss(output_exist, data.exist_features.detach())
                         loss_exist_sum = self.recon_exist_sum_loss(torch.sum(torch.ge(output_exist, 0.5)),
                                                                    torch.sum(data.exist_features.detach()))
