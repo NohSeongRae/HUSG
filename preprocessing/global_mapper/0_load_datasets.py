@@ -14,6 +14,7 @@ from rasterio.features import geometry_mask
 import rasterio
 from shapely.geometry import Point
 import shapely
+import concurrent.futures
 
 # MultiPolygon을 플롯하기
 # fig, ax = plt.subplots()
@@ -142,22 +143,12 @@ def make_edge():
         for col in range(cols):
             node_index = row * cols + col  # 현재 노드의 인덱스
 
-            if row == 0 or row == rows - 1:
-                # 상하좌우 인접 노드의 인덱스 계산
-                neighbors = [
-                    (row - 1, col),  # 상
-                    (row + 1, col),  # 하
-                    (row, col - 1),  # 좌
-                    (row, col + 1)  # 우
-                ]
-            else:
-                # 상하좌우 인접 노드의 인덱스 계산
-                neighbors = [
-                    # (row - 1, col),  # 상
-                    # (row + 1, col),  # 하
-                    (row, col - 1),  # 좌
-                    (row, col + 1)  # 우
-                ]
+            neighbors = [
+                (row - 1, col),  # 상
+                (row + 1, col),  # 하
+                (row, col - 1),  # 좌
+                (row, col + 1)  # 우
+            ]
 
             # edge_indices.append([node_index, node_index])
             for n_row, n_col in neighbors:
@@ -226,21 +217,20 @@ def graph_node():
 
     return graph_nodes_list
 
-output_file_num = 0
-for file_index in tqdm(range(120000)):
-    file_path = str(file_index)
-    input_file_path = f'raw_datasets/globalmapper_dataset/raw_geo/{file_path}'
+def generate_data(file_path):
+    input_file_path = f'datasets/raw_geo/{file_path}'
+
     with open(input_file_path, 'rb') as file:
         data = pickle.load(file)
         boundary = data[0]
         buildings = data[1]
 
-    boundary = boundary.simplify(0.5, preserve_topology=True)
+    boundary = boundary.simplify(1, preserve_topology=True)
     scaled_mask, dx = insidemask(boundary)
 
     if abs(dx) == 0:
         print('저장하지 않음')
-        continue
+        return
 
     exterior_polyline = list(boundary.exterior.coords)[:-1]
     exterior_polyline.reverse()
@@ -256,13 +246,13 @@ for file_index in tqdm(range(120000)):
     medaxis = modified_skel_to_medaxis(longest_skel, boundary)
     if medaxis == None:
         print('저장하지 않음')
-        continue
+        return
 
     ### warp all building locations and sizes
     pos_xsorted, size_xsorted, xsort_idx, aspect_rto = warp_bldg_by_midaxis(buildings, boundary, medaxis)
     if pos_xsorted.all() == None:
         print('저장하지 않음')
-        continue
+        return
 
     x_pos = [coord[0] for coord in pos_xsorted]
     y_pos = [coord[1] for coord in pos_xsorted]
@@ -302,7 +292,7 @@ for file_index in tqdm(range(120000)):
 
     if is_issue:
         print('저장하지 않음')
-        continue
+        return
 
     for node in G.nodes():
         if node_indices[node] > 0:
@@ -337,10 +327,24 @@ for file_index in tqdm(range(120000)):
     G.graph['polygon'] = boundary
     G.graph['binary_mask'] = scaled_mask
     G.graph['block_scale'] = 1 / abs(dx)
-    output_file_path = 'raw_datasets/globalmapper_dataset/processed'
-    with open(f'{output_file_path}/{output_file_num}.gpickle', 'wb') as f:
+    output_file_path = 'datasets/processed'
+    with open(f'{output_file_path}/{file_path}.gpickle', 'wb') as f:
         nx.write_gpickle(G, f)
-        output_file_num += 1
+
+if __name__ == '__main__':
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = []
+
+        # tqdm의 total 파라미터를 설정합니다.
+        progress = tqdm(total=120000, desc='Processing files', position=0, leave=True)
+
+        # submit 대신 map을 사용하여 future 객체를 얻고, 각 future가 완료될 때마다 진행 상황을 업데이트합니다.
+        futures = [executor.submit(generate_data, str(file_index)) for file_index in range(120000)]
+        for future in concurrent.futures.as_completed(futures):
+            results.append(future.result())
+            progress.update(1)
+
+        progress.close()
 
 # # 노드 위치 정보를 기반으로 위치 사전(pos) 생성
 # pos = {node: (G.nodes[node]['posx'], G.nodes[node]['posy']) for node in G.nodes()}
