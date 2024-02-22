@@ -185,7 +185,7 @@ class Trainer:
                 mask = data.exist_features.detach().unsqueeze(1)
 
                 loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
-                loss_size = self.recon_size_loss(output_size, data.size_feature.detach(), mask)
+                loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
                 loss_iou = self.recon_iou_loss(output_iou, data.iou_features.detach(), mask)
                 loss_shape = self.recon_shape_loss(output_shape, data.shape_features.detach()[:, 4:], mask)
                 loss_exist = self.recon_exist_loss(output_exist, data.exist_features.detach())
@@ -260,7 +260,7 @@ class Trainer:
                         mask = data.exist_features.detach().unsqueeze(1)
 
                         loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
-                        loss_size = self.recon_size_loss(output_size, data.size_feature.detach(), mask)
+                        loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
                         loss_iou = self.recon_iou_loss(output_iou, data.iou_features.detach(), mask)
                         loss_shape = self.recon_shape_loss(output_shape, data.shape_features.detach()[:, 4:], mask)
                         loss_exist = self.recon_exist_loss(output_exist, data.exist_features.detach())
