@@ -108,6 +108,7 @@ class GraphDataset(Dataset):
                                          dtype=torch.float32)
             exist_features = torch.tensor(np.array([grid_graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
                                           dtype=torch.long)
+            print(torch.sum(exist_features), torch.sum(building_masks))
 
             edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
