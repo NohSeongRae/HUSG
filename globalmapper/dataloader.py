@@ -17,7 +17,7 @@ class GraphDataset(Dataset):
         elif condition_type == 'image':
             self.folder_path = '/local_datasets/image_condition_train_datasets/' + self.data_type
         elif condition_type == 'image_resnet34':
-            self.folder_path = '/local_datasets/image_resnet34_condition_train_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/globalmapper_datasets/' + self.data_type
         file_extension = '.gpickle'
 
         count = 0
@@ -33,36 +33,34 @@ class GraphDataset(Dataset):
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
         self.gpickle_files.sort()
 
-        # 올바른 파일 목록을 저장할 리스트
-        self.valid_files = []
-
-        # 각 .gpickle 파일을 순회하며 검사합니다.
-        for file_name in self.gpickle_files:
-            file_path = os.path.join(self.folder_path, file_name)
-            # 파일을 로드합니다.
-            G = nx.read_gpickle(file_path)
-
-            building_masks = torch.tensor(np.array([G.nodes[node]['building_masks'] for node in G.nodes()]),
-                                          dtype=torch.long)
-
-            if torch.sum(building_masks) > 1:
-                self.valid_files.append(file_name)
-
-        self.data_length = len(self.valid_files)
+        self.data_length = len(self.gpickle_files)
         print(self.data_length)
 
     def get(self, idx):
         if self.data_type == 'train' or self.data_type == 'val':
-            load_path = self.folder_path + '/' + self.valid_files[idx]
+            load_path = self.folder_path + '/' + self.gpickle_files[idx]
             with open(load_path, 'rb') as f:
                 self.graph = pickle.load(f)
 
             graph = self.graph
 
-            node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
+            posx_features = torch.tensor(np.array([graph.nodes[node]['posx'] for node in graph.nodes()]),
+                                         dtype=torch.float32).unsqueeze(1)
+            posy_features = torch.tensor(np.array([graph.nodes[node]['posy'] for node in graph.nodes()]),
+                                         dtype=torch.float32).unsqueeze(1)
+            size_x_features = torch.tensor(np.array([graph.nodes[node]['size_x'] for node in graph.nodes()]),
+                                         dtype=torch.float32).unsqueeze(1)
+            size_y_features = torch.tensor(np.array([graph.nodes[node]['size_y'] for node in graph.nodes()]),
+                                         dtype=torch.float32).unsqueeze(1)
+            shape_features = torch.tensor(np.array([graph.nodes[node]['shape'] for node in graph.nodes()]),
+                                         dtype=torch.long)
+            iou_features = torch.tensor(np.array([graph.nodes[node]['iou'] for node in graph.nodes()]),
                                          dtype=torch.float32)
-            building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
-                                          dtype=torch.long)
+            exist_features = torch.tensor(np.array([graph.nodes[node]['exist'] for node in graph.nodes()]),
+                                         dtype=torch.long)
+
+            pos_features = torch.cat((posx_features, posy_features), dim=1)
+            size_features = torch.cat((size_x_features, size_y_features), dim=1)
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
@@ -79,21 +77,17 @@ class GraphDataset(Dataset):
                                  edge_index=condition_edge_index,
                                  num_nodes=condition_graph.number_of_nodes())
 
-            grid_graph = self.make_grid_graph(node_features, building_masks)
-            node_features = torch.tensor(np.array([grid_graph.nodes[node]['node_features'] for node in grid_graph.nodes()]),
-                                         dtype=torch.float32)
-            exist_features = torch.tensor(np.array([grid_graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
-                                          dtype=torch.long)
-
-            edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
+            edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            data = Data(node_features=node_features, exist_features=exist_features, condition=condition,
-                        edge_index=edge_index, num_nodes=grid_graph.number_of_nodes())
+            data = Data(pos_features=pos_features, size_features=size_features,
+                        shape_features=shape_features, iou_features=iou_features, exist_features=exist_features,
+                        condition=condition,
+                        edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
             return data
         else:
-            load_path = self.folder_path + '/' + self.valid_files[idx]
+            load_path = self.folder_path + '/' + self.gpickle_files[idx]
             with open(load_path, 'rb') as f:
                 self.graph = pickle.load(f)
             graph = self.graph
@@ -118,20 +112,14 @@ class GraphDataset(Dataset):
                                  edge_index=condition_edge_index,
                                  num_nodes=condition_graph.number_of_nodes())
 
-            grid_graph = self.make_grid_graph(node_features, building_masks)
-            node_features = torch.tensor(np.array([grid_graph.nodes[node]['node_features'] for node in grid_graph.nodes()]),
-                                         dtype=torch.float32)
-            exist_features = torch.tensor(np.array([grid_graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
-                                          dtype=torch.long)
-
             edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
             data = Data(node_features=node_features, exist_features=exist_features, condition=condition,
                         edge_index=edge_index, num_nodes=grid_graph.number_of_nodes())
 
-            polygon_path = self.valid_files[idx].replace('.gpickle', '.pkl')
-            return (data, polygon_path, self.valid_files[idx])
+            polygon_path = self.gpickle_files[idx].replace('.gpickle', '.pkl')
+            return (data, polygon_path, self.gpickle_files[idx])
     def len(self):
         return self.data_length
 

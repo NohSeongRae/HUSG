@@ -22,7 +22,7 @@ import wandb
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
-                 pos_weight, size_weight, theta_weight, kl_weight, distance_weight,
+                 pos_weight, size_weight, iou_weight, kl_weight, distance_weight,
                  condition_type, convlayer, weight_decay):
         """
         Initialize the trainer with the specified parameters.
@@ -54,7 +54,7 @@ class Trainer:
         self.n_head = n_head
         self.pos_weight = pos_weight
         self.size_weight = size_weight
-        self.theta_weight = theta_weight
+        self.iou_weight = iou_weight
         self.kl_weight = kl_weight
         self.distance_weight = distance_weight
         self.condition_type = condition_type
@@ -108,7 +108,17 @@ class Trainer:
         recon_loss = recon_loss * mask
         return recon_loss.sum() / mask.sum()
 
-    def recon_theta_loss(self, pred, trg, mask):
+    def recon_shape_loss(self, pred, trg, mask):
+        # pred와 trg 간의 binary cross entropy loss 계산
+        recon_loss = F.cross_entropy(pred, trg, reduction='none')
+
+        if mask is None:
+            return recon_loss.mean()
+
+        recon_loss = recon_loss * mask
+        return recon_loss.sum() / mask.sum()
+
+    def recon_iou_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
@@ -160,151 +170,147 @@ class Trainer:
         for epoch in range(epoch_start, self.max_epoch):
             total_pos_loss = torch.Tensor([0.0]).to(self.device)
             total_size_loss = torch.Tensor([0.0]).to(self.device)
-            total_theta_loss = torch.Tensor([0.0]).to(self.device)
+            total_shape_loss = torch.Tensor([0.0]).to(self.device)
+            total_iou_loss = torch.Tensor([0.0]).to(self.device)
             total_exist_loss = torch.Tensor([0.0]).to(self.device)
             total_exist_sum_loss = torch.Tensor([0.0]).to(self.device)
             total_kl_loss = torch.Tensor([0.0]).to(self.device)
-            total_distance_loss = torch.Tensor([0.0]).to(self.device)
 
             for data in tqdm(self.train_dataloader):
                 self.optimizer.zero_grad()
 
                 data = data.to(device=self.device)
-                output_pos, output_size, output_theta, output_exist, mu, log_var = self.cvae(data)
+                output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data)
 
                 mask = data.exist_features.detach().unsqueeze(1)
-                gt_feature = data.node_features
-                gt_exist = data.exist_features
 
-                loss_pos = self.recon_pos_loss(output_pos, gt_feature.detach()[:, :2], mask)
-                loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4], mask)
-                loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:], mask)
-                loss_exist = self.recon_exist_loss(output_exist, gt_exist.detach())
+                loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
+                loss_size = self.recon_size_loss(output_size, data.size_feature.detach(), mask)
+                loss_iou = self.recon_iou_loss(output_iou, data.iou_features.detach(), mask)
+                loss_shape = self.recon_shape_loss(output_shape, data.shape_features.detach()[:, 4:], mask)
+                loss_exist = self.recon_exist_loss(output_exist, data.exist_features.detach())
                 loss_exist_sum = self.recon_exist_sum_loss(torch.sum(torch.ge(output_exist, 0.5)),
-                                                           torch.sum(gt_exist.detach()))
+                                                           torch.sum(data.exist_features.detach()))
                 loss_kl = self.kl_loss(mu, log_var)
-                loss_distance = self.distance_loss(output_pos, gt_feature.detach()[:, :2],
-                                                   data.edge_index.detach())# 각 손실 출력
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
-                             loss_theta * self.theta_weight + loss_kl * self.kl_weight + \
-                             loss_exist * 4 + loss_exist_sum * 2
+                             loss_iou * self.iou_weight + loss_kl * self.kl_weight + \
+                             loss_exist * 4 + loss_exist_sum * 2 + loss_shape * 4
 
                 loss_total.backward()
                 self.optimizer.step()
 
                 dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
-                dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_shape, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_iou, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_exist, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_exist_sum, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
-                dist.all_reduce(loss_distance, op=dist.ReduceOp.SUM)
+
                 total_pos_loss += loss_pos
                 total_size_loss += loss_size
-                total_theta_loss += loss_theta
+                total_shape_loss += loss_shape
+                total_iou_loss += loss_iou
                 total_exist_loss += loss_exist
                 total_exist_sum_loss += loss_exist_sum
                 total_kl_loss += loss_kl
-                total_distance_loss += loss_distance
 
             if self.local_rank == 0:
                 loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
-                loss_theta_mean = total_theta_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_shape_mean = total_shape_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_iou_mean = total_iou_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_exist_mean = total_exist_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_exist_sum_mean = total_exist_sum_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
-                loss_distance_mean = total_distance_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Pos: {loss_pos_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Size: {loss_size_mean:.4f}")
-                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Theta: {loss_theta_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Shape: {loss_shape_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss IOU: {loss_iou_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Exist: {loss_exist_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Exist Sum: {loss_exist_sum_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl_mean:.4f}")
-                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Distance: {loss_distance_mean:.4f}")
 
                 if self.use_tensorboard:
                     wandb.log({"Train pos loss": loss_pos_mean}, step=epoch + 1)
                     wandb.log({"Train size loss": loss_size_mean}, step=epoch + 1)
-                    wandb.log({"Train theta loss": loss_theta_mean}, step=epoch + 1)
+                    wandb.log({"Train shape loss": loss_shape_mean}, step=epoch + 1)
+                    wandb.log({"Train iou loss": loss_iou_mean}, step=epoch + 1)
                     wandb.log({"Train exist loss": loss_exist_mean}, step=epoch + 1)
                     wandb.log({"Train exist sum loss": loss_exist_sum_mean}, step=epoch + 1)
                     wandb.log({"Train kl loss": loss_kl_mean}, step=epoch + 1)
-                    wandb.log({"Train distance loss": loss_distance_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.cvae.module.eval()
                 total_pos_loss = torch.Tensor([0.0]).to(self.device)
                 total_size_loss = torch.Tensor([0.0]).to(self.device)
-                total_theta_loss = torch.Tensor([0.0]).to(self.device)
+                total_shape_loss = torch.Tensor([0.0]).to(self.device)
+                total_iou_loss = torch.Tensor([0.0]).to(self.device)
                 total_exist_loss = torch.Tensor([0.0]).to(self.device)
                 total_exist_sum_loss = torch.Tensor([0.0]).to(self.device)
                 total_kl_loss = torch.Tensor([0.0]).to(self.device)
-                total_distance_loss = torch.Tensor([0.0]).to(self.device)
 
                 with torch.no_grad():
                     for data in tqdm(self.val_dataloader):
                         data = data.to(device=self.device)
-                        output_pos, output_size, output_theta, output_exist, mu, log_var = self.cvae(data)
+                        output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data)
 
                         mask = data.exist_features.detach().unsqueeze(1)
-                        gt_feature = data.node_features
-                        gt_exist = data.exist_features
 
-                        loss_pos = self.recon_pos_loss(output_pos, gt_feature[:, :2], mask)
-                        loss_size = self.recon_size_loss(output_size, gt_feature[:, 2:4], mask)
-                        loss_theta = self.recon_theta_loss(output_theta, gt_feature[:, 4:], mask)
-                        loss_exist = self.recon_exist_loss(output_exist, gt_exist)
+                        loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
+                        loss_size = self.recon_size_loss(output_size, data.size_feature.detach(), mask)
+                        loss_iou = self.recon_iou_loss(output_iou, data.iou_features.detach(), mask)
+                        loss_shape = self.recon_shape_loss(output_shape, data.shape_features.detach()[:, 4:], mask)
+                        loss_exist = self.recon_exist_loss(output_exist, data.exist_features.detach())
                         loss_exist_sum = self.recon_exist_sum_loss(torch.sum(torch.ge(output_exist, 0.5)),
-                                                                   torch.sum(gt_exist.detach()))
+                                                                   torch.sum(data.exist_features.detach()))
                         loss_kl = self.kl_loss(mu, log_var)
-                        loss_distance = self.distance_loss(output_pos, gt_feature[:, :2],
-                                                           data.edge_index)
 
                         dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(loss_theta, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_shape, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_iou, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_exist, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_exist_sum, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(loss_distance, op=dist.ReduceOp.SUM)
+
                         total_pos_loss += loss_pos
                         total_size_loss += loss_size
-                        total_theta_loss += loss_theta
+                        total_shape_loss += loss_shape
+                        total_iou_loss += loss_iou
                         total_exist_loss += loss_exist
                         total_exist_sum_loss += loss_exist_sum
                         total_kl_loss += loss_kl
-                        total_distance_loss += loss_distance
 
                     if self.local_rank == 0:
                         loss_pos_mean = total_pos_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_size_mean = total_size_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
-                        loss_theta_mean = total_theta_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_shape_mean = total_shape_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_iou_mean = total_iou_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_exist_mean = total_exist_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_exist_sum_mean = total_exist_sum_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
-                        loss_distance_mean = total_distance_loss.item() / (
-                                len(self.val_dataloader) * dist.get_world_size())
+
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Pos: {loss_pos_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Size: {loss_size_mean:.4f}")
-                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Theta: {loss_theta_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Shape: {loss_shape_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss IOU: {loss_iou_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Exist: {loss_exist_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Exist Sum: {loss_exist_sum_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss KL: {loss_kl_mean:.4f}")
-                        print(
-                            f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Distance: {loss_distance_mean:.4f}")
 
                         if self.use_tensorboard:
                             wandb.log({"Validation pos loss": loss_pos_mean}, step=epoch + 1)
                             wandb.log({"Validation size loss": loss_size_mean}, step=epoch + 1)
-                            wandb.log({"Validation theta loss": loss_theta_mean}, step=epoch + 1)
+                            wandb.log({"Validation shape loss": loss_shape_mean}, step=epoch + 1)
+                            wandb.log({"Validation iou loss": loss_iou_mean}, step=epoch + 1)
                             wandb.log({"Validation exist loss": loss_exist_mean}, step=epoch + 1)
                             wandb.log({"Validation exist sum loss": loss_exist_sum_mean}, step=epoch + 1)
                             wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
-                            wandb.log({"Validation distance loss": loss_distance_mean}, step=epoch + 1)
 
-                            loss_total = loss_pos_mean + loss_size_mean + loss_theta_mean + loss_kl_mean + loss_distance_mean + loss_exist_mean + loss_exist_sum_mean
+                            loss_total = loss_pos_mean + loss_size_mean + loss_iou_mean + loss_kl_mean + loss_exist_mean + loss_exist_sum_mean + loss_shape_mean
                             wandb.log({"Validation total loss": loss_total}, step=epoch + 1)
 
                             if min_loss > loss_total:
@@ -363,7 +369,7 @@ if __name__ == '__main__':
     parser.add_argument("--weight_decay", type=float, default=5e-4, help="save dir path")
     parser.add_argument("--pos_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--size_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
+    parser.add_argument("--iou_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='image_resnet34', help="save dir path")
@@ -415,7 +421,7 @@ if __name__ == '__main__':
                       use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
-                      pos_weight=opt.pos_weight, size_weight=opt.size_weight, theta_weight=opt.theta_weight,
+                      pos_weight=opt.pos_weight, size_weight=opt.size_weight, iou_weight=opt.iou_weight,
                       kl_weight=opt.kl_weight, distance_weight=opt.distance_weight, condition_type=opt.condition_type,
                       convlayer=opt.convlayer, weight_decay=opt.weight_decay)
 
