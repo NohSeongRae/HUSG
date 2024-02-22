@@ -90,20 +90,32 @@ class Trainer:
                                           weight_decay=self.weight_decay,
                                           betas=(0.9, 0.98))
 
-    def recon_pos_loss(self, pred, trg):
+    def recon_pos_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
-        return recon_loss.mean()
+        if mask is None:
+            return recon_loss.mean()
 
-    def recon_size_loss(self, pred, trg):
+        recon_loss = recon_loss * mask
+        return recon_loss.sum() / mask.sum()
+
+    def recon_size_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
-        return recon_loss.mean()
+        if mask is None:
+            return recon_loss.mean()
 
-    def recon_theta_loss(self, pred, trg):
+        recon_loss = recon_loss * mask
+        return recon_loss.sum() / mask.sum()
+
+    def recon_theta_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
-        return recon_loss.mean()
+        if mask is None:
+            return recon_loss.mean()
+
+        recon_loss = recon_loss * mask
+        return recon_loss.sum() / mask.sum()
 
     def recon_exist_loss(self, pred, trg):
         # pred와 trg 간의 binary cross entropy loss 계산
@@ -159,12 +171,13 @@ class Trainer:
                 data = data.to(device=self.device)
                 output_pos, output_size, output_theta, output_exist, mu, log_var = self.cvae(data)
 
+                mask = data.exist_features.detach()
                 gt_feature = data.node_features
                 gt_exist = data.exist_features
 
-                loss_pos = self.recon_pos_loss(output_pos, gt_feature.detach()[:, :2])
-                loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4])
-                loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:])
+                loss_pos = self.recon_pos_loss(output_pos, gt_feature.detach()[:, :2], mask)
+                loss_size = self.recon_size_loss(output_size, gt_feature.detach()[:, 2:4], mask)
+                loss_theta = self.recon_theta_loss(output_theta, gt_feature.detach()[:, 4:], mask)
                 loss_exist = self.recon_exist_loss(output_exist, gt_exist.detach())
                 loss_exist_sum = self.recon_exist_sum_loss(torch.sum(torch.ge(output_exist, 0.5)),
                                                            torch.sum(gt_exist.detach()))
@@ -228,12 +241,13 @@ class Trainer:
                         data = data.to(device=self.device)
                         output_pos, output_size, output_theta, output_exist, mu, log_var = self.cvae(data)
 
+                        mask = data.exist_features.detach()
                         gt_feature = data.node_features
                         gt_exist = data.exist_features
 
-                        loss_pos = self.recon_pos_loss(output_pos, gt_feature[:, :2])
-                        loss_size = self.recon_size_loss(output_size, gt_feature[:, 2:4])
-                        loss_theta = self.recon_theta_loss(output_theta, gt_feature[:, 4:])
+                        loss_pos = self.recon_pos_loss(output_pos, gt_feature[:, :2], mask)
+                        loss_size = self.recon_size_loss(output_size, gt_feature[:, 2:4], mask)
+                        loss_theta = self.recon_theta_loss(output_theta, gt_feature[:, 4:], mask)
                         loss_exist = self.recon_exist_loss(output_exist, gt_exist)
                         loss_kl = self.kl_loss(mu, log_var)
                         loss_distance = self.distance_loss(output_pos, gt_feature[:, :2],
