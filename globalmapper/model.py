@@ -116,7 +116,7 @@ class GraphEncoder(nn.Module):
         self.shape_fc = nn.Embedding(6, feature_dim // 4)
         self.iou_fc = nn.Linear(1, feature_dim // 4)
         self.exist_embed = nn.Embedding(2, feature_dim // 2)
-        self.node_fc = nn.Linear(feature_dim * 3, feature_dim)
+        self.node_fc = nn.Linear(feature_dim * 2, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
