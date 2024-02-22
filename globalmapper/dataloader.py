@@ -69,7 +69,6 @@ class GraphDataset(Dataset):
                                          dtype=torch.float32)
             exist_features = torch.tensor(np.array([grid_graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
                                           dtype=torch.long)
-            print(torch.sum(exist_features), torch.sum(building_masks))
 
             edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
@@ -109,7 +108,6 @@ class GraphDataset(Dataset):
                                          dtype=torch.float32)
             exist_features = torch.tensor(np.array([grid_graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
                                           dtype=torch.long)
-            print(torch.sum(exist_features), torch.sum(building_masks))
 
             edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
@@ -201,6 +199,8 @@ class GraphDataset(Dataset):
                 G.nodes[node]['node_features'] = node_features[building_index]
                 G.nodes[node]['building_masks'] = building_masks[building_index]
                 G.nodes[node]['exist_features'] = 1
+
+                print(node_features[building_index, :2], (((node % 40) / 39) / 42 * 40, ((node // 40) / 2) / 5 * 3))
             else:
                 G.nodes[node]['node_features'] = np.zeros_like(node_features[0])
                 G.nodes[node]['building_masks'] = np.zeros_like(building_masks[0])
