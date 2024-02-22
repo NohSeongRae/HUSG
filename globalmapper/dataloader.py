@@ -13,11 +13,11 @@ class GraphDataset(Dataset):
         self.data_type = data_type
 
         if condition_type == 'graph':
-            self.folder_path = '/local_datasets/graph_condition_train_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/graph_condition_train_datasets/'
         elif condition_type == 'image':
-            self.folder_path = '/local_datasets/image_condition_train_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/image_condition_train_datasets/'
         elif condition_type == 'image_resnet34':
-            self.folder_path = '/local_datasets/globalmapper_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/globalmapper_datasets/'
         file_extension = '.gpickle'
 
         count = 0
@@ -32,6 +32,11 @@ class GraphDataset(Dataset):
                     count += 1
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
         self.gpickle_files.sort()
+
+        if data_type == 'train':
+            self.gpickle_files = self.gpickle_files[:int(len(self.gpickle_files) * 0.7)]
+        if data_type == 'val' or data_type == 'test':
+            self.gpickle_files = self.gpickle_files[int(len(self.gpickle_files) * 0.7):]
 
         self.data_length = len(self.gpickle_files)
         print(self.data_length)
