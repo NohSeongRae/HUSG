@@ -31,13 +31,14 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             data, polygon_path, data_path  = data
 
             data = data.to(device=device)
-            output_pos, output_size, output_theta = cvae.test(data)
+            output_pos, output_size, output_theta, output_exist = cvae.test(data)
 
             if condition_type == 'image' or condition_type == 'image_resnet34':
                 plot(output_pos.detach().cpu().numpy(),
                      output_size.detach().cpu().numpy(),
                      output_theta.detach().cpu().numpy(),
-                     data.building_mask.detach().cpu().numpy(),
+                     output_exist.detach().cpu().numpy(),
+                     data.exist_features.detach().cpu().numpy(),
                      data.node_features.detach().cpu().numpy(),
                      idx + 1,
                      condition_type,

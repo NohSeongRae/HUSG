@@ -103,12 +103,17 @@ class GraphDataset(Dataset):
                                  edge_index=condition_edge_index,
                                  num_nodes=condition_graph.number_of_nodes())
 
-            edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
+            grid_graph = self.make_grid_graph(node_features, building_masks)
+            node_features = torch.tensor(np.array([grid_graph.nodes[node]['node_features'] for node in grid_graph.nodes()]),
+                                         dtype=torch.float32)
+            exist_features = torch.tensor(np.array([grid_graph.nodes[node]['exist_features'] for node in grid_graph.nodes()]),
+                                          dtype=torch.long)
+
+            edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            data = Data(node_features=node_features,
-                        building_mask=building_masks, condition=condition,
-                        edge_index=edge_index, num_nodes=graph.number_of_nodes())
+            data = Data(node_features=node_features, exist_features=exist_features, condition=condition,
+                        edge_index=edge_index, num_nodes=grid_graph.number_of_nodes())
 
             polygon_path = self.gpickle_files[idx].replace('.gpickle', '.pkl')
             return (data, polygon_path, self.gpickle_files[idx])
