@@ -31,14 +31,29 @@ class GraphDataset(Dataset):
                 if filename.endswith(file_extension):
                     count += 1
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
-
         self.gpickle_files.sort()
-        self.data_length = len(self.gpickle_files)
+
+        # 올바른 파일 목록을 저장할 리스트
+        self.valid_files = []
+
+        # 각 .gpickle 파일을 순회하며 검사합니다.
+        for file_name in self.gpickle_files:
+            file_path = os.path.join(self.folder_path, file_name)
+            # 파일을 로드합니다.
+            G = nx.read_gpickle(file_path)
+
+            building_masks = torch.tensor(np.array([G.nodes[node]['building_masks'] for node in G.nodes()]),
+                                          dtype=torch.long)
+
+            if torch.sum(building_masks) > 1:
+                self.valid_files.append(file_name)
+
+        self.data_length = len(self.valid_files)
         print(self.data_length)
 
     def get(self, idx):
         if self.data_type == 'train' or self.data_type == 'val':
-            load_path = self.folder_path + '/' + self.gpickle_files[idx]
+            load_path = self.folder_path + '/' + self.valid_files[idx]
             with open(load_path, 'rb') as f:
                 self.graph = pickle.load(f)
 
@@ -78,7 +93,7 @@ class GraphDataset(Dataset):
 
             return data
         else:
-            load_path = self.folder_path + '/' + self.gpickle_files[idx]
+            load_path = self.folder_path + '/' + self.valid_files[idx]
             with open(load_path, 'rb') as f:
                 self.graph = pickle.load(f)
             graph = self.graph
@@ -115,8 +130,8 @@ class GraphDataset(Dataset):
             data = Data(node_features=node_features, exist_features=exist_features, condition=condition,
                         edge_index=edge_index, num_nodes=grid_graph.number_of_nodes())
 
-            polygon_path = self.gpickle_files[idx].replace('.gpickle', '.pkl')
-            return (data, polygon_path, self.gpickle_files[idx])
+            polygon_path = self.valid_files[idx].replace('.gpickle', '.pkl')
+            return (data, polygon_path, self.valid_files[idx])
     def len(self):
         return self.data_length
 
@@ -199,8 +214,6 @@ class GraphDataset(Dataset):
                 G.nodes[node]['node_features'] = node_features[building_index]
                 G.nodes[node]['building_masks'] = building_masks[building_index]
                 G.nodes[node]['exist_features'] = 1
-
-                print(node_features[building_index, :2], (((node % 40) / 39) / 42 * 40, ((node // 40) / 2) / 5 * 3))
             else:
                 G.nodes[node]['node_features'] = np.zeros_like(node_features[0])
                 G.nodes[node]['building_masks'] = np.zeros_like(building_masks[0])
