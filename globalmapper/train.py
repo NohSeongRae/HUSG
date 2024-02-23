@@ -111,7 +111,6 @@ class Trainer:
     def recon_shape_loss(self, pred, trg, mask):
         # pred와 trg 간의 binary cross entropy loss 계산
         recon_loss = F.cross_entropy(pred, trg, reduction='none')
-        print(pred[0], trg[0], pred.shape, trg.shape)
 
         if mask is None:
             return recon_loss.mean()
@@ -121,6 +120,7 @@ class Trainer:
 
     def recon_iou_loss(self, pred, trg, mask):
         recon_loss = F.mse_loss(pred, trg, reduction='none')
+        print(pred[0], trg[0], pred.shape, trg.shape)
 
         if mask is None:
             return recon_loss.mean()
