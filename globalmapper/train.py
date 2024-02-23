@@ -127,9 +127,6 @@ class Trainer:
         return recon_loss.sum() / mask.sum()
 
     def recon_exist_loss(self, pred, trg):
-        if self.local_rank == 0:
-            print(pred[0], trg[0], pred.shape, trg.shape)
-
         # pred와 trg 간의 binary cross entropy loss 계산
         recon_loss = F.binary_cross_entropy(pred.float(), trg.float().unsqueeze(1), reduction='none')
 
@@ -184,7 +181,7 @@ class Trainer:
                 data = data.to(device=self.device)
                 output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data)
 
-                mask = data.exist_features.detach().unsqueeze(1)
+                mask = None # data.exist_features.detach().unsqueeze(1)
 
                 loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
                 loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
@@ -197,7 +194,7 @@ class Trainer:
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_iou * self.iou_weight + loss_kl * self.kl_weight + \
-                             loss_exist * 4 + loss_exist_sum * 2 + loss_shape * 4
+                             loss_exist * 4 + loss_exist_sum * 1 + loss_shape * 4
 
                 loss_total.backward()
                 self.optimizer.step()
@@ -259,7 +256,7 @@ class Trainer:
                         data = data.to(device=self.device)
                         output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data)
 
-                        mask = data.exist_features.detach().unsqueeze(1)
+                        mask = None # data.exist_features.detach().unsqueeze(1)
 
                         loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
                         loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
