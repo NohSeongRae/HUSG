@@ -264,10 +264,10 @@ class GraphDecoder(nn.Module):
         output_size = self.fc_size(output_size)
 
         output_shape = F.relu(self.dec_shape(d_embed_t))
-        output_shape = self.fc_shape(output_shape)
+        output_shape = F.softmax(self.fc_shape(output_shape))
 
         output_iou = F.relu(self.dec_iou(d_embed_t))
-        output_iou = F.softmax(self.fc_iou(output_iou), dim=-1)
+        output_iou = F.sigmoid(self.fc_iou(output_iou), dim=-1)
 
         output_exist = F.relu(self.dec_exist(d_embed_t))
         output_exist = F.sigmoid(self.fc_exist(output_exist))
