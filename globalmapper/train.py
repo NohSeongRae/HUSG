@@ -78,7 +78,7 @@ class Trainer:
 
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
                               condition_type=condition_type,
-                              convlayer=convlayer).to(device=self.device)
+                              convlayer=convlayer, batch_size=batch_size).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
         base_batch_size = 16
@@ -179,7 +179,7 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 data = data.to(device=self.device)
-                output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data, self.batch_size)
+                output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data)
 
                 mask = None # data.exist_features.detach().unsqueeze(1)
 
