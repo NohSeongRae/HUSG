@@ -176,7 +176,7 @@ class GraphEncoder(nn.Module):
         node_exist = data.exist_features
         node_exist = F.relu(self.exist_embed(node_exist))
 
-        one_hot = torch.eye(self.N, dtype=torch.float32).to(node_exist.device).repeat(self.batch_size, 1)
+        one_hot = torch.eye(self.N, dtype=torch.float32).to(node_exist.device).repeat(node_exist.shape[0] // self.N, 1)
         node_exist = F.relu(self.exist_enc(torch.cat([node_exist, one_hot], dim=1)))
 
         node_feature = F.relu(self.node_fc(torch.cat([pos_feature, size_feature, shape_feature, iou_feature, node_exist], dim=1)))
@@ -260,7 +260,7 @@ class GraphDecoder(nn.Module):
         z = self.dec_feature_init(z)
         z = z[batch]
 
-        one_hot = torch.eye(self.N, dtype=torch.float32).to(z.device).repeat(self.batch_size, 1)
+        one_hot = torch.eye(self.N, dtype=torch.float32).to(z.device).repeat(z.shape[0] // self.N, 1)
         z = torch.cat([z, one_hot], 1)
 
         d_embed_0 = F.relu(z)
