@@ -111,14 +111,20 @@ class GraphConditionEncoder(nn.Module):
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, T, feature_dim, latent_dim, n_head, convlayer):
+    def __init__(self, T, feature_dim, latent_dim, n_head, convlayer, batch_size):
         super(GraphEncoder, self).__init__()
+
+        self.batch_size = batch_size
 
         self.pos_fc = nn.Linear(2, feature_dim // 2)
         self.size_fc = nn.Linear(2, feature_dim // 2)
-        self.shape_fc = nn.Embedding(6, feature_dim // 4)
+        self.shape_fc = nn.Embedding(4, feature_dim // 4)
         self.iou_fc = nn.Linear(1, feature_dim // 4)
+
+        self.N = 120
         self.exist_embed = nn.Embedding(2, feature_dim // 2)
+        self.exist_enc = nn.Linear(feature_dim // 2 + self.N, feature_dim // 2)
+
         self.node_fc = nn.Linear(feature_dim * 2, feature_dim)
 
         if convlayer == 'gat':
@@ -170,6 +176,9 @@ class GraphEncoder(nn.Module):
         node_exist = data.exist_features
         node_exist = F.relu(self.exist_embed(node_exist))
 
+        one_hot = torch.eye(self.N, dtype=torch.float32).to(self.device).repeat(self.batch_size, 1)
+        node_exist = F.relu(self.exist_enc(torch.cat([node_exist, one_hot], dim=1)))
+
         node_feature = F.relu(self.node_fc(torch.cat([pos_feature, size_feature, shape_feature, iou_feature, node_exist], dim=1)))
 
         n_embed_0 = node_feature
@@ -194,8 +203,11 @@ class GraphEncoder(nn.Module):
         return mu, log_var
 
 class GraphDecoder(nn.Module):
-    def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer):
+    def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer, batch_size):
         super(GraphDecoder, self).__init__()
+
+        self.N = 120
+        self.batch_size = batch_size
 
         self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
 
@@ -235,7 +247,7 @@ class GraphDecoder(nn.Module):
         self.fc_size = nn.Linear(feature_dim, 2)
 
         self.dec_shape = nn.Linear(feature_dim * n_head, feature_dim)
-        self.fc_shape = nn.Linear(feature_dim, 6)
+        self.fc_shape = nn.Linear(feature_dim, 4)
 
         self.dec_iou = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_iou = nn.Linear(feature_dim, 1)
@@ -248,9 +260,8 @@ class GraphDecoder(nn.Module):
         z = self.dec_feature_init(z)
         z = z[batch]
 
-        pos = self.node_order_within_batch(batch)
-
-        z = torch.cat([z, pos], 1)
+        one_hot = torch.eye(self.N, dtype=torch.float32).to(self.device).repeat(self.batch_size, 1)
+        z = torch.cat([z, one_hot], 1)
 
         d_embed_0 = F.relu(z)
         d_embed_t = F.relu(self.d_conv1(d_embed_0, edge_index))
@@ -288,11 +299,12 @@ class GraphDecoder(nn.Module):
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
                  image_size=64, inner_channel=80, bottleneck=128,
-                 condition_type='graph', convlayer='gat'):
+                 condition_type='graph', convlayer='gat', batch_size=32):
         super(GraphCVAE, self).__init__()
 
         self.latent_dim = latent_dim
         self.condition_type = condition_type
+        self.batch_size = batch_size
 
         if condition_type == 'image':
             self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel,
@@ -304,9 +316,9 @@ class GraphCVAE(nn.Module):
                                                            n_head=n_head, convlayer=convlayer)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
-                                    convlayer=convlayer)
+                                    convlayer=convlayer, batch_size=batch_size)
         self.decoder = GraphDecoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
-                                    bottleneck=bottleneck, convlayer=convlayer)
+                                    bottleneck=bottleneck, convlayer=convlayer, batch_size=batch_size)
 
     def reparameterize(self, mu, logvar):
         return (torch.exp(0.5 * logvar)) * (torch.randn_like(torch.exp(0.5 * logvar))) + mu

@@ -179,7 +179,7 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 data = data.to(device=self.device)
-                output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data)
+                output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data, self.batch_size)
 
                 mask = None # data.exist_features.detach().unsqueeze(1)
 
