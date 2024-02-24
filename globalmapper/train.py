@@ -352,12 +352,12 @@ class Trainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
-    parser.add_argument("--batch_size", type=int, default=256, help="Batch size for training.")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
     parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
-    parser.add_argument("--n_head", type=int, default=8, help="Dimension of the model.")
+    parser.add_argument("--n_head", type=int, default=12, help="Dimension of the model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
     parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
