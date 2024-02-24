@@ -195,8 +195,7 @@ class Trainer:
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_iou * self.iou_weight + loss_kl * self.kl_weight + \
-                             loss_exist * self.exist_weight + loss_exist_sum * self.exist_sum_weight + \
-                             loss_shape * self.shape_weight
+                             loss_exist * self.exist_weight + loss_exist_sum * self.exist_sum_weight
 
                 loss_total.backward()
                 self.optimizer.step()
@@ -352,7 +351,7 @@ class Trainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training.")
+    parser.add_argument("--batch_size", type=int, default=256, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
