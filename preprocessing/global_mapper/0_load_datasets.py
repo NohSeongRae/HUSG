@@ -99,7 +99,7 @@ def get_square_bounds(polygon, padding_percentage=0):
 
     return left, upper, right, lower
 
-def insidemask(boundary_polygon, image_size=64):
+def insidemask(boundary_polygon, image_size=224):
     angle, dx = get_obb_rotation_angle(boundary_polygon)
 
     boundary_polygon = shapely.affinity.rotate(boundary_polygon, angle)
