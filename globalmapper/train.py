@@ -22,7 +22,7 @@ import wandb
 class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, T, d_feature, d_latent, n_head,
-                 pos_weight, size_weight, iou_weight, kl_weight, distance_weight,
+                 pos_weight, size_weight, iou_weight, kl_weight, exist_weight, exist_sum_weight, shape_weight,
                  condition_type, convlayer, weight_decay):
         """
         Initialize the trainer with the specified parameters.
@@ -56,7 +56,9 @@ class Trainer:
         self.size_weight = size_weight
         self.iou_weight = iou_weight
         self.kl_weight = kl_weight
-        self.distance_weight = distance_weight
+        self.exist_weight = exist_weight
+        self.exist_sum_weight=exist_sum_weight
+        self.shape_weight = shape_weight
         self.condition_type = condition_type
         self.convlayer = convlayer
 
@@ -87,7 +89,6 @@ class Trainer:
 
         self.optimizer = torch.optim.Adam(self.cvae.module.parameters(),
                                           lr=self.lr,
-                                          weight_decay=self.weight_decay,
                                           betas=(0.9, 0.98))
 
     def recon_pos_loss(self, pred, trg, mask):
@@ -194,7 +195,8 @@ class Trainer:
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_iou * self.iou_weight + loss_kl * self.kl_weight + \
-                             loss_exist * 4 + loss_exist_sum * 1 + loss_shape * 4
+                             loss_exist * self.exist_weight + loss_exist_sum * self.exist_sum_weight + \
+                             loss_shape * self.shape_weight
 
                 loss_total.backward()
                 self.optimizer.step()
@@ -350,12 +352,12 @@ class Trainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training.")
-    parser.add_argument("--max_epoch", type=int, default=500, help="Maximum number of epochs for training.")
+    parser.add_argument("--batch_size", type=int, default=200, help="Batch size for training.")
+    parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
     parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
-    parser.add_argument("--n_head", type=int, default=8, help="Dimension of the model.")
+    parser.add_argument("--n_head", type=int, default=12, help="Dimension of the model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
     parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
@@ -364,13 +366,15 @@ if __name__ == '__main__':
     parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
     parser.add_argument("--local-rank", type=int)
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
-    parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
+    parser.add_argument("--lr", type=float, default=0.001, help="save dir path")
     parser.add_argument("--weight_decay", type=float, default=5e-4, help="save dir path")
     parser.add_argument("--pos_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--size_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--iou_weight", type=float, default=4.0, help="save dir path")
+    parser.add_argument("--iou_weight", type=float, default=1.0, help="save dir path")
+    parser.add_argument("--exist_weight", type=float, default=3.0, help="save dir path")
+    parser.add_argument("--exist_sum_weight", type=float, default=2.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
-    parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
+    parser.add_argument("--shape_weight", type=float, default=0.05, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='image', help="save dir path")
     parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
 
@@ -421,7 +425,8 @@ if __name__ == '__main__':
                       val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       local_rank=opt.local_rank, save_dir_path=opt.save_dir_path, lr=opt.lr,
                       pos_weight=opt.pos_weight, size_weight=opt.size_weight, iou_weight=opt.iou_weight,
-                      kl_weight=opt.kl_weight, distance_weight=opt.distance_weight, condition_type=opt.condition_type,
+                      kl_weight=opt.kl_weight, exist_weight=opt.exist_weight, exist_sum_weight=opt.exist_sum_weight,
+                      shape_weight=opt.shape_weight, condition_type=opt.condition_type,
                       convlayer=opt.convlayer, weight_decay=opt.weight_decay)
 
     trainer.train()
