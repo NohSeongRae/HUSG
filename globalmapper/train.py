@@ -81,7 +81,7 @@ class Trainer:
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
                               condition_type=condition_type, image_size=64,
                               convlayer=convlayer, batch_size=batch_size).to(device=self.device)
-        self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank], find_unused_parameters=True)
+        self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
         base_batch_size = 16
         new_batch_size = self.batch_size
@@ -195,7 +195,8 @@ class Trainer:
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_iou * self.iou_weight + loss_kl * self.kl_weight + \
-                             loss_exist * self.exist_weight + loss_exist_sum * self.exist_sum_weight
+                             loss_exist * self.exist_weight + loss_exist_sum * self.exist_sum_weight + \
+                             loss_shape * self.shape_weight
 
                 loss_total.backward()
                 self.optimizer.step()
@@ -351,7 +352,7 @@ class Trainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
-    parser.add_argument("--batch_size", type=int, default=256, help="Batch size for training.")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
