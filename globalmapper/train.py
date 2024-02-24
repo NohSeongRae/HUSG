@@ -164,8 +164,8 @@ class Trainer:
 
         if self.use_tensorboard:
             self.writer = SummaryWriter()
-            if self.local_rank == 0:
-                wandb.watch(self.cvae.module, log='all')
+            # if self.local_rank == 0:
+            #     wandb.watch(self.cvae.module, log='all')
 
         for epoch in range(epoch_start, self.max_epoch):
             total_pos_loss = torch.Tensor([0.0]).to(self.device)
