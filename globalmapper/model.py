@@ -25,7 +25,7 @@ class BoundaryMaskEncoder(nn.Module):
         self.inner_channel = inner_channel
 
         self.cnn_encoder = nn.Sequential(
-            nn.Conv2d(1, int(self.inner_channel / 8), 3, stride=1, padding=1),
+            nn.Conv2d(2, int(self.inner_channel / 8), 3, stride=1, padding=1),
             nn.ReLU(True),
             nn.MaxPool2d(2, stride=2),
             nn.Conv2d(int(self.inner_channel / 8), int(self.inner_channel / 4), 3, stride=1, padding=1),
@@ -42,7 +42,7 @@ class BoundaryMaskEncoder(nn.Module):
         self.linear = nn.Linear(channel_num, bottleneck)
 
     def forward(self, mask):
-        mask = mask.view(-1, 1, self.image_size, self.image_size)
+        mask = mask.view(-1, 2, self.image_size, self.image_size)
         mask = self.cnn_encoder(mask)
         mask = torch.flatten(mask, 1)
         mask = self.linear(mask)

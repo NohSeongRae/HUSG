@@ -77,7 +77,7 @@ class Trainer:
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
-                              condition_type=condition_type,
+                              condition_type=condition_type, image_size=64,
                               convlayer=convlayer, batch_size=batch_size).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
@@ -371,7 +371,7 @@ if __name__ == '__main__':
     parser.add_argument("--iou_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="save dir path")
+    parser.add_argument("--condition_type", type=str, default='image', help="save dir path")
     parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
 
     opt = parser.parse_args()
