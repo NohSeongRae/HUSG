@@ -249,8 +249,9 @@ class GraphDecoder(nn.Module):
         self.dec_iou = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_iou = nn.Linear(feature_dim, 1)
 
-        self.dec_exist = nn.Linear(feature_dim * n_head, feature_dim)
-        self.fc_exist = nn.Linear(feature_dim, 1)
+        # self.dec_exist = nn.Linear(feature_dim * n_head, feature_dim)
+        # self.fc_exist = nn.Linear(feature_dim, 1)
+        self.fc_exist = nn.Linear(feature_dim * n_head, 1)
 
     def forward(self, z, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
@@ -277,8 +278,9 @@ class GraphDecoder(nn.Module):
         output_iou = F.relu(self.dec_iou(d_embed_t))
         output_iou = F.sigmoid(self.fc_iou(output_iou))
 
-        output_exist = F.relu(self.dec_exist(d_embed_t))
-        output_exist = F.sigmoid(self.fc_exist(output_exist))
+        # output_exist = F.relu(self.dec_exist(d_embed_t))
+        # output_exist = F.sigmoid(self.fc_exist(output_exist))
+        output_exist = F.sigmoid(self.fc_exist(d_embed_t))
 
         return output_pos, output_size, output_shape, output_iou, output_exist
 
