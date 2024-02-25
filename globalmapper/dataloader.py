@@ -16,6 +16,7 @@ class GraphDataset(Dataset):
             self.folder_path = '/local_datasets/graph_condition_train_datasets/'
         elif condition_type == 'image':
             self.folder_path = '/local_datasets/globalmapper_datasets/'
+            self.folder_path = '../preprocessing/global_mapper/datasets/globalmapper_datasets/'
         elif condition_type == 'image_resnet34':
             self.folder_path = '/local_datasets/globalmapper_datasets/'
         file_extension = '.gpickle'
@@ -98,15 +99,32 @@ class GraphDataset(Dataset):
             load_path = self.folder_path + '/' + self.gpickle_files[idx]
             with open(load_path, 'rb') as f:
                 self.graph = pickle.load(f)
+
             graph = self.graph
 
-            node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
-                                         dtype=torch.float32)
-            building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
+            posx_features = torch.tensor(np.array([graph.nodes[node]['posx'] for node in graph.nodes()]),
+                                         dtype=torch.float32).unsqueeze(1)
+            posy_features = torch.tensor(np.array([graph.nodes[node]['posy'] for node in graph.nodes()]),
+                                         dtype=torch.float32).unsqueeze(1)
+            size_x_features = torch.tensor(np.array([graph.nodes[node]['size_x'] for node in graph.nodes()]),
+                                           dtype=torch.float32).unsqueeze(1)
+            size_y_features = torch.tensor(np.array([graph.nodes[node]['size_y'] for node in graph.nodes()]),
+                                           dtype=torch.float32).unsqueeze(1)
+            shape_features = torch.tensor(np.array([graph.nodes[node]['shape'] for node in graph.nodes()]),
+                                          dtype=torch.long)
+            iou_features = torch.tensor(np.array([graph.nodes[node]['iou'] for node in graph.nodes()]),
+                                        dtype=torch.float32)
+            exist_features = torch.tensor(np.array([graph.nodes[node]['exist'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
+            pos_features = torch.cat((posx_features, posy_features), dim=1)
+            size_features = torch.cat((size_x_features, size_y_features), dim=1)
+
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
-                condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
+                condition = torch.tensor(np.array(graph.graph['binary_mask']), dtype=torch.float32).unsqueeze(0)
+                scale = torch.tensor(graph.graph['block_scale'], dtype=torch.float32).expand(condition.shape)
+                condition = torch.cat([condition, scale], dim=0)
+
             else:
                 condition_graph = graph.graph['condition']
                 condition_edge_index = nx.to_scipy_sparse_matrix(condition_graph).tocoo()
@@ -120,14 +138,16 @@ class GraphDataset(Dataset):
                                  edge_index=condition_edge_index,
                                  num_nodes=condition_graph.number_of_nodes())
 
-            edge_index = nx.to_scipy_sparse_matrix(grid_graph).tocoo()
+            edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            data = Data(node_features=node_features, exist_features=exist_features, condition=condition,
-                        edge_index=edge_index, num_nodes=grid_graph.number_of_nodes())
+            data = Data(pos_features=pos_features, size_features=size_features,
+                        shape_features=shape_features, iou_features=iou_features, exist_features=exist_features,
+                        condition=condition,
+                        edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
-            polygon_path = self.gpickle_files[idx].replace('.gpickle', '.pkl')
-            return (data, polygon_path, self.gpickle_files[idx])
+            return [data, self.gpickle_files[idx]]
+
     def len(self):
         return self.data_length
 

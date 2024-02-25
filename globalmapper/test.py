@@ -6,6 +6,7 @@ from torch_geometric.loader import DataLoader
 import numpy as np
 import random
 from tqdm import tqdm
+import networkx as nx
 
 from model import GraphCVAE
 from dataloader import GraphDataset
@@ -27,36 +28,42 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
     cvae.eval()
     with torch.no_grad():
-        for idx, data in enumerate(tqdm(test_dataloader)):
-            data, polygon_path, data_path  = data
+        idx = 0
+        for data in tqdm(test_dataloader):
+            data, graph = data
+            print(graph)
+            import pickle
+            load_path = '../preprocessing/global_mapper/datasets/globalmapper_datasets/' + '/' + graph[0]
+            with open(load_path, 'rb') as f:
+                graph = pickle.load(f)
 
             data = data.to(device=device)
-            output_pos, output_size, output_theta, output_exist = cvae.test(data)
+            output_pos, output_size, output_shape, output_iou, output_exist = cvae.test(data)
 
-            if condition_type == 'image' or condition_type == 'image_resnet34':
-                plot(output_pos.detach().cpu().numpy(),
-                     output_size.detach().cpu().numpy(),
-                     output_theta.detach().cpu().numpy(),
-                     output_exist.detach().cpu().numpy(),
-                     data.exist_features.detach().cpu().numpy(),
-                     data.node_features.detach().cpu().numpy(),
-                     idx + 1,
-                     condition_type,
-                     polygon_path,
-                     save_dir_path,
-                     data_path)
+            for node in graph.nodes():
+                if output_exist[node] > 0.5:
+                    graph.nodes[node]['posx'] = output_pos[node][0]
+                    graph.nodes[node]['posy'] = output_pos[node][1]
+                    graph.nodes[node]['exist'] = 1.0
+                    graph.nodes[node]['size_x'] = output_size[node][0]
+                    graph.nodes[node]['size_y'] = output_size[node][1]
+                    graph.nodes[node]['shape'] = output_shape[node]
+                    graph.nodes[node]['iou'] = output_iou[node]
 
-            elif condition_type == 'graph':
-                plot(output_pos.detach().cpu().numpy(),
-                     output_size.detach().cpu().numpy(),
-                     output_theta.detach().cpu().numpy(),
-                     data.building_mask.detach().cpu().numpy(),
-                     data.node_features.detach().cpu().numpy(),
-                     idx + 1,
-                     condition_type,
-                     polygon_path,
-                     save_dir_path,
-                     data_path)
+                else:
+                    graph.nodes[node]['posx'] = 0.0
+                    graph.nodes[node]['posy'] = 0.0
+                    graph.nodes[node]['exist'] = 0.0
+                    graph.nodes[node]['size_x'] = 0.0
+                    graph.nodes[node]['size_y'] = 0.0
+                    graph.nodes[node]['shape'] = 0
+                    graph.nodes[node]['iou'] = 0.0
+
+            output_file_path = 'output'
+            idx += 1
+            with open(f'{output_file_path}/{str(idx)}.gpickle', 'wb') as f:
+                nx.write_gpickle(graph, f)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
@@ -64,11 +71,11 @@ if __name__ == '__main__':
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
     parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
-    parser.add_argument("--n_head", type=int, default=8, help="Dimension of the model.")
+    parser.add_argument("--n_head", type=int, default=12, help="Dimension of the model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
-    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="save dir path")
+    parser.add_argument("--condition_type", type=str, default='image', help="save dir path")
     parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
 
     opt = parser.parse_args()
