@@ -119,8 +119,8 @@ class GraphEncoder(nn.Module):
         self.iou_fc = nn.Linear(1, feature_dim // 4)
 
         self.N = 120
-        self.exist_embed = nn.Embedding(2, feature_dim // 4)
-        self.exist_enc = nn.Linear(feature_dim // 4 + self.N, feature_dim // 2)
+        self.exist_embed = nn.Embedding(2, feature_dim // 2)
+        self.exist_enc = nn.Linear(feature_dim // 2 + self.N, feature_dim // 2)
 
         self.node_fc = nn.Linear(feature_dim * 2, feature_dim)
 
