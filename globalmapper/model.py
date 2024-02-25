@@ -276,11 +276,11 @@ class GraphDecoder(nn.Module):
         output_shape = F.softmax(self.fc_shape(output_shape), dim=-1)
 
         output_iou = F.relu(self.dec_iou(d_embed_t))
-        output_iou = self.fc_iou(output_iou)
+        output_iou = F.sigmoid(self.fc_iou(output_iou))
 
         # output_exist = F.relu(self.dec_exist(d_embed_t))
         # output_exist = F.sigmoid(self.fc_exist(output_exist))
-        output_exist = self.fc_exist(d_embed_t)
+        output_exist = F.sigmoid(self.fc_exist(d_embed_t))
 
         return output_pos, output_size, output_shape, output_iou, output_exist
 
