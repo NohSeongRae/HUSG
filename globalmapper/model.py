@@ -115,7 +115,7 @@ class GraphEncoder(nn.Module):
 
         self.pos_fc = nn.Linear(2, feature_dim // 2)
         self.size_fc = nn.Linear(2, feature_dim // 2)
-        self.shape_fc = nn.Embedding(4, feature_dim // 4)
+        self.shape_fc = nn.Embedding(6, feature_dim // 4)
         self.iou_fc = nn.Linear(1, feature_dim // 4)
 
         self.N = 120
@@ -244,7 +244,7 @@ class GraphDecoder(nn.Module):
         self.fc_size = nn.Linear(feature_dim, 2)
 
         self.dec_shape = nn.Linear(feature_dim * n_head, feature_dim)
-        self.fc_shape = nn.Linear(feature_dim, 4)
+        self.fc_shape = nn.Linear(feature_dim, 6)
 
         self.dec_iou = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_iou = nn.Linear(feature_dim, 1)
