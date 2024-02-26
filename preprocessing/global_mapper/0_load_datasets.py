@@ -145,8 +145,8 @@ def make_edge():
 
             neighbors = [
                 (row - 1, col),  # 상
-                (row + 1, col),  # 하
-                (row, col - 1),  # 좌
+                # (row + 1, col),  # 하
+                # (row, col - 1),  # 좌
                 (row, col + 1)  # 우
             ]
 
