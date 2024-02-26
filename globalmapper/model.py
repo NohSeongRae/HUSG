@@ -206,7 +206,7 @@ class GraphDecoder(nn.Module):
         self.N = 120
         self.batch_size = batch_size
 
-        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
+        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim * self.N)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -256,7 +256,7 @@ class GraphDecoder(nn.Module):
     def forward(self, z, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
-        z = z[batch]
+        z = z.view(z.shape[0] * self.N, -1)
 
         one_hot = torch.eye(self.N, dtype=torch.float32).to(z.device).repeat(z.shape[0] // self.N, 1)
         z = torch.cat([z, one_hot], 1)
