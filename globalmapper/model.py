@@ -251,7 +251,7 @@ class GraphDecoder(nn.Module):
 
         # self.dec_exist = nn.Linear(feature_dim * n_head, feature_dim)
         # self.fc_exist = nn.Linear(feature_dim, 1)
-        self.fc_exist = nn.Linear(feature_dim * n_head, 1)
+        # self.fc_exist = nn.Linear(feature_dim * n_head, 1)
 
     def forward(self, z, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
@@ -280,9 +280,9 @@ class GraphDecoder(nn.Module):
 
         # output_exist = F.relu(self.dec_exist(d_embed_t))
         # output_exist = F.sigmoid(self.fc_exist(output_exist))
-        output_exist = F.sigmoid(self.fc_exist(d_embed_t))
+        # output_exist = F.sigmoid(self.fc_exist(d_embed_t))
 
-        return output_pos, output_size, output_shape, output_iou, output_exist
+        return output_pos, output_size, output_shape, output_iou
 
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
@@ -326,9 +326,9 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_shape, output_iou, output_exist = self.decoder(z, condition, edge_index, data.batch)
+        output_pos, output_size, output_shape, output_iou = self.decoder(z, condition, edge_index, data.batch)
 
-        return output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var
+        return output_pos, output_size, output_shape, output_iou, mu, log_var
 
     def test(self, data):
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
@@ -339,6 +339,6 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_shape, output_iou, output_exist = self.decoder(z, condition, data.edge_index, data.batch)
+        output_pos, output_size, output_shape, output_iou = self.decoder(z, condition, data.edge_index, data.batch)
 
-        return output_pos, output_size, output_shape, output_iou, output_exist
+        return output_pos, output_size, output_shape, output_iou
