@@ -238,7 +238,7 @@ class Trainer:
                 with torch.no_grad():
                     for data in tqdm(self.val_dataloader):
                         data = data.to(device=self.device)
-                        output_pos, output_size, output_shape, output_iou, output_exist, mu, log_var = self.cvae(data)
+                        output_pos, output_size, output_shape, output_iou, mu, log_var = self.cvae(data)
 
                         mask = None # data.exist_features.detach().unsqueeze(1)
 
