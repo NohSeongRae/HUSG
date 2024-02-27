@@ -178,7 +178,7 @@ class Trainer:
                 data = data.to(device=self.device)
                 output_pos, output_size, mu, log_var = self.cvae(data)
 
-                mask = None # data.exist_features.detach().unsqueeze(1)
+                mask = data.exist_features.detach().unsqueeze(1)
 
                 loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
                 loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
@@ -223,7 +223,7 @@ class Trainer:
                         data = data.to(device=self.device)
                         output_pos, output_size, mu, log_var = self.cvae(data)
 
-                        mask = None # data.exist_features.detach().unsqueeze(1)
+                        mask = data.exist_features.detach().unsqueeze(1)
 
                         loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
                         loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
