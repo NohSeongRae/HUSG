@@ -82,7 +82,23 @@ class GraphDataset(Dataset):
                                  num_nodes=condition_graph.number_of_nodes())
 
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
-            edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
+            # 무방향 그래프로 만들기 위해 (row, col)과 (col, row)를 모두 포함
+            row = np.append(edge_index.row, edge_index.col)
+            col = np.append(edge_index.col, edge_index.row)
+
+            # 중복 제거 및 self-loop 추가
+            unique_edges = np.unique(np.vstack((row, col)), axis=1)
+            nodes = np.arange(len(graph.nodes))
+            self_loops = np.vstack((nodes, nodes))
+
+            # self-loop와 unique_edges 결합
+            all_edges = np.hstack((unique_edges, self_loops))
+
+            # 중복 제거 (self-loop 추가 시 중복될 수 있음)
+            all_edges = np.unique(all_edges, axis=1)
+
+            # 결과를 torch tensor로 변환
+            edge_index = torch.tensor(all_edges, dtype=torch.long)
 
             data = Data(pos_features=pos_features, size_features=size_features,
                         shape_features=shape_features, iou_features=iou_features, exist_features=exist_features,
