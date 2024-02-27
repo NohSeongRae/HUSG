@@ -180,7 +180,13 @@ class Trainer:
                 loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
                 loss_kl = self.kl_loss(mu, log_var)
 
-                if loss_pos.item() > 10:
+                # loss_pos를 전체 노드와 공유하여 모든 노드에서의 최대 값을 얻음
+                loss_pos_global_max = torch.tensor([loss_pos.item()]).to(self.device)
+                dist.all_reduce(loss_pos_global_max, op=dist.ReduceOp.MAX)
+
+                # 모든 노드에서 최대 loss_pos 값이 10을 초과하는지 확인
+                if loss_pos_global_max > 10:
+                    # 모든 노드에서 연산을 건너뛴다.
                     continue
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
@@ -293,7 +299,7 @@ class Trainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
 
-    parser.add_argument("--batch_size", type=int, default=200, help="Batch size for training.")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
     parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
