@@ -83,10 +83,6 @@ class Trainer:
                               convlayer=convlayer, batch_size=batch_size).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
-        base_batch_size = 16
-        new_batch_size = self.batch_size
-        self.lr = self.lr * (new_batch_size / base_batch_size)
-
         self.optimizer = torch.optim.Adam(self.cvae.module.parameters(),
                                           lr=self.lr,
                                           betas=(0.9, 0.98))
