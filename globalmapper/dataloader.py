@@ -34,11 +34,6 @@ class GraphDataset(Dataset):
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
         self.gpickle_files.sort()
 
-        if data_type == 'train':
-            self.gpickle_files = self.gpickle_files[:int(len(self.gpickle_files) * 0.7)]
-        if data_type == 'val' or data_type == 'test':
-            self.gpickle_files = self.gpickle_files[int(len(self.gpickle_files) * 0.7):]
-
         self.data_length = len(self.gpickle_files)
         print(self.data_length)
 

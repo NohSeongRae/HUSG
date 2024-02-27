@@ -310,7 +310,7 @@ class GraphCVAE(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                m.weight.data = nn.init.xavier_uniform(m.weight.data, gain=nn.init.calculate_gain('relu'))
+                nn.init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain('relu'))
 
     def reparameterize(self, mu, logvar):
         return (torch.exp(0.5 * logvar)) * (torch.randn_like(torch.exp(0.5 * logvar))) + mu
