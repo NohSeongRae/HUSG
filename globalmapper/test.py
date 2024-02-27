@@ -19,7 +19,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
-                     condition_type=condition_type, convlayer=convlayer).to(device=device)
+                     condition_type=condition_type, convlayer=convlayer, image_size=224).to(device=device)
 
     if checkpoint_epoch == 0:
         checkpoint_epoch = 'best'
@@ -31,25 +31,23 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
         idx = 0
         for data in tqdm(test_dataloader):
             data, graph = data
-            print(graph)
             import pickle
-            load_path = '../preprocessing/global_mapper/datasets/globalmapper_datasets/' + '/' + graph[0]
+            load_path = '../preprocessing/global_mapper/datasets/globalmapper_datasets/test/' + graph[0]
             with open(load_path, 'rb') as f:
                 graph = pickle.load(f)
 
             data = data.to(device=device)
-            output_pos, output_size, output_shape, output_iou, output_exist = cvae.test(data)
+            output_pos, output_size = cvae.test(data)
 
             for node in graph.nodes():
-                if output_exist[node] > 0.5:
+                if graph.nodes[node]['exist'] > 0.5:
                     graph.nodes[node]['posx'] = output_pos[node][0]
                     graph.nodes[node]['posy'] = output_pos[node][1]
                     graph.nodes[node]['exist'] = 1.0
                     graph.nodes[node]['size_x'] = output_size[node][0]
                     graph.nodes[node]['size_y'] = output_size[node][1]
-                    graph.nodes[node]['shape'] = output_shape[node]
-                    graph.nodes[node]['iou'] = output_iou[node]
-
+                    graph.nodes[node]['shape'] = 0
+                    graph.nodes[node]['iou'] = 0
                 else:
                     graph.nodes[node]['posx'] = 0.0
                     graph.nodes[node]['posy'] = 0.0
@@ -59,7 +57,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                     graph.nodes[node]['shape'] = 0
                     graph.nodes[node]['iou'] = 0.0
 
-            output_file_path = 'output'
+            output_file_path = '../preprocessing/global_mapper/output'
             idx += 1
             with open(f'{output_file_path}/{str(idx)}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
