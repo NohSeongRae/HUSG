@@ -308,10 +308,6 @@ class GraphCVAE(nn.Module):
         self.decoder = GraphDecoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     bottleneck=bottleneck, convlayer=convlayer, batch_size=batch_size)
 
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain('relu'))
-
     def reparameterize(self, mu, logvar):
         return (torch.exp(0.5 * logvar)) * (torch.randn_like(torch.exp(0.5 * logvar))) + mu
 
