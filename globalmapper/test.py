@@ -41,11 +41,11 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
             for node in graph.nodes():
                 if graph.nodes[node]['exist'] > 0.5:
-                    graph.nodes[node]['posx'] = output_pos[node][0]
-                    graph.nodes[node]['posy'] = output_pos[node][1]
+                    graph.nodes[node]['posx'] = output_pos[node][0].detach().cpu().numpy()
+                    graph.nodes[node]['posy'] = output_pos[node][1].detach().cpu().numpy()
                     graph.nodes[node]['exist'] = 1.0
-                    graph.nodes[node]['size_x'] = output_size[node][0]
-                    graph.nodes[node]['size_y'] = output_size[node][1]
+                    graph.nodes[node]['size_x'] = output_size[node][0].detach().cpu().numpy()
+                    graph.nodes[node]['size_y'] = output_size[node][1].detach().cpu().numpy()
                     graph.nodes[node]['shape'] = 0
                     graph.nodes[node]['iou'] = 0
                 else:
