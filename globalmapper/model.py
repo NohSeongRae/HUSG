@@ -115,12 +115,12 @@ class GraphEncoder(nn.Module):
 
         self.pos_fc = nn.Linear(2, feature_dim // 2)
         self.size_fc = nn.Linear(2, feature_dim // 2)
-        self.shape_fc = nn.Embedding(6, feature_dim // 4)
-        self.iou_fc = nn.Linear(1, feature_dim // 4)
+        # self.shape_fc = nn.Embedding(6, feature_dim // 4)
+        # self.iou_fc = nn.Linear(1, feature_dim // 4)
 
         self.N = 120
         self.exist_embed = nn.Embedding(2, feature_dim // 2)
-        self.exist_enc = nn.Linear(feature_dim // 2 + self.N, feature_dim // 2)
+        self.exist_enc = nn.Linear(feature_dim // 2 + self.N, feature_dim)
 
         self.node_fc = nn.Linear(feature_dim * 2, feature_dim)
 
@@ -164,11 +164,11 @@ class GraphEncoder(nn.Module):
         size_feature = data.size_features
         size_feature = F.relu(self.size_fc(size_feature))
 
-        shape_feature = data.shape_features
-        shape_feature = F.relu(self.shape_fc(shape_feature))
-
-        iou_feature = data.iou_features.unsqueeze(-1)
-        iou_feature = F.relu(self.iou_fc(iou_feature))
+        # shape_feature = data.shape_features
+        # shape_feature = F.relu(self.shape_fc(shape_feature))
+        #
+        # iou_feature = data.iou_features.unsqueeze(-1)
+        # iou_feature = F.relu(self.iou_fc(iou_feature))
 
         node_exist = data.exist_features
         node_exist = F.relu(self.exist_embed(node_exist))
@@ -176,7 +176,7 @@ class GraphEncoder(nn.Module):
         one_hot = torch.eye(self.N, dtype=torch.float32).to(node_exist.device).repeat(node_exist.shape[0] // self.N, 1)
         node_exist = F.relu(self.exist_enc(torch.cat([node_exist, one_hot], dim=1)))
 
-        node_feature = F.relu(self.node_fc(torch.cat([pos_feature, size_feature, shape_feature, iou_feature, node_exist], dim=1)))
+        node_feature = F.relu(self.node_fc(torch.cat([pos_feature, size_feature, node_exist], dim=1)))
 
         n_embed_0 = node_feature
         g_embed_0 = self.global_pool(n_embed_0, data.batch)
@@ -243,11 +243,11 @@ class GraphDecoder(nn.Module):
         self.dec_size = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_size = nn.Linear(feature_dim, 2)
 
-        self.dec_shape = nn.Linear(feature_dim * n_head, feature_dim)
-        self.fc_shape = nn.Linear(feature_dim, 6)
-
-        self.dec_iou = nn.Linear(feature_dim * n_head, feature_dim)
-        self.fc_iou = nn.Linear(feature_dim, 1)
+        # self.dec_shape = nn.Linear(feature_dim * n_head, feature_dim)
+        # self.fc_shape = nn.Linear(feature_dim, 6)
+        #
+        # self.dec_iou = nn.Linear(feature_dim * n_head, feature_dim)
+        # self.fc_iou = nn.Linear(feature_dim, 1)
 
         # self.dec_exist = nn.Linear(feature_dim * n_head, feature_dim)
         # self.fc_exist = nn.Linear(feature_dim, 1)
@@ -272,17 +272,17 @@ class GraphDecoder(nn.Module):
         output_size = F.relu(self.dec_size(d_embed_t))
         output_size = self.fc_size(output_size)
 
-        output_shape = F.relu(self.dec_shape(d_embed_t))
-        output_shape = F.softmax(self.fc_shape(output_shape), dim=-1)
-
-        output_iou = F.relu(self.dec_iou(d_embed_t))
-        output_iou = F.sigmoid(self.fc_iou(output_iou))
+        # output_shape = F.relu(self.dec_shape(d_embed_t))
+        # output_shape = F.softmax(self.fc_shape(output_shape), dim=-1)
+        #
+        # output_iou = F.relu(self.dec_iou(d_embed_t))
+        # output_iou = F.sigmoid(self.fc_iou(output_iou))
 
         # output_exist = F.relu(self.dec_exist(d_embed_t))
         # output_exist = F.sigmoid(self.fc_exist(output_exist))
         # output_exist = F.sigmoid(self.fc_exist(d_embed_t))
 
-        return output_pos, output_size, output_shape, output_iou
+        return output_pos, output_size
 
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
@@ -326,9 +326,9 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_shape, output_iou = self.decoder(z, condition, edge_index, data.batch)
+        output_pos, output_size = self.decoder(z, condition, edge_index, data.batch)
 
-        return output_pos, output_size, output_shape, output_iou, mu, log_var
+        return output_pos, output_size, mu, log_var
 
     def test(self, data):
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
@@ -339,6 +339,6 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_shape, output_iou = self.decoder(z, condition, data.edge_index, data.batch)
+        output_pos, output_size = self.decoder(z, condition, data.edge_index, data.batch)
 
-        return output_pos, output_size, output_shape, output_iou
+        return output_pos, output_size

@@ -79,7 +79,7 @@ class Trainer:
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
-                              condition_type=condition_type, image_size=64,
+                              condition_type=condition_type, image_size=224,
                               convlayer=convlayer, batch_size=batch_size).to(device=self.device)
         self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
 
