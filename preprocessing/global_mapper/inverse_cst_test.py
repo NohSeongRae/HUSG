@@ -12,8 +12,8 @@ from shapely.geometry import Polygon
 from shapely.affinity import scale
 from shapely.ops import transform
 
-test_gt_graph = "./datasets/test/20.gpickle"
-test_gt_graph = "./output/1.gpickle"
+test_gt_graph = "./datasets/globalmapper_datasets/test/2.gpickle"
+test_gt_graph = "./output/5.gpickle"
 
 def move_polygon_center_to_midpoint(polygon):
     minx, miny, maxx, maxy = polygon.bounds
