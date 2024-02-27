@@ -12,8 +12,7 @@ from shapely.geometry import Polygon
 from shapely.affinity import scale
 from shapely.ops import transform
 
-test_gt_graph = "./output/1.gpickle"
-test_gt_graph = "./datasets/globalmapper_datasets/1.gpickle"
+test_gt_graph = "./datasets/test/20.gpickle"
 
 def move_polygon_center_to_midpoint(polygon):
     minx, miny, maxx, maxy = polygon.bounds
@@ -34,7 +33,7 @@ polygon = G.graph['polygon']
 node_size, node_pos, node_attr, edge_list, node_idx, asp_rto, longside, b_shape, b_iou = graph2vector_processed(G)
 
 org_bldg, org_pos, org_size = inverse_warp_bldg_by_midaxis(node_pos, node_size, midaxis, aspect_rto,
-                                                           rotate_bldg_by_midaxis=True,
+                                                           rotate_bldg_by_midaxis=False,
                                                            output_mode=False)
 from shapely.wkt import dumps
 

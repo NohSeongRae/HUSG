@@ -414,13 +414,15 @@ def get_block_width_from_pt_on_midaxis(block, vector_midaxis, pt_on_midaxis):
     dummy_left_pt = Point(pt_on_midaxis.x + left_v[0], pt_on_midaxis.y + left_v[1])
     dummy_right_pt = Point(pt_on_midaxis.x + right_v[0], pt_on_midaxis.y + right_v[1])
 
-    left_line_to_contour = get_extend_line(dummy_left_pt, pt_on_midaxis, block, False, is_extend_from_end=True)
-    right_line_to_contour = get_extend_line(dummy_right_pt, pt_on_midaxis, block, False, is_extend_from_end=True)
+    # left_line_to_contour = get_extend_line(dummy_left_pt, pt_on_midaxis, block, False, is_extend_from_end=False, is_vis=True)
+    # right_line_to_contour = get_extend_line(dummy_right_pt, pt_on_midaxis, block, False, is_extend_from_end=False, is_vis=True)
+    left_line_to_contour = LineString([pt_on_midaxis, dummy_left_pt])
+    right_line_to_contour = LineString([pt_on_midaxis, dummy_right_pt])
 
     return left_line_to_contour.length + right_line_to_contour.length
 
 
-def get_extend_line(a, b, block, isfront, is_extend_from_end=False):
+def get_extend_line(a, b, block, isfront, is_extend_from_end=False, is_vis=False):
     minx, miny, maxx, maxy = block.bounds
     if a.x == b.x:  # vertical line
         if a.y <= b.y:
@@ -458,6 +460,10 @@ def get_extend_line(a, b, block, isfront, is_extend_from_end=False):
         points_sorted_by_distance = sorted(points_on_boundary_lines, key=a.distance)
         extended_line = LineString([a, Point(points_sorted_by_distance[0])])
 
+    if is_vis:
+        import matplotlib.pyplot as plt
+        x, y = extended_line.xy
+        plt.plot(x, y, '-', color='blue', label='Line')
     min_dis = 9999999999.9
     intersect = block.boundary.intersection(extended_line)
     if intersect.geom_type == 'MultiPoint':
@@ -541,16 +547,12 @@ def warp_bldg_by_midaxis(bldg, block, midaxis):
         coords = np.array(midaxis.coords.xy)
         # Process the single geometry here
 
-    # coords = np.array(midaxis.coords.xy)
-
     for i in range(1, coords.shape[1]):
         relative_cutoff.append(midaxis.project(Point(coords[0, i], coords[1, i]), normalized=True))
         vector_midaxis.append(coords[:, i] - coords[:, i - 1])
 
         if i < coords.shape[1] - 1:
-            cur_width = get_block_width_from_pt_on_midaxis(block, coords[:, i] - coords[:, i - 1], Point(coords[0, i],
-                                                                                                         coords[
-                                                                                                             1, i]))  # each node on midaxis, except the last and the front.
+            cur_width = get_block_width_from_pt_on_midaxis(block, coords[:, i] - coords[:, i - 1], Point(coords[0, i], coords[1, i]))  # each node on midaxis, except the last and the front.
             block_width_list.append(cur_width)
 
     if block_width_list == []:

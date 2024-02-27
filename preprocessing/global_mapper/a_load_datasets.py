@@ -229,7 +229,7 @@ def generate_data(file_path):
     scaled_mask, dx = insidemask(boundary)
 
     if abs(dx) == 0:
-        print('저장하지 않음')
+        print('저장 하지 않음')
         return
 
     exterior_polyline = list(boundary.exterior.coords)[:-1]
@@ -245,13 +245,13 @@ def generate_data(file_path):
     ### get the medial axis of block
     medaxis = modified_skel_to_medaxis(longest_skel, boundary)
     if medaxis == None:
-        print('저장하지 않음')
+        print('저장 하지 않음')
         return
 
     ### warp all building locations and sizes
     pos_xsorted, size_xsorted, xsort_idx, aspect_rto = warp_bldg_by_midaxis(buildings, boundary, medaxis)
     if pos_xsorted.all() == None:
-        print('저장하지 않음')
+        print('저장 하지 않음')
         return
 
     x_pos = [coord[0] for coord in pos_xsorted]
@@ -291,7 +291,7 @@ def generate_data(file_path):
         is_issue = True
 
     if is_issue:
-        print('저장하지 않음')
+        print('저장 하지 않음')
         return
 
     for node in G.nodes():
