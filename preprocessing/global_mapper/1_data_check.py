@@ -11,7 +11,7 @@ def list_files(directory):
             file_list.append(os.path.join(root, file))
     return file_list
 
-directory_path = 'raw_datasets/globalmapper_dataset/original'
+directory_path = 'datasets/globalmapper_datasets/train'
 files = list_files(directory_path)
 
 x_pos_list = []
