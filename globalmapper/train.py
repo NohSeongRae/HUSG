@@ -180,6 +180,9 @@ class Trainer:
                 loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
                 loss_kl = self.kl_loss(mu, log_var)
 
+                if loss_pos.item > 10:
+                    continue
+
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
                              loss_kl * self.kl_weight
 
