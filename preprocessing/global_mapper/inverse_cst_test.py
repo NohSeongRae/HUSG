@@ -23,9 +23,9 @@ def move_polygon_center_to_midpoint(polygon):
 
     return moved_polygon, (shift_x, shift_y)
 
-for idx in range(1, 100):
-    # test_gt_graph = f"./datasets/globalmapper_datasets/test/{str(idx)}.gpickle"
-    test_gt_graph = f"./output/{str(idx)}.gpickle"
+for idx in range(0, 100):
+    test_gt_graph = f"./output/gt/{str(idx)}.gpickle"
+    # test_gt_graph = f"./output/pred/{str(idx)}.gpickle"
 
     G = nx.read_gpickle(test_gt_graph)
     midaxis = G.graph['midaxis']
@@ -73,4 +73,5 @@ for idx in range(1, 100):
     # plt.grid(False)
     plt.xlim(0, 1)
     plt.ylim(0, 1)
-    plt.savefig(f'figure/pred_{str(idx - 1)}.png', dpi=32, bbox_inches='tight', pad_inches=0)
+    # plt.savefig(f'figure/pred_{str(idx)}.png', dpi=32, bbox_inches='tight', pad_inches=0)
+    plt.savefig(f'figure/gt_{str(idx)}.png', dpi=32, bbox_inches='tight', pad_inches=0)
