@@ -22,7 +22,20 @@ from dataloader import GraphDataset
 from test import make_upper_follow_lower_torch_padded
 
 import wandb
+def custom_collate(batch):
+    # Separate the data by types
+    boundary_data_list = [item[0] for item in batch]
+    building_data_list = [item[1] for item in batch]
+    adj_matrices = [item[2] for item in batch]
 
+    # Use PyG's Batch to handle Data objects
+    boundary_batch = Batch.from_data_list(boundary_data_list)
+    building_batch = Batch.from_data_list(building_data_list)
+
+    # For example, stack adjacency matrices if they are tensors
+    adj_matrix_batch = torch.stack(adj_matrices, dim=0)
+
+    return boundary_batch, building_batch, adj_matrix_batch
 class Trainer:
     def __init__(self, batch_size, max_epoch,dropout, lr,
                  d_unit, d_model,
@@ -79,13 +92,13 @@ class Trainer:
         # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = GraphDataset(data_type='train')
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, rank=rank)
-        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,collate_fn=Batch.from_data_list,
+        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,collate_fn=custom_collate,
                                            num_workers=8, pin_memory=True)
         print('here we are, train_dataset success')
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = GraphDataset(data_type='val')
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, rank=rank)
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True,collate_fn=Batch.from_data_list,
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True,collate_fn=custom_collate,
                                          num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
