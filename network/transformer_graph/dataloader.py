@@ -63,28 +63,33 @@ class GraphDataset(torch.utils.data.Dataset):
         data=Data(x=node_features, edge_index=edge_index, num_nodes=nx_graph.number_of_nodes())
         return data
 
-    def create_boundary_building_adjmatrix(self, boundary_graph, building_graph,combined_edge_index):
-        # Get node indices for boundary and building graphs
+    def create_boundary_building_adjmatrix(self, boundary_graph, building_graph, combined_edge_index):
+        # Maps for node indices
         boundary_indices = {node: i for i, node in enumerate(boundary_graph.nodes())}
-        building_indices = {node: i + len(boundary_indices) for i, node in enumerate(building_graph.nodes())}
+        building_indices = {node: i for i, node in enumerate(building_graph.nodes())}
 
         # Initialize adjacency matrix
         num_boundary = len(boundary_indices)
         num_building = len(building_indices)
         adj_matrix = torch.zeros((num_boundary, num_building), dtype=torch.float32)
 
-        # Fill adjacenecy matrix for boundary-building relationships
-        # This part depends on how the relationships are defined in your data
-        # For example, if they're stored as edge attributes in the combined graph:
-
-        # Process the combined edge index
-        # Assuming combined_edge_index is a 2xN tensor where rows are edges (u, v)
+        # Ensure that each edge is valid before attempting to add it to the adjacency matrix
         for edge in combined_edge_index.t():
-            u, v = edge[0].item(), edge[1].item()  # Convert tensor to integer
-            # Check if one node is in the boundary and the other in the building
+            u, v = edge[0].item(), edge[1].item()  # Extract node indices
+
             if u in boundary_indices and v in building_indices:
-                adj_matrix[boundary_indices[u], building_indices[v]] = 1
+                # Check within bounds before assigning
+                if boundary_indices[u] < num_boundary and building_indices[v] < num_building:
+                    adj_matrix[boundary_indices[u], building_indices[v]] = 1
+                else:
+                    # Log or handle the error appropriately here
+                    print(f"Error: Index out of bounds for boundary-building matrix at edge ({u}, {v}).")
             elif v in boundary_indices and u in building_indices:
-                adj_matrix[boundary_indices[v], building_indices[u]] = 1
+                # Check within bounds before assigning
+                if boundary_indices[v] < num_boundary and building_indices[u] < num_building:
+                    adj_matrix[boundary_indices[v], building_indices[u]] = 1
+                else:
+                    # Log or handle the error appropriately here
+                    print(f"Error: Index out of bounds for boundary-building matrix at edge ({v}, {u}).")
 
         return adj_matrix
