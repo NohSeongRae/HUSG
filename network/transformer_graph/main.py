@@ -80,13 +80,13 @@ class Trainer:
         self.train_dataset = GraphDataset(data_type='train')
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, rank=rank)
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,collate_fn=Batch.from_data_list,
-                                           sampler=self.train_sampler, num_workers=8, pin_memory=True)
+                                           num_workers=8, pin_memory=True)
         print('here we are, train_dataset success')
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = GraphDataset(data_type='val')
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, rank=rank)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True,collate_fn=Batch.from_data_list,
-                                         sampler=self.val_sampler, num_workers=8, pin_memory=True)
+                                         num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
         self.transformer = GraphCrossAttention(n_layer=self.n_layer, n_head=self.n_head,n_building=self.n_building,
