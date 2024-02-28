@@ -36,6 +36,10 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             with open(load_path, 'rb') as f:
                 graph = pickle.load(f)
 
+            output_file_path = '../preprocessing/global_mapper/output/gt'
+            with open(f'{output_file_path}/{str(idx)}.gpickle', 'wb') as f:
+                nx.write_gpickle(graph, f)
+
             data = data.to(device=device)
             output_pos, output_size = cvae.test(data)
 
@@ -57,10 +61,10 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                     graph.nodes[node]['shape'] = 0
                     graph.nodes[node]['iou'] = 0.0
 
-            output_file_path = '../preprocessing/global_mapper/output'
-            idx += 1
+            output_file_path = '../preprocessing/global_mapper/output/pred'
             with open(f'{output_file_path}/{str(idx)}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
+            idx += 1
 
 
 if __name__ == '__main__':
