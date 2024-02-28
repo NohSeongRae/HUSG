@@ -12,9 +12,6 @@ from shapely.geometry import Polygon
 from shapely.affinity import scale
 from shapely.ops import transform
 
-test_gt_graph = "./datasets/globalmapper_datasets/test/2.gpickle"
-test_gt_graph = "./output/5.gpickle"
-
 def move_polygon_center_to_midpoint(polygon):
     minx, miny, maxx, maxy = polygon.bounds
     center_x, center_y = (minx + maxx) / 2, (miny + maxy) / 2
@@ -26,50 +23,54 @@ def move_polygon_center_to_midpoint(polygon):
 
     return moved_polygon, (shift_x, shift_y)
 
-G = nx.read_gpickle(test_gt_graph)
-midaxis = G.graph['midaxis']
-aspect_rto = G.graph['aspect_ratio']
-polygon = G.graph['polygon']
+for idx in range(1, 100):
+    # test_gt_graph = f"./datasets/globalmapper_datasets/test/{str(idx)}.gpickle"
+    test_gt_graph = f"./output/{str(idx)}.gpickle"
 
-node_size, node_pos, node_attr, edge_list, node_idx, asp_rto, longside, b_shape, b_iou = graph2vector_processed(G)
+    G = nx.read_gpickle(test_gt_graph)
+    midaxis = G.graph['midaxis']
+    aspect_rto = G.graph['aspect_ratio']
+    polygon = G.graph['polygon']
 
-org_bldg, org_pos, org_size = inverse_warp_bldg_by_midaxis(node_pos, node_size, midaxis, aspect_rto,
-                                                           rotate_bldg_by_midaxis=False,
-                                                           output_mode=False)
-from shapely.wkt import dumps
+    node_size, node_pos, node_attr, edge_list, node_idx, asp_rto, longside, b_shape, b_iou = graph2vector_processed(G)
 
-wkt_polygons = [dumps(poly) for poly in org_bldg]
-counter = Counter(wkt_polygons)
+    org_bldg, org_pos, org_size = inverse_warp_bldg_by_midaxis(node_pos, node_size, midaxis, aspect_rto,
+                                                               rotate_bldg_by_midaxis=False,
+                                                               output_mode=False)
+    from shapely.wkt import dumps
 
-org_bldg = [poly for poly, wkt in zip(org_bldg, wkt_polygons) if counter[wkt] < 3]
+    wkt_polygons = [dumps(poly) for poly in org_bldg]
+    counter = Counter(wkt_polygons)
 
-minx, miny, maxx, maxy = polygon.bounds
-width, height = maxx - minx, maxy - miny
-longer_side = max(width, height)
+    org_bldg = [poly for poly, wkt in zip(org_bldg, wkt_polygons) if counter[wkt] < 3]
 
-def normalize(x, y):
-    return ((x - minx) / longer_side, (y - miny) / longer_side)
+    minx, miny, maxx, maxy = polygon.bounds
+    width, height = maxx - minx, maxy - miny
+    longer_side = max(width, height)
 
-minx, miny, maxx, maxy = polygon.bounds
-width, height = maxx - minx, maxy - miny
+    def normalize(x, y):
+        return ((x - minx) / longer_side, (y - miny) / longer_side)
 
-normalized_polygon = transform(normalize, polygon)
+    minx, miny, maxx, maxy = polygon.bounds
+    width, height = maxx - minx, maxy - miny
 
-moved_polygon, shift_amount = move_polygon_center_to_midpoint(normalized_polygon)
+    normalized_polygon = transform(normalize, polygon)
 
-normalized_org_bldg = [transform(normalize, poly) for poly in org_bldg]
-shifted_org_bldg = [translate(poly, xoff=shift_amount[0], yoff=shift_amount[1]) for poly in normalized_org_bldg]
+    moved_polygon, shift_amount = move_polygon_center_to_midpoint(normalized_polygon)
 
-fig, ax = plt.subplots(figsize=(8, 8))
+    normalized_org_bldg = [transform(normalize, poly) for poly in org_bldg]
+    shifted_org_bldg = [translate(poly, xoff=shift_amount[0], yoff=shift_amount[1]) for poly in normalized_org_bldg]
 
-for norm_polygon in shifted_org_bldg:
-    x, y = norm_polygon.exterior.xy
-    ax.plot(x, y, color='black', linewidth=0.5)
+    fig, ax = plt.subplots(figsize=(8, 8))
 
-ax.set_xticks([])
-ax.set_yticks([])
+    for norm_polygon in shifted_org_bldg:
+        x, y = norm_polygon.exterior.xy
+        ax.plot(x, y, color='black', linewidth=0.5)
 
-# plt.grid(False)
-plt.xlim(0, 1)
-plt.ylim(0, 1)
-plt.savefig('inverse_cst_test_normalized.png', dpi=32, bbox_inches='tight', pad_inches=0)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # plt.grid(False)
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
+    plt.savefig(f'figure/pred_{str(idx - 1)}.png', dpi=32, bbox_inches='tight', pad_inches=0)
