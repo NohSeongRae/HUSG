@@ -49,18 +49,30 @@ class GraphDataset(torch.utils.data.Dataset):
         adj_matrix = self.create_boundary_building_adjmatrix(boundary_graph, building_graph, combined_edge_index)
 
         return boundary_data, building_data, adj_matrix
+
     def convert_to_pyg_data(self, nx_graph, feature_key):
-        #Convert node features
-        node_features_list = [nx_graph.nodes[node][feature_key] for node in nx_graph.nodes()]
+        # Check if the graph is empty
+        if nx_graph.number_of_nodes() == 0 or nx_graph.number_of_edges() == 0:
+            # Handle the empty graph case. Options:
+            # Option 1: Return an empty Data object
+            data = Data(x=torch.empty((0, 0)), edge_index=torch.empty((2, 0), dtype=torch.long))
+            return data
+            # Option 2: Log a warning and return an empty Data object
+            # print(f"Warning: Empty graph encountered for feature_key {feature_key}")
+            # return Data(x=torch.empty((0, 0)), edge_index=torch.empty((2, 0), dtype=torch.long))
+            # Option 3: Raise an exception if an empty graph should never occur
+            # raise ValueError(f"Empty graph encountered for feature_key {feature_key}")
+
+        # If the graph is not empty, proceed as normal
+        node_features_list = [nx_graph.nodes[node].get(feature_key, np.zeros(1)) for node in nx_graph.nodes()]
         node_features_array = np.array(node_features_list)  # Convert list of numpy arrays to single numpy array
         node_features = torch.tensor(node_features_array, dtype=torch.float32)  # Convert numpy array to tensor
 
-        # Convert edges
         edge_index = nx.to_scipy_sparse_matrix(nx_graph).tocoo()
-        edge_index=torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
+        edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
         # Create PyG Data object
-        data=Data(x=node_features, edge_index=edge_index, num_nodes=nx_graph.number_of_nodes())
+        data = Data(x=node_features, edge_index=edge_index, num_nodes=nx_graph.number_of_nodes())
         return data
 
     def create_boundary_building_adjmatrix(self, boundary_graph, building_graph, combined_edge_index):
