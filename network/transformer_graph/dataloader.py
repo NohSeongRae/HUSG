@@ -1,12 +1,12 @@
 import torch
 import networkx as nx
-from torch_geometric.data import Data
+from torch_geometric.data import Data, Dataset
 import numpy as np
 import os
 import pickle
 
 
-class GraphDataset(torch.utils.data.Dataset):
+class GraphDataset(Dataset):
     """
     Dataset class for boundary data.
     """
