@@ -30,7 +30,7 @@ class DecoderLayer(nn.Module):
     def forward(self, dec_input, enc_output):
         dec_output = None
 
-        dec_output = self.enc_attn(dec_input, enc_output, enc_output, mask=enc_mask)
+        dec_output = self.enc_attn(dec_input, enc_output, enc_output)
         dec_output = self.pos_ffn(dec_output)
 
         return dec_output

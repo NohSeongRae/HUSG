@@ -2,6 +2,11 @@ import torch
 import torch.nn as nn
 from module import ScaledDotProductAttention
 
+
+def attention_mask(batch):
+    """batch 벡터를 기반으로 마스크 행렬을 생성합니다."""
+    mask = torch.eq(batch[:, None], batch[None, :])  # 같은 배치 내의 노드들에 대해서만 True
+    return mask.unsqueeze(0)
 class MultiHeadAttention(nn.Module):
     def __init__(self, n_head=8, d_model=512, dropout=0.1):
         super(MultiHeadAttention, self).__init__()
@@ -18,7 +23,8 @@ class MultiHeadAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
-    def forward(self, q, k, v, mask=None):
+    def forward(self, q, k, v,batch, mask=None):
+        mask = attention_mask(batch).to(q.device)
         d_k, d_v, n_head = self.d_model // self.n_head, self.d_model // self.n_head, self.n_head
         sz_b, len_q, len_k, len_v = q.size(0), q.size(1), k.size(1), v.size(1)
         residual = q
