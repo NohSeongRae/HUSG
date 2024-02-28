@@ -11,9 +11,9 @@ class GraphDataset(torch.utils.data.Dataset):
     Dataset class for boundary data.
     """
     def __init__(self,data_type):
-        data_path = './processed_graphs/train_condition/atlanta'
+        data_path = '/data/ssw03270/datasets/'
         self.data_type = data_type
-        self.load_path = os.path.join(data_path, f'{data_type}_condition', 'atlanta')  # Corrected path
+        self.load_path = os.path.join(data_path,  'atlanta')  # Corrected path
         self.gpickle_files = [f for f in os.listdir(self.load_path) if f.endswith('.gpickle')]
         self.gpickle_files.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))  # Sort files numerically
         self.data_length = len(self.gpickle_files)  # Total number of files
