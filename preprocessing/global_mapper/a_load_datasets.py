@@ -160,12 +160,17 @@ def make_edge():
     return edge_indices
 
 def mapping(x_pos, y_pos):
+    x_min = min(x_pos)
+    x_max = max(x_pos)
+    y_min = min(y_pos)
+    y_max = max(y_pos)
+
     # 그리드 사이즈 + 2
-    rows, cols = 5, 42
+    rows, cols = 3, 40
 
     # 행과 열에 대한 분할 점 계산
-    y_divisions = np.linspace(-1, 1, rows)[1: -1]
-    x_divisions = np.linspace(-1, 1, cols)[1: -1]
+    y_divisions = np.linspace(y_min, y_max, rows)[:]
+    x_divisions = np.linspace(x_min, x_max, cols)[:]
 
     # 모든 교차점의 x, y 좌표를 계산
     x_coords, y_coords = np.meshgrid(x_divisions, y_divisions)

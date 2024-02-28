@@ -128,8 +128,6 @@ def generate_datasets(idx, data_type):
             plt.gca().add_patch(
                 plt.Rectangle((x[i], y[i]), size_x[i], size_y[i], linewidth=1, edgecolor='r', facecolor='none'))
 
-        plt.show()
-
     is_test_save = True
     if is_test_save:
         scaled_mask, dx = insidemask(simplified_polygon)
@@ -212,7 +210,10 @@ def generate_datasets(idx, data_type):
         G.graph['polygon'] = simplified_polygon
         G.graph['binary_mask'] = scaled_mask
         G.graph['block_scale'] = 1 / abs(dx)
-        output_file_path = 'datasets/val'
+
+        # plt.show()
+
+        output_file_path = 'datasets/test'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
 
@@ -220,7 +221,7 @@ def generate_datasets(idx, data_type):
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'val'
+    data_type = 'test'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
