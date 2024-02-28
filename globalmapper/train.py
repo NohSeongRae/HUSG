@@ -238,6 +238,17 @@ class Trainer:
                         loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
                         loss_kl = self.kl_loss(mu, log_var)
 
+                        # loss_pos를 전체 노드와 공유하여 모든 노드에서의 최대 값을 얻음
+                        loss_pos_global_max = torch.tensor([loss_pos.item()]).to(self.device)
+                        dist.all_reduce(loss_pos_global_max, op=dist.ReduceOp.MAX)
+                        loss_size_global_max = torch.tensor([loss_size.item()]).to(self.device)
+                        dist.all_reduce(loss_size_global_max, op=dist.ReduceOp.MAX)
+
+                        # 모든 노드에서 최대 loss_pos 값이 10을 초과하는지 확인
+                        if loss_pos_global_max > 10 or loss_size_global_max > 10:
+                            # 모든 노드에서 연산을 건너뛴다.
+                            continue
+
                         dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
