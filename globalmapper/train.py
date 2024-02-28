@@ -168,7 +168,7 @@ class Trainer:
             total_size_loss = torch.Tensor([0.0]).to(self.device)
             total_kl_loss = torch.Tensor([0.0]).to(self.device)
 
-            for data in tqdm(self.train_dataloader):
+            for data in self.train_dataloader:
                 self.optimizer.zero_grad()
 
                 data = data.to(device=self.device)
@@ -204,8 +204,8 @@ class Trainer:
                 total_pos_loss += loss_pos
                 total_size_loss += loss_size
                 total_kl_loss += loss_kl
-                if self.local_rank == 0:
-                    print(loss_pos, loss_size, loss_kl)
+                # if self.local_rank == 0:
+                #     print(loss_pos, loss_size, loss_kl)
 
             if self.local_rank == 0:
                 loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
@@ -228,7 +228,7 @@ class Trainer:
                 total_kl_loss = torch.Tensor([0.0]).to(self.device)
 
                 with torch.no_grad():
-                    for data in tqdm(self.val_dataloader):
+                    for data in self.val_dataloader:
                         data = data.to(device=self.device)
                         output_pos, output_size, mu, log_var = self.cvae(data)
 
