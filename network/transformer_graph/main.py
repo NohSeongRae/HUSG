@@ -296,10 +296,11 @@ if __name__ == '__main__':
         wandb.config.update(opt)
 
     # Create a Trainer instance and start the training process
-    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch,d_unit=opt.d_unit, d_model=opt.d_model, n_layer=opt.n_layer, n_head=opt.n_head,
-                      n_building=opt.n_building, n_boundary=opt.n_boundary, use_tensorboard=opt.use_tensorboard,
-                      dropout=opt.dropout, use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
-                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,  lr=opt.lr,
+    trainer = Trainer(batch_size=opt.batch_size, max_epoch=opt.max_epoch,dropout=opt.dropout, lr=opt.lr,
+                      d_unit=opt.d_unit, d_model=opt.d_model,
+                      n_layer=opt.n_layer, n_head=opt.n_head,n_building=opt.n_building, n_boundary=opt.n_boundary,
+                      use_tensorboard=opt.use_tensorboard,use_checkpoint=opt.use_checkpoint, checkpoint_epoch=opt.checkpoint_epoch,
+                      val_epoch=opt.val_epoch, save_epoch=opt.save_epoch,
                       use_global_attn=opt.use_global_attn,local_rank=opt.local_rank,
                       save_dir_path=opt.save_dir_path)
 

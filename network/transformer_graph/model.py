@@ -131,6 +131,7 @@ class BuildingEncoder(nn.Module):
         return enc_output
 class GraphCrossAttention(nn.Module):
     def __init__(self, n_layer=6, n_head=8, n_building=120,n_boundary=200, d_model=512, d_inner=2048, dropout=0.1):
+        super(GraphCrossAttention, self).__init__()
         self.num_heads = n_head
         self.d_model = d_model
 
