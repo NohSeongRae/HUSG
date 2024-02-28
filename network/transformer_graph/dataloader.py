@@ -6,7 +6,7 @@ import os
 import pickle
 
 
-class GraphDataset(Dataset):
+class GraphDataset(torch.utils.data.Dataset):
     """
     Dataset class for boundary data.
     """
@@ -19,7 +19,7 @@ class GraphDataset(Dataset):
         self.data_length = len(self.gpickle_files)  # Total number of files
     def __len__(self):
         return self.data_length
-    def get(self, idx):
+    def __getitem__(self, idx):
         #Load the combined graph
         load_path=os.path.join(self.load_path, self.gpickle_files[idx]) #path including data filename
         with open(load_path, 'rb') as f:
