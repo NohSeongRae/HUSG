@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from transformers.optimization import AdamW, get_cosine_schedule_with_warmup
 import torch.distributed as dist
+from torch_geometric.data import Batch
 
 import numpy as np
 import random
@@ -78,13 +79,13 @@ class Trainer:
         # Only the first dataset initialization will load the full dataset from disk
         self.train_dataset = GraphDataset(data_type='train')
         self.train_sampler = torch.utils.data.DistributedSampler(dataset=self.train_dataset, rank=rank)
-        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=False,
+        self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True,collate_fn=Batch.from_data_list,
                                            sampler=self.train_sampler, num_workers=8, pin_memory=True)
         print('here we are, train_dataset success')
         # Subsequent initializations will use the already loaded full dataset
         self.val_dataset = GraphDataset(data_type='val')
         self.val_sampler = torch.utils.data.DistributedSampler(dataset=self.val_dataset, rank=rank)
-        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False,
+        self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True,collate_fn=Batch.from_data_list,
                                          sampler=self.val_sampler, num_workers=8, pin_memory=True)
 
         # Initialize the Transformer model
