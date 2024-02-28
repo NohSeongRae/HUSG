@@ -81,50 +81,102 @@ class PositionalEncoding(nn.Module):
         return self.pos_table[:, :x.size(1)].clone().detach()
 
 class BoundaryEncoder(nn.Module):
-    def __init__(self, n_layer=6, n_head=8, d_model=512, d_inner=2048, d_unit=8, d_street=64,
-                 dropout=0.1, use_global_attn=True, use_street_attn=True, use_local_attn=True):
+    def __init__(self, n_layer=6, n_head=8, d_model=512, d_inner=2048, d_unit=8, 
+                 dropout=0.1, use_global_attn=True):
         super(BoundaryEncoder, self).__init__()
 
         self.pos_enc = nn.Linear(2, 1)
         self.unit_enc = nn.Linear(d_unit, d_model)
-        self.street_enc = nn.Linear(d_street, d_model)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
             EncoderLayer(d_model=d_model, d_inner=d_inner, n_head=n_head, dropout=dropout,
-                         use_global_attn=use_global_attn, use_street_attn=use_street_attn, use_local_attn=use_local_attn)
+                         use_global_attn=use_global_attn)
             for _ in range(n_layer)
         ])
 
-    def forward(self, src_unit_seq, src_street_seq, global_mask, street_mask, local_mask):
+    def forward(self, src_unit_seq, global_mask):
         src_unit_seq = self.pos_enc(src_unit_seq).squeeze(dim=-1)
-        src_street_seq = self.pos_enc(src_street_seq).squeeze(dim=-1)
 
-        enc_output = self.unit_enc(src_unit_seq) + self.street_enc(src_street_seq)
+        enc_output = self.unit_enc(src_unit_seq)
         enc_output = self.dropout(enc_output)
 
         for enc_layer in self.layer_stack:
-            enc_output = enc_layer(enc_output, global_mask, street_mask, local_mask)
+            enc_output = enc_layer(enc_output, global_mask)
 
         return enc_output
 
+class BuildingEncoder(nn.Module):
+    def __init__(self, n_layer=6, n_head=8, d_model=512, d_inner=2048, d_unit=8, 
+                 dropout=0.1, use_global_attn=True):
+        super(BuildingEncoder, self).__init__()
+
+        self.pos_enc = nn.Linear(2, 1)
+        self.unit_enc = nn.Linear(d_unit, d_model)
+        self.dropout = nn.Dropout(dropout)
+        self.layer_stack = nn.ModuleList([
+            EncoderLayer(d_model=d_model, d_inner=d_inner, n_head=n_head, dropout=dropout,
+                         use_global_attn=use_global_attn)
+            for _ in range(n_layer)
+        ])
+
+    def forward(self, src_unit_seq, global_mask):
+        src_unit_seq = self.pos_enc(src_unit_seq).squeeze(dim=-1)
+
+        enc_output = self.unit_enc(src_unit_seq)
+        enc_output = self.dropout(enc_output)
+
+        for enc_layer in self.layer_stack:
+            enc_output = enc_layer(enc_output, global_mask)
+
+        return enc_output
+class GraphCrossAttention(nn.Module):
+    def __init__(self, n_layer=6, n_head=8, n_building=120,n_boundary=200, d_model=512, d_inner=2048, dropout=0.1):
+        self.num_heads = n_head
+        self.d_model = d_model
+
+        self.type_emb = nn.Embedding(2, d_model)
+        self.building_count_emb = nn.Embedding(n_building , d_model)
+        self.boundary_count_emb=nn.Embedding(n_boundary, d_model)
+        self.building_node_enc = nn.Linear(n_building, d_model)
+        self.boundary_node_enc=nn.Linear(n_boundary, d_model)
+        self.building_pos_enc = PositionalEncoding( n_building,d_model)
+        self.boundary_pos_enc = PositionalEncoding( n_boundary,d_model) #n_boundary=200
+
+        self.dropout = nn.Dropout(dropout)
+        self.cross_attention=nn.ModuleList([
+           DecoderLayer(d_model, d_inner, n_head, dropout)
+           for _ in range(n_layer)
+        ])
+    def forward(self, building_adj, boundary_adj, is_building_tensor,is_boundary_tensor, n_building_node,n_boundary_node):
+        dec_output = (self.building_node_enc(building_adj) + self.type_emb(is_building_tensor.long())
+                      + self.building_pos_enc(building_adj) + self.building_count_emb(n_building_node))
+        dec_output = self.dropout(dec_output)
+        boundary_enc= (self.boundary_node_enc(boundary_adj) + self.type_emb(is_boundary_tensor.long())
+                       + self.boundary_pos_enc(boundary_adj) + self.boundary_count_emb(n_boundary_node))
+        boundary_enc= self.dropout(boundary_enc)
+        for dec_layer in self.layer_stack:
+            dec_output = dec_layer(dec_output, boundary_enc)
+
+        return dec_output
+        
 class GraphDecoder(nn.Module):
     def __init__(self, n_layer=6, n_head=8, n_building=120, n_street=50, d_model=512, d_inner=2048, dropout=0.1,
-                 use_global_attn=True, use_street_attn=True, use_local_attn=True):
+                 use_global_attn=True):
         super(GraphDecoder, self).__init__()
 
         self.type_emb = nn.Embedding(2, d_model)
-        self.count_emb = nn.Embedding(n_building + n_street, d_model)
+        self.count_emb = nn.Embedding(n_building , d_model)
         self.node_enc = nn.Linear(n_building + n_street, d_model)
         self.pos_enc = PositionalEncoding(d_model, n_building=n_building + n_street)
         self.dropout = nn.Dropout(dropout)
         self.layer_stack = nn.ModuleList([
            DecoderLayer(d_model, d_inner, n_head, dropout,
-                        use_global_attn=use_global_attn, use_street_attn=use_street_attn, use_local_attn=use_local_attn)
+                        use_global_attn=use_global_attn)
            for _ in range(n_layer)
         ])
         self.d_model = d_model
 
-    def forward(self, dec_input, enc_output, is_building_tensor, n_building_node, global_mask, street_mask, local_mask, enc_mask):
+    def forward(self, dec_input, enc_output, is_building_tensor, n_building_node, global_mask, local_mask, enc_mask):
         dec_output = self.node_enc(dec_input) + self.type_emb(is_building_tensor.long()) + self.pos_enc(dec_input) + self.count_emb(n_building_node)
         dec_output = self.dropout(dec_output)
 
@@ -136,7 +188,7 @@ class GraphDecoder(nn.Module):
 class GraphTransformer(nn.Module):
     def __init__(self, n_building=120, n_street=50, d_model=512, d_inner=2048, sos_idx=2, eos_idx=3, pad_idx=4,
                  n_layer=6, n_head=8, dropout=0.1, d_unit=8, d_street=64,
-                 use_global_attn=True, use_street_attn=True, use_local_attn=True, local_rank=0):
+                 use_global_attn=True, local_rank=0):
         super(GraphTransformer, self).__init__()
 
         self.sos_idx = sos_idx    # [2, 2, 2, ..., 2]
@@ -148,12 +200,10 @@ class GraphTransformer(nn.Module):
 
         self.encoder = BoundaryEncoder(n_layer=n_layer, n_head=n_head, d_model=d_model, d_inner=d_inner,
                                        d_unit=d_unit, d_street=d_street, dropout=0.1,
-                                       use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                                       use_local_attn=use_local_attn)
+                                       use_global_attn=use_global_attn)
         self.decoder = GraphDecoder(n_layer=n_layer, n_head=n_head, n_building=n_building, n_street=n_street,
                                     d_model=d_model, d_inner=d_inner, dropout=0.1,
-                                    use_global_attn=use_global_attn, use_street_attn=use_street_attn,
-                                    use_local_attn=use_local_attn)
+                                    use_global_attn=use_global_attn)
 
         self.dropout = nn.Dropout(dropout)
         self.adj_fc = nn.Linear(d_model, n_building + n_street)
