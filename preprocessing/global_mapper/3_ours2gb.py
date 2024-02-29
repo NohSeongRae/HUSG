@@ -106,7 +106,7 @@ def generate_datasets(idx, data_type):
         print('저장 하지 않음 2')
         return
 
-    is_vis = True
+    is_vis = False
     if is_vis:
         x, y = medaxis.xy
         # plt.plot(x, y, '-', color='blue', label='Line')
@@ -210,10 +210,9 @@ def generate_datasets(idx, data_type):
         G.graph['polygon'] = simplified_polygon
         G.graph['binary_mask'] = scaled_mask
         G.graph['block_scale'] = 1 / abs(dx)
+        G.graph['building_polygon'] = buildings
 
-        plt.show()
-
-        output_file_path = 'datasets/test'
+        output_file_path = f'datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
 

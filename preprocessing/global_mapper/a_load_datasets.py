@@ -198,7 +198,7 @@ def mapping(x_pos, y_pos):
         closest_index = np.argmin(dist_squared)
         used_indices.append(closest_index)
 
-        plt.scatter(coordinates[closest_index][0], coordinates[closest_index][1], color='r')
+        # plt.scatter(coordinates[closest_index][0], coordinates[closest_index][1], color='r')
         node_indices[closest_index] = idx + 1
 
     return node_indices
