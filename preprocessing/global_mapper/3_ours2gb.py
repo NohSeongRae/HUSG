@@ -106,7 +106,7 @@ def generate_datasets(idx, data_type):
         print('저장 하지 않음 2')
         return
 
-    is_vis = False
+    is_vis = True
     if is_vis:
         x, y = medaxis.xy
         # plt.plot(x, y, '-', color='blue', label='Line')
@@ -211,7 +211,7 @@ def generate_datasets(idx, data_type):
         G.graph['binary_mask'] = scaled_mask
         G.graph['block_scale'] = 1 / abs(dx)
 
-        # plt.show()
+        plt.show()
 
         output_file_path = 'datasets/test'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
