@@ -63,9 +63,11 @@ def generate_datasets(idx, data_type):
         buildings = pickle.load(file)
 
     building_polygons = []
+    original_building_polygons = []
     for building in buildings:
         building_polygon = shapely.minimum_rotated_rectangle(Polygon(building.T))
         building_polygons.append(building_polygon)
+        original_building_polygons.append(Polygon(building.T))
 
     graph = nx.read_gpickle(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
@@ -191,6 +193,7 @@ def generate_datasets(idx, data_type):
                 G.nodes[node]['shape'] = b_shape[building_index]
                 G.nodes[node]['iou'] = b_iou[building_index]
                 G.nodes[node]['height'] = 0.0
+                G.nodes[node]['polygon'] = original_building_polygons[building_index]
 
             else:
                 G.nodes[node]['old_label'] = graph_nodes_list[node]
@@ -203,6 +206,7 @@ def generate_datasets(idx, data_type):
                 G.nodes[node]['shape'] = 0.0
                 G.nodes[node]['iou'] = 0.0
                 G.nodes[node]['height'] = 0.0
+                G.nodes[node]['polygon'] = original_building_polygons[0]
 
         G.graph['aspect_ratio'] = aspect_rto
         G.graph['long_side'] = 0.0
@@ -210,7 +214,6 @@ def generate_datasets(idx, data_type):
         G.graph['polygon'] = simplified_polygon
         G.graph['binary_mask'] = scaled_mask
         G.graph['block_scale'] = 1 / abs(dx)
-        G.graph['building_polygon'] = buildings
 
         output_file_path = f'datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
