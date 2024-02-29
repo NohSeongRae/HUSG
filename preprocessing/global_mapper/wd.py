@@ -66,3 +66,11 @@ wd_wh = np.mean([
 
 # print(wd_xy, wd_wh, wd_theta)
 print(wd_xy, wd_wh)
+print(np.min(xy[:, 0]))
+print(np.max(xy[:, 0]))
+print(np.min(xy[:, 1]))
+print(np.max(xy[:, 1]))
+print(np.min(xy_gt[:, 0]))
+print(np.max(xy_gt[:, 0]))
+print(np.min(xy_gt[:, 1]))
+print(np.max(xy_gt[:, 1]))

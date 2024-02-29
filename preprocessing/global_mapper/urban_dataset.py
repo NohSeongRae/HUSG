@@ -207,7 +207,11 @@ def graph2vector_processed(g):
     else:
         b_iou = np.array(b_iou)
 
-    return node_size, node_pos, node_attr, edge_list, node_idx, asp_rto, longside, b_shape, b_iou
+    building_polygons = []
+    for node in g.nodes():
+       building_polygons.append(g.nodes[node]['polygon'])
+
+    return node_size, node_pos, node_attr, edge_list, node_idx, asp_rto, longside, b_shape, b_iou, building_polygons
 
 
 def test_graph_transform(data):
