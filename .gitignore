@@ -10,4 +10,5 @@ paths.py
 Heatmap/model/ubuntu_copy/
 preprocessing/global_mapper/datasets/
 preprocessing/global_mapper/output/
+preprocessing/global_mapper/figure/
 *.pth
