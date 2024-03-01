@@ -628,6 +628,8 @@ def warp_bldg_by_midaxis(bldg, block, midaxis):
     pos_sort = np.lexsort((normalized_pos[:, 1], normalized_pos[:, 0]))
     pos_sorted = normalized_pos[pos_sort]
     size_sorted = normalized_size[pos_sort]
+    # pos_sorted = normalized_pos[:]
+    # size_sorted = normalized_size[:]
 
     aspect_rto = np.double(mean_block_width) / np.double(midaxis_length)
 

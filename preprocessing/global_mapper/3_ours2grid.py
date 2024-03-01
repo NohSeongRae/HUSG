@@ -215,7 +215,7 @@ def generate_datasets(idx, data_type):
         G.graph['binary_mask'] = scaled_mask
         G.graph['block_scale'] = 1 / abs(dx)
 
-        output_file_path = f'datasets/{data_type}'
+        output_file_path = f'grid_graph_datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
 
@@ -223,7 +223,7 @@ def generate_datasets(idx, data_type):
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'test'
+    data_type = 'val'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
