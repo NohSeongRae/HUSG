@@ -19,7 +19,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=8)
 
     cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
-                     condition_type=condition_type, convlayer=convlayer, image_size=224).to(device=device)
+                     condition_type=condition_type, convlayer=convlayer, image_size=64).to(device=device)
 
     if checkpoint_epoch == 0:
         checkpoint_epoch = 'best'
@@ -32,7 +32,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
         for data in tqdm(test_dataloader):
             data, graph = data
             import pickle
-            load_path = '../preprocessing/global_mapper/datasets/globalmapper_datasets/test/' + graph[0]
+            load_path = '../preprocessing/global_mapper/gt_graph_datasets/test/' + graph[0]
             with open(load_path, 'rb') as f:
                 graph = pickle.load(f)
 
