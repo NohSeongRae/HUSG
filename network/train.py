@@ -113,11 +113,17 @@ class Trainer:
             for data in self.train_dataloader:
                 self.optimizer.zero_grad()
 
-                data = data.to(device=self.device)
-                output = self.transformer(data['building_adj_matrix_padded'], data['boundary_adj_matrix_padded'],
-                                          data['building_pad_mask'], data['boundary_pad_mask'])
+                building_adj_matrix_padded = torch.tensor(data['building_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
+                boundary_adj_matrix_padded = torch.tensor(data['boundary_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
+                bb_adj_matrix_padded = torch.tensor(data['bb_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
+                building_pad_mask = torch.tensor(data['building_pad_mask'], dtype=torch.bool).to(device=self.device)
+                boundary_pad_mask = torch.tensor(data['boundary_pad_mask'], dtype=torch.bool).to(device=self.device)
+                bb_pad_mask = torch.tensor(data['bb_pad_mask'], dtype=torch.bool).to(device=self.device)
 
-                loss = self.cross_entropy_loss(output, data['bb_adj_matrix_padded'].detach(), data['bb_pad_mask'])
+                output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
+                                          building_pad_mask, boundary_pad_mask)
+
+                loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask)
 
                 loss_total.backward()
                 self.optimizer.step()
@@ -143,13 +149,17 @@ class Trainer:
 
                 with torch.no_grad():
                     for data in self.val_dataloader:
-                        data = data.to(device=self.device)
-                        output = self.transformer(data['building_adj_matrix_padded'],
-                                                  data['boundary_adj_matrix_padded'],
-                                                  data['building_pad_mask'], data['boundary_pad_mask'])
+                        building_adj_matrix_padded = torch.tensor(data['building_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
+                        boundary_adj_matrix_padded = torch.tensor(data['boundary_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
+                        bb_adj_matrix_padded = torch.tensor(data['bb_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
+                        building_pad_mask = torch.tensor(data['building_pad_mask'], dtype=torch.bool).to(device=self.device)
+                        boundary_pad_mask = torch.tensor(data['boundary_pad_mask'], dtype=torch.bool).to(device=self.device)
+                        bb_pad_mask = torch.tensor(data['bb_pad_mask'], dtype=torch.bool).to(device=self.device)
 
-                        loss = self.cross_entropy_loss(output, data['bb_adj_matrix_padded'].detach(),
-                                                       data['bb_pad_mask'])
+                        output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
+                                                  building_pad_mask, boundary_pad_mask)
+
+                        loss = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask)
 
                         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
 

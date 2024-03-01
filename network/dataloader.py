@@ -39,7 +39,6 @@ class GraphDataset(Dataset):
         # 패딩 마스크 생성: 실제 데이터는 0, 패딩 부분은 1
         pad_mask = np.zeros_like(padded_matrix, dtype=np.float32)
         pad_mask[:original_shape[0], :original_shape[1]] = 1  # 실제 데이터 부분을 1로 설정
-        pad_mask = 1 - pad_mask  # 실제 데이터 부분을 0, 패딩 부분을 1로 변환
 
         return padded_matrix, pad_mask
 
