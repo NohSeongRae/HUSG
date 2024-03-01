@@ -152,7 +152,7 @@ def graph2vector_processed(g):
     b_shape = get_node_attribute(g, 'shape', np.int_)
     b_iou = get_node_attribute(g, 'iou', np.double)
 
-    node_attr = np.stack((exist.squeeze(), merge), 1)
+    node_attr = np.stack((exist, merge), 1)
 
     edge_list = np.array(list(g.edges()), dtype=np.int_)
     edge_list = np.transpose(edge_list)
