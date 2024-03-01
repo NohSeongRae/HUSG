@@ -42,7 +42,7 @@ class BoundaryEncoder(nn.Module):
         ])
 
     def forward(self, boundary, enc_mask):
-        enc_input = torch.cat([boundary, self.pos_enc(boundary)], dim=1)
+        enc_input = torch.cat([boundary, self.pos_enc(boundary)], dim=2)
         enc_input = self.enc_init(enc_input)
         enc_output = self.dropout(enc_input)
 
@@ -66,7 +66,7 @@ class BuildingDncoder(nn.Module):
         ])
 
     def forward(self, building, boundary, dec_mask, enc_mask):
-        dec_input = torch.cat([building, self.pos_enc(building)], dim=1)
+        dec_input = torch.cat([building, self.pos_enc(building)], dim=2)
         dec_input = self.dec_init(dec_input)
         dec_output = self.dropout(dec_input)
 
