@@ -37,8 +37,8 @@ class GraphDataset(Dataset):
         padded_matrix = np.pad(matrix, pad_width=pad_width, mode='constant', constant_values=0)
 
         # 패딩 마스크 생성: 실제 데이터는 0, 패딩 부분은 1
-        pad_mask = np.zeros(pad_shape, dtype=np.float32)
-        pad_mask[:original_shape[0]] = 1  # 실제 데이터 부분을 1로 설정
+        pad_mask = np.zeros_like(padded_matrix, dtype=np.float32)
+        pad_mask[:original_shape[0], :original_shape[1]] = 1  # 실제 데이터 부분을 1로 설정
 
         return padded_matrix, pad_mask
 
@@ -60,8 +60,8 @@ class GraphDataset(Dataset):
             'boundary_adj_matrix_padded': boundary_adj_matrix_padded,
             'building_adj_matrix_padded': building_adj_matrix_padded,
             'bb_adj_matrix_padded': bb_adj_matrix_padded,
-            'boundary_pad_mask': boundary_pad_mask,
-            'building_pad_mask': building_pad_mask,
+            'boundary_pad_mask': boundary_pad_mask[:, 0],
+            'building_pad_mask': building_pad_mask[:, 0],
             'bb_pad_mask': bb_pad_mask
         }
 
