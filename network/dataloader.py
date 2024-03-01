@@ -57,12 +57,12 @@ class GraphDataset(Dataset):
         bb_adj_matrix_padded, bb_pad_mask = self.pad_matrix(bb_adj_matrix, (120, 200))
 
         return {
-            'boundary_adj_matrix_padded': boundary_adj_matrix_padded,
-            'building_adj_matrix_padded': building_adj_matrix_padded,
-            'bb_adj_matrix_padded': bb_adj_matrix_padded,
-            'boundary_pad_mask': boundary_pad_mask[:, 0],
-            'building_pad_mask': building_pad_mask[:, 0],
-            'bb_pad_mask': bb_pad_mask
+            'boundary_adj_matrix_padded': torch.tensor(boundary_adj_matrix_padded, dtype=torch.float32),
+            'building_adj_matrix_padded': torch.tensor(building_adj_matrix_padded, dtype=torch.float32),
+            'bb_adj_matrix_padded': torch.tensor(bb_adj_matrix_padded, dtype=torch.float32),
+            'boundary_pad_mask': torch.tensor(boundary_pad_mask, dtype=torch.bool)[:, 0],
+            'building_pad_mask': torch.tensor(building_pad_mask, dtype=torch.bool)[:, 0],
+            'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool)
         }
 
     def __len__(self):
