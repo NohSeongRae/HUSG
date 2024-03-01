@@ -265,7 +265,7 @@ class GraphDecoder(nn.Module):
     def forward(self, z, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
-        z = z.view(z.shape[0] * self.N, -1)
+        z = z[batch]
 
         one_hot = self.node_order_within_batch(batch)
         z = torch.cat([z, one_hot], 1)
