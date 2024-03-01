@@ -143,7 +143,7 @@ class Trainer:
 
             if self.local_rank == 0:
                 loss_mean = total_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
-                correct_mean = total_correct.item() / total_problem
+                correct_mean = total_correct.item() / total_problem.item()
 
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss : {loss_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Accuracy : {correct_mean:.4f}")
@@ -183,10 +183,10 @@ class Trainer:
 
                     if self.local_rank == 0:
                         loss_mean = total_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
-                        correct_mean = total_correct.item() / total_problem
+                        correct_mean = total_correct.item() / total_problem.item()
 
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss: {loss_mean:.4f}")
-                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Accuracy:  {correct_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Accuracy: {correct_mean:.4f}")
 
                         if self.use_tensorboard:
                             wandb.log({"Validation loss": loss_mean}, step=epoch + 1)
