@@ -73,22 +73,23 @@ class Trainer:
                                           betas=(0.9, 0.98))
 
     def cross_entropy_loss(self, pred, trg, pad_mask):
-        """
-        Compute the binary cross-entropy loss between predictions and targets.
-
-        Args:
-        - pred (torch.Tensor): Model predictions.
-        - trg (torch.Tensor): Ground truth labels.
-
-        Returns:
-        - torch.Tensor: Computed BCE loss.
-        """
         loss = F.binary_cross_entropy(pred, trg, reduction='none')
 
         # mask 적용
         masked_loss = loss * pad_mask.float()
         # 손실의 평균 반환
         return masked_loss.sum() / pad_mask.float().sum()
+
+    def correct_data(self, pred, trg, pad_mask):
+        predictions = (pred >= 0.5).float()
+
+        # 마스크가 참인 위치에서 예측값과 실제값이 일치하는지 확인
+        correct_predictions = (predictions == trg).float() * pad_mask
+
+        # 마스크가 참인 위치의 총 개수
+        masked_elements_count = pad_mask.sum().item()
+
+        return correct_predictions.sum().item(), masked_elements_count
 
     def train(self):
         epoch_start = 0
@@ -109,6 +110,7 @@ class Trainer:
         for epoch in range(epoch_start, self.max_epoch):
             total_loss = torch.Tensor([0.0]).to(self.device)
             total_correct = torch.Tensor([0.0]).to(self.device)
+            total_problem = torch.Tensor([0.0]).to(self.device)
 
             for data in tqdm(self.train_dataloader):
                 self.optimizer.zero_grad()
@@ -122,30 +124,39 @@ class Trainer:
 
                 output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                           building_pad_mask, boundary_pad_mask)
-                print(output.shape, bb_adj_matrix_padded.shape, bb_pad_mask.shape)
-                loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask)
+
+                loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
                 loss.backward()
                 self.optimizer.step()
 
                 dist.all_reduce(loss, op=dist.ReduceOp.SUM)
+                dist.all_reduce(correct, op=dist.ReduceOp.SUM)
+                dist.all_reduce(problem, op=dist.ReduceOp.SUM)
 
                 total_loss += loss
+                total_correct += correct
+                total_problem += problem
                 # if self.local_rank == 0:
                 #     print(loss_pos, loss_size, loss_kl)
 
             if self.local_rank == 0:
                 loss_mean = total_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                correct_mean = total_correct.item() / total_problem
 
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss : {loss_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Accuracy : {correct_mean:.4f}")
 
                 if self.use_tensorboard:
                     wandb.log({"Train loss": loss_mean}, step=epoch + 1)
+                    wandb.log({"Train accuracy": correct_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
                 total_loss = torch.Tensor([0.0]).to(self.device)
                 total_correct = torch.Tensor([0.0]).to(self.device)
+                total_problem = torch.Tensor([0.0]).to(self.device)
 
                 with torch.no_grad():
                     for data in self.val_dataloader:
@@ -159,19 +170,27 @@ class Trainer:
                         output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                                   building_pad_mask, boundary_pad_mask)
 
-                        loss = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask)
+                        loss = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                        correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
                         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(correct, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(problem, op=dist.ReduceOp.SUM)
 
                         total_loss += loss
+                        total_correct += correct
+                        total_problem += problem
 
                     if self.local_rank == 0:
                         loss_mean = total_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        correct_mean = total_correct.item() / total_problem
 
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss: {loss_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Accuracy:  {correct_mean:.4f}")
 
                         if self.use_tensorboard:
                             wandb.log({"Validation loss": loss_mean}, step=epoch + 1)
+                            wandb.log({"Validation accuracy": correct_mean}, step=epoch + 1)
 
                             loss_total = loss_mean
                             if min_loss > loss_total:
