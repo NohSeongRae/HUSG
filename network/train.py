@@ -149,12 +149,12 @@ class Trainer:
 
                 with torch.no_grad():
                     for data in self.val_dataloader:
-                        building_adj_matrix_padded = torch.tensor(data['building_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
-                        boundary_adj_matrix_padded = torch.tensor(data['boundary_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
-                        bb_adj_matrix_padded = torch.tensor(data['bb_adj_matrix_padded'], dtype=torch.float32).to(device=self.device)
-                        building_pad_mask = torch.tensor(data['building_pad_mask'], dtype=torch.bool).to(device=self.device)
-                        boundary_pad_mask = torch.tensor(data['boundary_pad_mask'], dtype=torch.bool).to(device=self.device)
-                        bb_pad_mask = torch.tensor(data['bb_pad_mask'], dtype=torch.bool).to(device=self.device)
+                        building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=self.device)
+                        boundary_adj_matrix_padded = data['boundary_adj_matrix_padded'].to(device=self.device)
+                        bb_adj_matrix_padded = data['bb_adj_matrix_padded'].to(device=self.device)
+                        building_pad_mask = data['building_pad_mask'].to(device=self.device)
+                        boundary_pad_mask = data['boundary_pad_mask'].to(device=self.device)
+                        bb_pad_mask = data['bb_pad_mask'].to(device=self.device)
 
                         output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                                   building_pad_mask, boundary_pad_mask)
