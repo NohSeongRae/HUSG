@@ -132,8 +132,8 @@ class Trainer:
                 self.optimizer.step()
 
                 dist.all_reduce(loss, op=dist.ReduceOp.SUM)
-                dist.all_reduce(correct, op=dist.ReduceOp.SUM)
-                dist.all_reduce(problem, op=dist.ReduceOp.SUM)
+                dist.all_reduce(torch.tensor(correct), op=dist.ReduceOp.SUM)
+                dist.all_reduce(torch.tensor(problem), op=dist.ReduceOp.SUM)
 
                 total_loss += loss
                 total_correct += correct
@@ -174,8 +174,8 @@ class Trainer:
                         correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
                         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(correct, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(problem, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(torch.tensor(correct), op=dist.ReduceOp.SUM)
+                        dist.all_reduce(torch.tensor(problem), op=dist.ReduceOp.SUM)
 
                         total_loss += loss
                         total_correct += correct
