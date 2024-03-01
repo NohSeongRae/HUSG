@@ -215,7 +215,7 @@ class GraphDecoder(nn.Module):
         self.N = 120
         self.batch_size = batch_size
 
-        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim * self.N)
+        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
