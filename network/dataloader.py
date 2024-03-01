@@ -10,7 +10,7 @@ class GraphDataset(Dataset):
 
         self.data_type = data_type
 
-        self.folder_path = f'/local_datasets/gt_graph_datasets/{data_type}'
+        self.folder_path = f'/local_datasets/graph_generation_datasets/{data_type}'
         file_extension = '.pickle'
 
         count = 0
