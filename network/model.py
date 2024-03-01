@@ -66,7 +66,7 @@ class BuildingDncoder(nn.Module):
         ])
 
     def forward(self, building, boundary, dec_mask, enc_mask):
-        dec_input = torch.cat([building, self.pos_enc(building).expand(boundary.shape[0], -1, -1)], dim=2)
+        dec_input = torch.cat([building, self.pos_enc(building).expand(building.shape[0], -1, -1)], dim=2)
         dec_input = self.dec_init(dec_input)
         dec_output = self.dropout(dec_input)
 
