@@ -122,7 +122,7 @@ class Trainer:
 
                 output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                           building_pad_mask, boundary_pad_mask)
-
+                print(output.shape, bb_adj_matrix_padded.shape, bb_pad_mask.shape)
                 loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask)
 
                 loss.backward()
