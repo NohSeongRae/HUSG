@@ -30,7 +30,7 @@ class MultiHeadAttention(nn.Module):
         q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
 
         if mask is not None:
-            mask = mask.unsqueeze(1)
+            mask = mask.unsqueeze(1).unsqueeze(1)
 
         q, attn = self.attention(q, k, v, mask=mask)
 
