@@ -125,7 +125,7 @@ class Trainer:
 
                 loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask)
 
-                loss_total.backward()
+                loss.backward()
                 self.optimizer.step()
 
                 dist.all_reduce(loss, op=dist.ReduceOp.SUM)
