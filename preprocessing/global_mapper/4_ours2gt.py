@@ -142,6 +142,10 @@ def generate_datasets(idx, data_type):
         return
 
     th = 0.25
+    x_pos = [coord[0] for coord in pos_xsorted]
+    y_pos = [coord[1] for coord in pos_xsorted]
+    x_th = th / (max(x_pos) - min(x_pos))
+    y_th = th / (max(y_pos) - min(y_pos))
     edge_index = []
     # generate edge index
     for i, data_i in enumerate(zip(pos_xsorted, size_xsorted)):
@@ -179,9 +183,22 @@ def generate_datasets(idx, data_type):
 
             # Polygon 객체 생성
             polygon_j = Polygon(points)
-            dist = polygon_i.distance(polygon_j)
 
-            if dist < th:
+            def calculate_axis_distances(polygon_i, polygon_j):
+                bounds_i = polygon_i.bounds
+                bounds_j = polygon_j.bounds
+
+                # X 축 거리 계산
+                distance_x = max(0, max(bounds_i[0], bounds_j[0]) - min(bounds_i[2], bounds_j[2]))
+
+                # Y 축 거리 계산
+                distance_y = max(0, max(bounds_i[1], bounds_j[1]) - min(bounds_i[3], bounds_j[3]))
+
+                return distance_x, distance_y
+
+            x_dist, y_dist = calculate_axis_distances(polygon_i, polygon_j)
+
+            if x_dist < x_th and y_dist < y_th:
                 is_invalid = False
                 for k, data_k in enumerate(zip(pos_xsorted, size_xsorted)):
                     if i != k and j != k:
@@ -203,12 +220,12 @@ def generate_datasets(idx, data_type):
                             is_invalid = True
                             break
 
-                        center_1 = (polygon_i.centroid.x, polygon_i.centroid.y)
-                        center_2 = (polygon_j.centroid.x, polygon_j.centroid.y)
-                        check_line = LineString([center_1, center_2])
-                        if polygon_k.intersects(check_line):
-                            is_invalid = True
-                            break
+                        # center_1 = (polygon_i.centroid.x, polygon_i.centroid.y)
+                        # center_2 = (polygon_j.centroid.x, polygon_j.centroid.y)
+                        # check_line = LineString([center_1, center_2])
+                        # if polygon_k.intersects(check_line):
+                        #     is_invalid = True
+                        #     break
 
                 if not is_invalid:
                     edge_index.append([i, j])
@@ -294,7 +311,10 @@ def generate_datasets(idx, data_type):
                 if building_adj_matrix[i, j] == 1:
                     plt.plot([x[i], x[j]], [y[i], y[j]])
 
+        plt.xlim(-1, 1)
+        plt.ylim(-1, 1)
         plt.show()
+        plt.close()
 
     is_test_save = True
     if is_test_save:
@@ -368,7 +388,7 @@ def generate_datasets(idx, data_type):
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'train'
+    data_type = 'val'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
