@@ -15,6 +15,33 @@ from shapely.ops import transform
 import os
 from tqdm import tqdm
 import shapely
+import math
+def get_bbox_details(rotated_rectangle):
+    # 사각형의 꼭짓점들을 얻음
+    x, y = rotated_rectangle.exterior.coords.xy
+
+    min_angle = 999
+    min_idx = -1
+    for i in range(len(x) - 1):
+        dx = x[(i+1) % (len(x)-1)] - x[i]
+        dy = y[(i+1) % (len(y)-1)] - y[i]
+        angle = math.degrees(math.atan2(dy, dx))
+        if min_angle > abs(angle):
+            min_angle = abs(angle)
+            min_idx = i
+
+    idx = min_idx
+    w = math.sqrt((x[(idx + 1) % (len(y)-1)] - x[idx]) ** 2 + (y[(idx + 1) % (len(y)-1)] - y[idx]) ** 2)
+    h = math.sqrt((x[(idx + 2) % (len(y)-1)] - x[(idx + 1) % (len(y)-1)]) ** 2 + (y[(idx + 2) % (len(y)-1)] - y[(idx + 1) % (len(y)-1)]) ** 2)
+
+    dx = x[idx + 1] - x[idx]
+    dy = y[idx + 1] - y[idx]
+    theta = math.degrees(math.atan2(dy, dx))
+    theta = (theta + 45) / 90
+
+    # 좌하단 꼭짓점을 x, y로 선택
+    x, y = rotated_rectangle.centroid.x, rotated_rectangle.centroid.y
+    return x, y, w, h, theta
 
 def move_polygon_center_to_midpoint(polygon):
     minx, miny, maxx, maxy = polygon.bounds
@@ -74,20 +101,14 @@ for idx in tqdm(range(0, 12295)):
         x, y = norm_polygon.exterior.xy
         ax1.plot(x, y, color='k', label='Rotated Box')
 
-        # 꼭지점 좌표를 리스트로 변환
-        coords = list(zip(x, y))
-
         # 중심 좌표 구하기
         center = norm_polygon.centroid.coords[0]
         if not (0 <= center[0] <= 1) or not (0 <= center[0] <= 1):
             print('111111')
             continue
-        # 가로, 세로 길이 계산하기
-        # MRR의 변들은 순차적으로 인접해 있으므로, 첫 번째와 두 번째 꼭지점을 사용하여 하나의 변의 길이를,
-        # 첫 번째와 마지막 꼭지점을 사용하여 인접한 변의 길이를 계산할 수 있습니다.
-        width = Polygon([coords[0], coords[1], coords[2], coords[3]]).length / 2
-        height = Polygon([coords[0], coords[3], coords[2], coords[1]]).length / 2
-        pred_output_list.append([center[0], center[1], width, height])
+
+        x, y, w, h, theta = get_bbox_details(norm_polygon)
+        pred_output_list.append([x, y, w, h, theta])
 
     gt_graph = nx.read_gpickle(test_gt_graph)
     midaxis = gt_graph.graph['midaxis']
@@ -127,20 +148,8 @@ for idx in tqdm(range(0, 12295)):
 
     gt_output_list = []
     for norm_polygon in shifted_org_bldg:
-        x, y = norm_polygon.exterior.xy
-
-        # 꼭지점 좌표를 리스트로 변환
-        coords = list(zip(x, y))
-
-        # 중심 좌표 구하기
-        center = norm_polygon.centroid.coords[0]
-
-        # 가로, 세로 길이 계산하기
-        # MRR의 변들은 순차적으로 인접해 있으므로, 첫 번째와 두 번째 꼭지점을 사용하여 하나의 변의 길이를,
-        # 첫 번째와 마지막 꼭지점을 사용하여 인접한 변의 길이를 계산할 수 있습니다.
-        width = Polygon([coords[0], coords[1], coords[2], coords[3]]).length / 2
-        height = Polygon([coords[0], coords[3], coords[2], coords[1]]).length / 2
-        gt_output_list.append([center[0], center[1], width, height])
+        x, y, w, h, theta = get_bbox_details(norm_polygon)
+        gt_output_list.append([x, y, w, h, theta])
 
     for building in building_polygons:
         x, y = building.exterior.xy
