@@ -86,10 +86,10 @@ class Trainer:
         pad_mask = pad_mask.reshape(-1, 200)
 
         pred = torch.ge(pred, 0.5) * pad_mask
-        loss = F.mse_loss(pred, trg, reduction='none')
+        loss = F.mse_loss(torch.sum(pred, dim=-1), torch.sum(trg, dim=-1), reduction='none')
 
         # mask 적용
-        masked_loss = loss * pad_mask.float()
+        masked_loss = loss * pad_mask[:, 0].float()
         # 손실의 평균 반환
         return masked_loss.sum() / pad_mask.float().sum()
 
