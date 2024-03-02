@@ -30,14 +30,15 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     with torch.no_grad():
         idx = 0
         for data in tqdm(test_dataloader):
-            data, graph = data
+            data, graph_file = data
             import pickle
-            load_path = '../preprocessing/global_mapper/gt_graph_datasets/test/' + graph[0]
+            load_path = '../preprocessing/global_mapper/gt_graph_datasets/test/' + graph_file[0]
             with open(load_path, 'rb') as f:
                 graph = pickle.load(f)
 
             output_file_path = '../preprocessing/global_mapper/output/gt'
-            with open(f'{output_file_path}/{str(idx)}.gpickle', 'wb') as f:
+            file_name = graph_file[0].replace('.gpickle', '')
+            with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
 
             data = data.to(device=device)
@@ -62,7 +63,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                     graph.nodes[node]['iou'] = 0.0
 
             output_file_path = '../preprocessing/global_mapper/output/pred'
-            with open(f'{output_file_path}/{str(idx)}.gpickle', 'wb') as f:
+            with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
             idx += 1
 
