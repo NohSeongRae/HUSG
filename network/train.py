@@ -80,6 +80,19 @@ class Trainer:
         # 손실의 평균 반환
         return masked_loss.sum() / pad_mask.float().sum()
 
+    def edge_sum_loss(self, pred, trg, pad_mask):
+        pred = pred.reshape(-1, 200)
+        trg = trg.reshape(-1, 200)
+        pad_mask = pad_mask.reshape(-1, 200)
+
+        pred = torch.ge(pred, 0.5) * pad_mask
+        loss = F.mse_loss(pred, trg, reduction='none')
+
+        # mask 적용
+        masked_loss = loss * pad_mask.float()
+        # 손실의 평균 반환
+        return masked_loss.sum() / pad_mask.float().sum()
+
     def correct_data(self, pred, trg, pad_mask):
         predictions = (pred >= 0.5).float()
 
@@ -125,7 +138,9 @@ class Trainer:
                 output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                           building_pad_mask, boundary_pad_mask)
 
-                loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                loss1 = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                loss2 = self.edge_sum_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                loss = loss1 + loss2
                 correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
                 loss.backward()
@@ -170,7 +185,9 @@ class Trainer:
                         output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                                   building_pad_mask, boundary_pad_mask)
 
-                        loss = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                        loss1 = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                        loss2 = self.edge_sum_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                        loss = loss1 + loss2
                         correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
                         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
