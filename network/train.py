@@ -121,6 +121,8 @@ class Trainer:
             #     wandb.watch(self.transformer.module, log='all')
 
         for epoch in range(epoch_start, self.max_epoch):
+            total_exist_loss = torch.Tensor([0.0]).to(self.device)
+            total_count_loss = torch.Tensor([0.0]).to(self.device)
             total_loss = torch.Tensor([0.0]).to(self.device)
             total_correct = torch.Tensor([0.0]).to(self.device)
             total_problem = torch.Tensor([0.0]).to(self.device)
@@ -138,18 +140,23 @@ class Trainer:
                 output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                           building_pad_mask, boundary_pad_mask)
 
-                loss1 = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
-                loss2 = self.edge_sum_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
-                loss = loss1 + loss2
+                exist_loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                count_loss = self.edge_sum_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                loss = exist_loss + count_loss
                 correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
                 loss.backward()
                 self.optimizer.step()
 
+                dist.all_reduce(exist_loss, op=dist.ReduceOp.SUM)
+                dist.all_reduce(count_loss, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss, op=dist.ReduceOp.SUM)
                 dist.all_reduce(torch.tensor(correct), op=dist.ReduceOp.SUM)
                 dist.all_reduce(torch.tensor(problem), op=dist.ReduceOp.SUM)
 
+
+                total_exist_loss += exist_loss
+                total_count_loss += count_loss
                 total_loss += loss
                 total_correct += correct
                 total_problem += problem
@@ -157,18 +164,26 @@ class Trainer:
                 #     print(loss_pos, loss_size, loss_kl)
 
             if self.local_rank == 0:
+                exist_loss_mean = total_exist_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                count_loss_mean = total_count_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_mean = total_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 correct_mean = total_correct.item() / total_problem.item()
 
-                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss : {loss_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Total : {loss_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Exist : {exist_loss_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Count : {count_loss_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Accuracy : {correct_mean:.4f}")
 
                 if self.use_tensorboard:
-                    wandb.log({"Train loss": loss_mean}, step=epoch + 1)
+                    wandb.log({"Train loss total": loss_mean}, step=epoch + 1)
+                    wandb.log({"Train loss exist": exist_loss_mean}, step=epoch + 1)
+                    wandb.log({"Train loss count": count_loss_mean}, step=epoch + 1)
                     wandb.log({"Train accuracy": correct_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.transformer.module.eval()
+                total_exist_loss = torch.Tensor([0.0]).to(self.device)
+                total_count_loss = torch.Tensor([0.0]).to(self.device)
                 total_loss = torch.Tensor([0.0]).to(self.device)
                 total_correct = torch.Tensor([0.0]).to(self.device)
                 total_problem = torch.Tensor([0.0]).to(self.device)
@@ -185,28 +200,38 @@ class Trainer:
                         output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                                   building_pad_mask, boundary_pad_mask)
 
-                        loss1 = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
-                        loss2 = self.edge_sum_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
-                        loss = loss1 + loss2
+                        exist_loss = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                        count_loss = self.edge_sum_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                        loss = exist_loss + count_loss
                         correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
                         dist.all_reduce(loss, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(exist_loss, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(count_loss, op=dist.ReduceOp.SUM)
                         dist.all_reduce(torch.tensor(correct), op=dist.ReduceOp.SUM)
                         dist.all_reduce(torch.tensor(problem), op=dist.ReduceOp.SUM)
 
+                        total_exist_loss += exist_loss
+                        total_count_loss += count_loss
                         total_loss += loss
                         total_correct += correct
                         total_problem += problem
 
                     if self.local_rank == 0:
+                        loss_exist_mean = total_exist_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_count_mean = total_count_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_mean = total_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         correct_mean = total_correct.item() / total_problem.item()
 
-                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss: {loss_mean:.4f}")
-                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Accuracy: {correct_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Total : {loss_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Exist : {loss_exist_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Count : {loss_count_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Accuracy : {correct_mean:.4f}")
 
                         if self.use_tensorboard:
-                            wandb.log({"Validation loss": loss_mean}, step=epoch + 1)
+                            wandb.log({"Validation loss total": loss_mean}, step=epoch + 1)
+                            wandb.log({"Validation loss exist": loss_exist_mean}, step=epoch + 1)
+                            wandb.log({"Validation loss count": loss_count_mean}, step=epoch + 1)
                             wandb.log({"Validation accuracy": correct_mean}, step=epoch + 1)
 
                             loss_total = loss_mean
