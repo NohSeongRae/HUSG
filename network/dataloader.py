@@ -11,6 +11,8 @@ class GraphDataset(Dataset):
         self.data_type = data_type
 
         self.folder_path = f'/local_datasets/graph_generation_datasets/{data_type}'
+        if data_type == 'test':
+            self.folder_path = f'../preprocessing/global_mapper/graph_generation_datasets/{data_type}'
         file_extension = '.pickle'
 
         count = 0
@@ -50,6 +52,8 @@ class GraphDataset(Dataset):
         boundary_adj_matrix = self.data['boundary_adj_matrix']
         building_adj_matrix = self.data['building_adj_matrix']
         bb_adj_matrix = self.data['bb_adj_matrix']
+        n_boundary = self.data['n_boundary']
+        n_building = self.data['n_building']
 
         # 각 행렬을 원하는 크기로 패딩
         boundary_adj_matrix_padded, boundary_pad_mask = self.pad_matrix(boundary_adj_matrix, (200, 200))
@@ -62,7 +66,9 @@ class GraphDataset(Dataset):
             'bb_adj_matrix_padded': torch.tensor(bb_adj_matrix_padded, dtype=torch.float32),
             'boundary_pad_mask': torch.tensor(boundary_pad_mask, dtype=torch.bool)[:, 0],
             'building_pad_mask': torch.tensor(building_pad_mask, dtype=torch.bool)[:, 0],
-            'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool)
+            'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool),
+            'n_boundary': n_boundary,
+            'n_building': n_building
         }
 
     def __len__(self):
