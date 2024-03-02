@@ -76,7 +76,7 @@ class Trainer:
         loss = F.binary_cross_entropy(pred, trg, reduction='none')
 
         # mask 적용
-        masked_loss = loss * pad_mask.float()
+        masked_loss = loss * pad_mask.float() + loss * trg
         # 손실의 평균 반환
         return masked_loss.sum() / pad_mask.float().sum()
 
