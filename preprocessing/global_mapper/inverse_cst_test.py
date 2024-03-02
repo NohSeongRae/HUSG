@@ -54,11 +54,16 @@ def move_polygon_center_to_midpoint(polygon):
 
     return moved_polygon, (shift_x, shift_y)
 
-for idx in tqdm(range(0, 12295)):
-    test_gt_graph = f"./output/gt/{str(idx)}.gpickle"
-    test_pred_graph = f"./output/pred/{str(idx)}.gpickle"
+for idx in tqdm(range(0, 13039)):
+    path = 'gt_graph_output'
+    test_gt_graph = f"./{path}/gt/{str(idx)}.gpickle"
+    test_pred_graph = f"./{path}/pred/{str(idx)}.gpickle"
 
-    pred_G = nx.read_gpickle(test_pred_graph)
+    try:
+        pred_G = nx.read_gpickle(test_pred_graph)
+    except:
+        continue
+
     midaxis = pred_G.graph['midaxis']
     aspect_rto = pred_G.graph['aspect_ratio']
     polygon = pred_G.graph['polygon']
@@ -158,7 +163,7 @@ for idx in tqdm(range(0, 12295)):
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
 
-    directory = 'figure'
+    directory = path.replace('output', 'figure')
     ax1.set_aspect('equal', adjustable='box')
     ax1.set_xlim([0.0, 1.0])
     ax1.set_ylim([0.0, 1.0])
