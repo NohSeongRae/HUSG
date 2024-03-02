@@ -2,7 +2,8 @@ import pickle
 import networkx as nx
 import matplotlib.pyplot as plt
 import shapely
-from shapely.geometry import Polygon, MultiLineString
+from shapely.geometry import Polygon, MultiLineString, LineString
+from shapely.ops import unary_union, nearest_points
 import skgeom
 from skgeom.draw import draw
 import random
@@ -140,35 +141,160 @@ def generate_datasets(idx, data_type):
         print('저장 하지 않음 2')
         return
 
+    th = 0.25
+    edge_index = []
+    # generate edge index
+    for i, data_i in enumerate(zip(pos_xsorted, size_xsorted)):
+        edge_index.append([i, i])
+        pos, size = data_i
+        x, y, = pos
+        w, h, = size
+        # 네 꼭짓점 계산
+        points = [
+            (x - w / 2, y + h / 2),  # 왼쪽 상단
+            (x + w / 2, y + h / 2),  # 오른쪽 상단
+            (x + w / 2, y - h / 2),  # 오른쪽 하단
+            (x - w / 2, y - h / 2)  # 왼쪽 하단
+        ]
+
+        # Polygon 객체 생성
+        polygon_i = Polygon(points)
+        # x, y = polygon_i.exterior.xy
+        # plt.plot(x, y)
+
+        for j, data_j in enumerate(zip(pos_xsorted, size_xsorted)):
+            if i >= j:
+                continue
+
+            pos, size = data_j
+            x, y, = pos
+            w, h, = size
+            # 네 꼭짓점 계산
+            points = [
+                (x - w / 2, y + h / 2),  # 왼쪽 상단
+                (x + w / 2, y + h / 2),  # 오른쪽 상단
+                (x + w / 2, y - h / 2),  # 오른쪽 하단
+                (x - w / 2, y - h / 2)  # 왼쪽 하단
+            ]
+
+            # Polygon 객체 생성
+            polygon_j = Polygon(points)
+            dist = polygon_i.distance(polygon_j)
+
+            if dist < th:
+                is_invalid = False
+                for k, data_k in enumerate(zip(pos_xsorted, size_xsorted)):
+                    if i != k and j != k:
+                        pos, size = data_k
+                        x, y, = pos
+                        w, h, = size
+                        # 네 꼭짓점 계산
+                        points = [
+                            (x - w / 2, y + h / 2),  # 왼쪽 상단
+                            (x + w / 2, y + h / 2),  # 오른쪽 상단
+                            (x + w / 2, y - h / 2),  # 오른쪽 하단
+                            (x - w / 2, y - h / 2)  # 왼쪽 하단
+                        ]
+
+                        # Polygon 객체 생성
+                        polygon_k = Polygon(points)
+                        check_line = LineString(nearest_points(polygon_i, polygon_j))
+                        if polygon_k.intersects(check_line):
+                            is_invalid = True
+                            break
+
+                        center_1 = (polygon_i.centroid.x, polygon_i.centroid.y)
+                        center_2 = (polygon_j.centroid.x, polygon_j.centroid.y)
+                        check_line = LineString([center_1, center_2])
+                        if polygon_k.intersects(check_line):
+                            is_invalid = True
+                            break
+
+                if not is_invalid:
+                    edge_index.append([i, j])
+                    edge_index.append([j, i])
+                    # center_1 = (polygon_i.centroid.x, polygon_i.centroid.y)
+                    # center_2 = (polygon_j.centroid.x, polygon_j.centroid.y)
+                    # plt.plot([center_1[0], center_2[0]],
+                    #          [center_1[1], center_2[1]])
+    edge_count = np.zeros(n_building)
+    for edge in edge_index:
+        edge_count[edge[0]] += 1
+        edge_count[edge[1]] += 1
+
+    for count_idx, count in enumerate(edge_count):
+        if count == 2:
+            cur_building_idx = count_idx
+            min_idx = -1
+            min_distance = 999
+
+            pos, size = pos_xsorted[cur_building_idx], size_xsorted[cur_building_idx]
+            x, y, = pos
+            w, h, = size
+            # 네 꼭짓점 계산
+            points = [
+                (x - w / 2, y + h / 2),  # 왼쪽 상단
+                (x + w / 2, y + h / 2),  # 오른쪽 상단
+                (x + w / 2, y - h / 2),  # 오른쪽 하단
+                (x - w / 2, y - h / 2)  # 왼쪽 하단
+            ]
+
+            # Polygon 객체 생성
+            polygon_i = Polygon(points)
+            for j, data_j in enumerate(zip(pos_xsorted, size_xsorted)):
+                pos, size = data_j
+                x, y, = pos
+                w, h, = size
+                # 네 꼭짓점 계산
+                points = [
+                    (x - w / 2, y + h / 2),  # 왼쪽 상단
+                    (x + w / 2, y + h / 2),  # 오른쪽 상단
+                    (x + w / 2, y - h / 2),  # 오른쪽 하단
+                    (x - w / 2, y - h / 2)  # 왼쪽 하단
+                ]
+
+                # Polygon 객체 생성
+                polygon_j = Polygon(points)
+                if cur_building_idx != j:
+                    if min_distance > polygon_j.distance(polygon_i):
+                        min_idx = j
+                        min_distance = polygon_j.distance(polygon_i)
+
+            edge_index.append([count_idx, min_idx])
+            edge_index.append([min_idx, count_idx])
+
+    building_adj_matrix = np.zeros((n_building, n_building), dtype=int)
+    # edge_index를 사용하여 인접 행렬의 해당 위치를 1로 설정
+    for start_node, end_node in edge_index:
+        building_adj_matrix[start_node, end_node] = 1
+
     is_vis = False
     if is_vis:
-        x, y = medaxis.xy
-        # plt.plot(x, y, '-', color='blue', label='Line')
-        for i in range(len(x) - 1):
-            colors = ['red', 'green', 'blue', 'cyan', 'magenta']
-            plt.plot(x[i:i + 2], y[i:i + 2], '-', color=colors[i % len(colors)],
-                     label=f'Line {i + 1}' if i == 0 else "")
-
-        x, y = simplified_polygon.exterior.coords.xy
-        plt.plot(x, y, '-', color='red', label='Boundary')
-
-        for i, building in enumerate(building_polygons):
-            x, y = building.exterior.coords.xy
-            plt.plot(x, y, '-', color='green')
-            for j in range(len(building_polygons)):
-                if building_adj_matrix[i, j] == 1:
-                    plt.plot([building_polygons[i].centroid.x, building_polygons[j].centroid.x],
-                             [building_polygons[i].centroid.y, building_polygons[j].centroid.y])
+        # x, y = medaxis.xy
+        # # plt.plot(x, y, '-', color='blue', label='Line')
+        # for i in range(len(x) - 1):
+        #     colors = ['red', 'green', 'blue', 'cyan', 'magenta']
+        #     plt.plot(x[i:i + 2], y[i:i + 2], '-', color=colors[i % len(colors)],
+        #              label=f'Line {i + 1}' if i == 0 else "")
+        #
+        # x, y = simplified_polygon.exterior.coords.xy
+        # plt.plot(x, y, '-', color='red', label='Boundary')
+        #
+        # for i, building in enumerate(building_polygons):
+        #     x, y = building.exterior.coords.xy
+        #     plt.plot(x, y, '-', color='green')
+        #     for j in range(len(building_polygons)):
+        #         if building_adj_matrix[i, j] == 1:
+        #             plt.plot([building_polygons[i].centroid.x, building_polygons[j].centroid.x],
+        #                      [building_polygons[i].centroid.y, building_polygons[j].centroid.y])
 
         x, y = pos_xsorted[:, 0], pos_xsorted[:, 1]
-        size_x, size_y = size_xsorted[:, 0], size_xsorted[:, 1]
         for i in range(len(x)):
-            plt.gca().add_patch(
-                plt.Rectangle((x[i], y[i]), size_x[i], size_y[i], linewidth=1, edgecolor='r', facecolor='none'))
-
             for j in range(len(x)):
                 if building_adj_matrix[i, j] == 1:
                     plt.plot([x[i], x[j]], [y[i], y[j]])
+
+        plt.show()
 
     is_test_save = True
     if is_test_save:
@@ -242,7 +368,7 @@ def generate_datasets(idx, data_type):
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'test'
+    data_type = 'train'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
