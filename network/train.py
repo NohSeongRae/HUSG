@@ -85,7 +85,7 @@ class Trainer:
         trg = trg.reshape(-1, 200)
         pad_mask = pad_mask.reshape(-1, 200)
 
-        pred = torch.ge(pred, 0.5) * pad_mask
+        pred = pred * pad_mask
         loss = F.mse_loss(torch.sum(pred, dim=-1), torch.sum(trg, dim=-1), reduction='none')
 
         # mask 적용
