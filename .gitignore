@@ -10,7 +10,7 @@ paths.py
 Heatmap/model/ubuntu_copy/
 preprocessing/global_mapper/datasets/
 preprocessing/global_mapper/gt_graph_output/
-preprocessing/global_mapper/figure/
+preprocessing/global_mapper/gt_graph_figure/
 preprocessing/global_mapper/gt_graph_datasets/
 preprocessing/global_mapper/grid_graph_datasets/
 preprocessing/global_mapper/graph_generation_datasets/
