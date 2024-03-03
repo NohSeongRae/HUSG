@@ -6,7 +6,7 @@ from scipy.stats import wasserstein_distance
 import pickle
 
 
-base = 'gt_graph_figure'
+base = 'grid_graph_figure'
 path = ''
 path = os.path.join(base, path)
 
