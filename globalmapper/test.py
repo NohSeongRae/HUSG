@@ -32,11 +32,11 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
         for data in tqdm(test_dataloader):
             data, graph_file = data
             import pickle
-            load_path = '../preprocessing/global_mapper/gt_graph_datasets/test/' + graph_file[0]
+            load_path = '../preprocessing/global_mapper/grid_graph_datasets/test/' + graph_file[0]
             with open(load_path, 'rb') as f:
                 graph = pickle.load(f)
 
-            output_file_path = '../preprocessing/global_mapper/gt_graph_output/gt'
+            output_file_path = '../preprocessing/global_mapper/grid_graph_output/gt'
             file_name = graph_file[0].replace('.gpickle', '')
             with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
@@ -62,7 +62,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                     graph.nodes[node]['shape'] = 0
                     graph.nodes[node]['iou'] = 0.0
 
-            output_file_path = '../preprocessing/global_mapper/gt_graph_output/pred'
+            output_file_path = '../preprocessing/global_mapper/grid_graph_output/pred'
             with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
             idx += 1
