@@ -329,7 +329,7 @@ if __name__ == '__main__':
     parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="save dir path")
+    parser.add_argument("--condition_type", type=str, default='graph', help="save dir path")
     parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
 
     opt = parser.parse_args()
