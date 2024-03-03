@@ -272,14 +272,14 @@ class GraphCVAE(nn.Module):
         self.latent_dim = latent_dim
         self.condition_type = condition_type
 
-        if condition_type == 'image':
-            self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel,
-                                                         bottleneck=bottleneck)
-        elif condition_type == 'image_resnet34':
-            self.condition_encoder = ResNet34(bottleneck=bottleneck)
-        elif condition_type == 'graph':
-            self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck,
-                                                           n_head=n_head, convlayer=convlayer)
+        # if condition_type == 'image':
+        #     self.condition_encoder = BoundaryMaskEncoder(image_size=image_size, inner_channel=inner_channel,
+        #                                                  bottleneck=bottleneck)
+        # elif condition_type == 'image_resnet34':
+        #     self.condition_encoder = ResNet34(bottleneck=bottleneck)
+        # elif condition_type == 'graph':
+        #     self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck,
+        #                                                    n_head=n_head, convlayer=convlayer)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     convlayer=convlayer)
