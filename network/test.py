@@ -60,6 +60,7 @@ if __name__ == '__main__':
             building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=device)
             boundary_adj_matrix_padded = data['boundary_adj_matrix_padded'].to(device=device)
             bb_adj_matrix_padded = data['bb_adj_matrix_padded'].to(device=device)
+            boundary_pos_padded = data['boundary_pos_padded'].to(device=device)
             building_pad_mask = data['building_pad_mask'].to(device=device)
             boundary_pad_mask = data['boundary_pad_mask'].to(device=device)
             bb_pad_mask = data['bb_pad_mask'].to(device=device)
@@ -67,7 +68,7 @@ if __name__ == '__main__':
             n_building = data['n_building']
 
             output = transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
-                                 building_pad_mask, boundary_pad_mask)
+                                 building_pad_mask, boundary_pad_mask, boundary_pos_padded)
             output = (output >= 0.5).float()
 
             pred_adj_matrix = np.zeros((n_boundary + n_building, n_boundary + n_building))
