@@ -58,18 +58,42 @@ def draw_skeleton(polygon, skeleton, show_time=False):
                 (v.point.x(), v.point.y()),
                 v.time, color='blue', fill=False))
 
+def create_rotated_rectangle(x, y, w, h, theta):
+    # 사각형의 중심을 기준으로 초기 꼭짓점을 계산합니다.
+    dx = w / 2
+    dy = h / 2
+    corners = [(-dx, -dy), (-dx, dy), (dx, dy), (dx, -dy)]
+
+    # 중심점을 기준으로 꼭짓점을 회전시킨 후, 실제 위치로 이동시킵니다.
+    theta = np.radians(theta)
+    rotated_corners = [
+        (math.cos(theta) * cx - math.sin(theta) * cy + x,
+         math.sin(theta) * cx + math.cos(theta) * cy + y) for cx, cy in corners
+    ]
+
+    # 회전된 꼭짓점들로 Polygon 객체를 생성합니다.
+    rotated_rectangle = Polygon(rotated_corners)
+    return rotated_rectangle
+
 def generate_datasets(idx, data_type):
     with open(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
         buildings = pickle.load(file)
 
+    graph = nx.read_gpickle(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
+
+    n_node = graph.number_of_nodes()
+    n_building = len(buildings)
+    n_chunk = n_node - n_building
+
     building_polygons = []
     original_building_polygons = []
-    for building in buildings:
-        building_polygon = shapely.minimum_rotated_rectangle(Polygon(building.T))
-        building_polygons.append(building_polygon)
-        original_building_polygons.append(Polygon(building.T))
 
-    graph = nx.read_gpickle(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
+    for node in graph.nodes():
+        if node >= n_chunk:
+            x, y, w, h, theta = graph.nodes[node]['node_features']
+            polygon = create_rotated_rectangle(x, y, w, h, (theta * 2 - 1) * 45)
+            building_polygons.append(polygon)
+            original_building_polygons.append(polygon)
 
     boundary_points = []
     for node in graph.graph['condition'].nodes():

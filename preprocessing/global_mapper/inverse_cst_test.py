@@ -114,51 +114,20 @@ for idx in tqdm(range(0, 13039)):
 
         x, y, w, h, theta = get_bbox_details(norm_polygon)
         pred_output_list.append([x, y, w, h, theta])
+    pred_output_list = sorted(pred_output_list, key=lambda item: (item[0], item[1]))
 
     gt_graph = nx.read_gpickle(test_gt_graph)
-    midaxis = gt_graph.graph['midaxis']
-    aspect_rto = gt_graph.graph['aspect_ratio']
-    polygon = gt_graph.graph['polygon']
-
-    node_size, node_pos, node_attr, edge_list, node_idx, asp_rto, longside, b_shape, b_iou, building_polygons = graph2vector_processed(
-        gt_graph)
-
-    org_bldg, org_pos, org_size = inverse_warp_bldg_by_midaxis(node_pos, node_size, midaxis, aspect_rto,
-                                                               rotate_bldg_by_midaxis=True,
-                                                               output_mode=False)
-    from shapely.wkt import dumps
-
-    wkt_polygons = [dumps(poly) for poly in org_bldg]
-    counter = Counter(wkt_polygons)
-
-    org_bldg = [poly for poly, wkt in zip(org_bldg, wkt_polygons) if counter[wkt] < 3]
-    building_polygons = [poly for poly, wkt in zip(building_polygons, wkt_polygons) if counter[wkt] < 3]
-
-    minx, miny, maxx, maxy = polygon.bounds
-    width, height = maxx - minx, maxy - miny
-    longer_side = max(width, height)
-
-    minx, miny, maxx, maxy = polygon.bounds
-    width, height = maxx - minx, maxy - miny
-
-    def normalize(x, y):
-        return ((x - minx) / longer_side, (y - miny) / longer_side)
-
-    normalized_polygon = transform(normalize, polygon)
-
-    moved_polygon, shift_amount = move_polygon_center_to_midpoint(normalized_polygon)
-
-    normalized_org_bldg = [transform(normalize, poly) for poly in org_bldg]
-    shifted_org_bldg = [translate(poly, xoff=shift_amount[0], yoff=shift_amount[1]) for poly in normalized_org_bldg]
+    building_polygons = gt_graph.graph['building_polygons']
 
     gt_output_list = []
-    for norm_polygon in shifted_org_bldg:
-        x, y, w, h, theta = get_bbox_details(norm_polygon)
-        gt_output_list.append([x, y, w, h, theta])
-
     for building in building_polygons:
         x, y = building.exterior.xy
         ax2.plot(x, y, color='k', label='Rotated Box')
+
+        x, y, w, h, theta = get_bbox_details(building)
+        gt_output_list.append([x, y, w, h, theta])
+
+    gt_output_list = sorted(gt_output_list, key=lambda item: (item[0], item[1]))
 
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])

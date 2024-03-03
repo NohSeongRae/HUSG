@@ -59,6 +59,33 @@ def draw_skeleton(polygon, skeleton, show_time=False):
                 (v.point.x(), v.point.y()),
                 v.time, color='blue', fill=False))
 
+def get_bbox_corners(x, y, w, h):
+    half_w = w / 2
+    half_h = h / 2
+
+    top_left = [x - half_w, y - half_h]
+    top_right = [x + half_w, y - half_h]
+    bottom_left = [x - half_w, y + half_h]
+    bottom_right = [x + half_w, y + half_h]
+
+    return [top_left, top_right, bottom_right, bottom_left]
+
+def rotate_points_around_center(points, center, theta_deg):
+    theta_rad = np.radians(theta_deg)
+
+    rotation_matrix = np.array([
+        [np.cos(theta_rad), -np.sin(theta_rad)],
+        [np.sin(theta_rad), np.cos(theta_rad)]
+    ])
+
+    points = np.array(points)
+    center = np.array(center)
+    translated_points = points - center
+
+    rotated_points = np.dot(translated_points, rotation_matrix.T)
+    rotated_points = rotated_points + center
+
+    return rotated_points
 
 def create_rotated_rectangle(x, y, w, h, theta):
     # 사각형의 중심을 기준으로 초기 꼭짓점을 계산합니다.
@@ -97,10 +124,11 @@ def generate_datasets(idx, data_type):
     for node in graph.nodes():
         if node >= n_chunk:
             x, y, w, h, theta = graph.nodes[node]['node_features']
-            polygon = create_rotated_rectangle(x, y, w, h, theta)
+            polygon = create_rotated_rectangle(x, y, w, h, (theta * 2 - 1) * 45)
             building_polygons.append(polygon)
             original_building_polygons.append(polygon)
 
+    plt.show()
     adj_matrix = nx.adjacency_matrix(graph).todense()
     building_adj_matrix = adj_matrix[n_chunk:, n_chunk:]
 
