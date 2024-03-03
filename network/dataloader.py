@@ -60,8 +60,7 @@ class GraphDataset(Dataset):
         boundary_adj_matrix_padded, boundary_pad_mask = self.pad_matrix(boundary_adj_matrix, (200, 200))
         building_adj_matrix_padded, building_pad_mask = self.pad_matrix(building_adj_matrix, (120, 120))
         bb_adj_matrix_padded, bb_pad_mask = self.pad_matrix(bb_adj_matrix, (120, 200))
-        boundary_pos_padded, _ = self.pad_matrix(boundary_pos_feature, (120, 2))
-        print(boundary_pos_padded.shape)
+        boundary_pos_padded, _ = self.pad_matrix(boundary_pos_feature, (200, 2))
 
         return {
             'boundary_adj_matrix_padded': torch.tensor(boundary_adj_matrix_padded, dtype=torch.float32),
