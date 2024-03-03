@@ -32,8 +32,9 @@ class BoundaryEncoder(nn.Module):
         super(BoundaryEncoder, self).__init__()
 
         n_node = 200
-        self.pos_enc = PositionalEncoding(d_model, n_node=n_node)
-        self.enc_init = nn.Linear(n_node + d_model, d_model)
+        self.pos_emb = PositionalEncoding(d_model, n_node=n_node)
+        self.pos_enc = nn.Linear(2, d_model)
+        self.enc_init = nn.Linear(n_node + d_model + d_model, d_model)
         self.dropout = nn.Dropout(dropout)
 
         self.layer_stack = nn.ModuleList([
@@ -41,8 +42,9 @@ class BoundaryEncoder(nn.Module):
             for _ in range(n_layer)
         ])
 
-    def forward(self, boundary, enc_mask):
-        enc_input = torch.cat([boundary, self.pos_enc(boundary).expand(boundary.shape[0], -1, -1)], dim=2)
+    def forward(self, boundary, enc_mask, boundary_pos):
+        boundary_pos = torch.relu(self.pos_enc(boundary_pos))
+        enc_input = torch.cat([boundary, boundary_pos, self.pos_emb(boundary).expand(boundary.shape[0], -1, -1)], dim=2)
         enc_input = self.enc_init(enc_input)
         enc_output = self.dropout(enc_input)
 
@@ -85,8 +87,8 @@ class GraphTransformer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.adj_fc = nn.Linear(d_model, 200)
 
-    def forward(self, building, boundary, building_pad_mask, boundary_pad_mask):
-        enc_output = self.encoder(boundary, boundary_pad_mask)
+    def forward(self, building, boundary, building_pad_mask, boundary_pad_mask, boundary_pos):
+        enc_output = self.encoder(boundary, boundary_pad_mask, boundary_pos)
         dec_output = self.decoder(building, enc_output, building_pad_mask, boundary_pad_mask)
 
         dec_output = self.adj_fc(dec_output)

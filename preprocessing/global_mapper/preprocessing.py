@@ -2,6 +2,8 @@ import concurrent.futures
 from tqdm import tqdm
 import pickle
 import networkx as nx
+import numpy as np
+import matplotlib.pyplot as plt
 
 def generate_datasets(idx, data_type):
     with open(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
@@ -17,10 +19,17 @@ def generate_datasets(idx, data_type):
     boundary_adj_matrix = adj_matrix[:n_chunk, :n_chunk]
     building_adj_matrix = adj_matrix[n_chunk:, n_chunk:]
     bb_adj_matrix = adj_matrix[n_chunk:, :n_chunk]
+    boundary_pos_feature = []
+
+    for node in graph.nodes():
+        if node < n_chunk:
+            boundary_pos_feature.append(graph.nodes[node]['node_features'][:2])
+    boundary_pos_feature = np.array(boundary_pos_feature)
 
     data = {'boundary_adj_matrix': boundary_adj_matrix,
             'building_adj_matrix': building_adj_matrix,
             'bb_adj_matrix': bb_adj_matrix,
+            'boundary_pos_feature': boundary_pos_feature,
             'n_boundary': n_chunk,
             'n_building': n_building}
 
@@ -30,7 +39,7 @@ def generate_datasets(idx, data_type):
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'train'
+    data_type = 'test'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []

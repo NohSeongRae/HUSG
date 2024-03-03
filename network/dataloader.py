@@ -52,6 +52,7 @@ class GraphDataset(Dataset):
         boundary_adj_matrix = self.data['boundary_adj_matrix']
         building_adj_matrix = self.data['building_adj_matrix']
         bb_adj_matrix = self.data['bb_adj_matrix']
+        boundary_pos_feature = self.data['boundary_pos_feature']
         n_boundary = self.data['n_boundary']
         n_building = self.data['n_building']
 
@@ -59,11 +60,13 @@ class GraphDataset(Dataset):
         boundary_adj_matrix_padded, boundary_pad_mask = self.pad_matrix(boundary_adj_matrix, (200, 200))
         building_adj_matrix_padded, building_pad_mask = self.pad_matrix(building_adj_matrix, (120, 120))
         bb_adj_matrix_padded, bb_pad_mask = self.pad_matrix(bb_adj_matrix, (120, 200))
+        boundary_pos_feature, _ = self.pad_matrix(boundary_pos_feature, (120, 2))
 
         return {
             'boundary_adj_matrix_padded': torch.tensor(boundary_adj_matrix_padded, dtype=torch.float32),
             'building_adj_matrix_padded': torch.tensor(building_adj_matrix_padded, dtype=torch.float32),
             'bb_adj_matrix_padded': torch.tensor(bb_adj_matrix_padded, dtype=torch.float32),
+            'boundary_pos_feature': torch.tensor(boundary_pos_feature, dtype=torch.float32),
             'boundary_pad_mask': torch.tensor(boundary_pad_mask, dtype=torch.bool)[:, 0],
             'building_pad_mask': torch.tensor(building_pad_mask, dtype=torch.bool)[:, 0],
             'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool),
