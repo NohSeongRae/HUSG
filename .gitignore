@@ -8,3 +8,5 @@ out
 gen
 paths.py
 Heatmap/model/ubuntu_copy/
+preprocessing/global_mapper/
+*.pth
