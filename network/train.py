@@ -133,13 +133,13 @@ class Trainer:
                 building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=self.device)
                 boundary_adj_matrix_padded = data['boundary_adj_matrix_padded'].to(device=self.device)
                 bb_adj_matrix_padded = data['bb_adj_matrix_padded'].to(device=self.device)
-                boundary_pos_feature = data['boundary_pos_feature'].to(device=self.device)
+                boundary_pos_padded = data['boundary_pos_padded'].to(device=self.device)
                 building_pad_mask = data['building_pad_mask'].to(device=self.device)
                 boundary_pad_mask = data['boundary_pad_mask'].to(device=self.device)
                 bb_pad_mask = data['bb_pad_mask'].to(device=self.device)
 
                 output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
-                                          building_pad_mask, boundary_pad_mask, boundary_pos_feature)
+                                          building_pad_mask, boundary_pad_mask, boundary_pos_padded)
 
                 exist_loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
                 count_loss = self.edge_sum_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
@@ -194,12 +194,13 @@ class Trainer:
                         building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=self.device)
                         boundary_adj_matrix_padded = data['boundary_adj_matrix_padded'].to(device=self.device)
                         bb_adj_matrix_padded = data['bb_adj_matrix_padded'].to(device=self.device)
+                        boundary_pos_padded = data['boundary_pos_padded'].to(device=self.device)
                         building_pad_mask = data['building_pad_mask'].to(device=self.device)
                         boundary_pad_mask = data['boundary_pad_mask'].to(device=self.device)
                         bb_pad_mask = data['bb_pad_mask'].to(device=self.device)
 
                         output = self.transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
-                                                  building_pad_mask, boundary_pad_mask)
+                                                  building_pad_mask, boundary_pad_mask, boundary_pos_padded)
 
                         exist_loss = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
                         count_loss = self.edge_sum_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
