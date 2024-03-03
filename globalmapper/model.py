@@ -173,7 +173,7 @@ class GraphEncoder(nn.Module):
         node_exist = data.exist_features
         node_exist = F.relu(self.exist_embed(node_exist))
 
-        one_hot = self.node_order_within_batch(data.batch)
+        one_hot = torch.eye(self.N, dtype=torch.float32).to(node_exist.device).repeat(node_exist.shape[0] // self.N, 1)
         node_exist = F.relu(self.exist_enc(torch.cat([node_exist, one_hot], dim=1)))
 
         node_feature = F.relu(self.node_fc(torch.cat([pos_feature, size_feature, node_exist], dim=1)))
@@ -199,15 +199,6 @@ class GraphEncoder(nn.Module):
 
         return mu, log_var
 
-    def node_order_within_batch(self, batch):
-        order_within_batch = torch.zeros_like(batch)
-        unique_batches = batch.unique()
-        for ub in unique_batches:
-            mask = (batch == ub)
-            order_within_batch[mask] = torch.arange(mask.sum(), device=batch.device)
-
-        one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=120)
-        return one_hot_order
 class GraphDecoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer, batch_size):
         super(GraphDecoder, self).__init__()
@@ -215,7 +206,7 @@ class GraphDecoder(nn.Module):
         self.N = 120
         self.batch_size = batch_size
 
-        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
+        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim * self.N)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -265,9 +256,9 @@ class GraphDecoder(nn.Module):
     def forward(self, z, condition, edge_index, batch):
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
-        z = z[batch]
+        z = z.view(z.shape[0] * self.N, -1)
 
-        one_hot = self.node_order_within_batch(batch)
+        one_hot = torch.eye(self.N, dtype=torch.float32).to(z.device).repeat(z.shape[0] // self.N, 1)
         z = torch.cat([z, one_hot], 1)
 
         d_embed_0 = F.relu(z)
@@ -276,7 +267,7 @@ class GraphDecoder(nn.Module):
             d_embed_t = F.relu(d_conv_t(d_embed_t, edge_index))
 
         output_pos = F.relu(self.dec_pos(d_embed_t))
-        output_pos = torch.tanh(self.fc_pos(output_pos))
+        output_pos = self.fc_pos(output_pos)
 
         output_size = F.relu(self.dec_size(d_embed_t))
         output_size = self.fc_size(output_size)
@@ -293,15 +284,6 @@ class GraphDecoder(nn.Module):
 
         return output_pos, output_size
 
-    def node_order_within_batch(self, batch):
-        order_within_batch = torch.zeros_like(batch)
-        unique_batches = batch.unique()
-        for ub in unique_batches:
-            mask = (batch == ub)
-            order_within_batch[mask] = torch.arange(mask.sum(), device=batch.device)
-
-        one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=120)
-        return one_hot_order
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
                  image_size=64, inner_channel=80, bottleneck=128,
