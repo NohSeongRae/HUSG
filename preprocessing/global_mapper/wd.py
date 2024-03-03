@@ -49,8 +49,8 @@ xy = np.array(xy)
 xy_gt = np.array(xy_gt)
 wh = np.array(wh)
 wh_gt = np.array(wh_gt)
-theta = np.array(theta)
-theta_gt = np.array(theta_gt)
+theta = (np.array(theta) * 2 - 1) * 45
+theta_gt = (np.array(theta_gt) * 2 - 1) * 45
 
 wd_xy = np.mean([
     wasserstein_distance(xy[:, i], xy_gt[:, i])
