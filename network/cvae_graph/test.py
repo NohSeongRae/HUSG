@@ -55,7 +55,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      condition_type,
                      polygon_path,
                      save_dir_path,
-                     data_path)
+                     data_path[0])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")

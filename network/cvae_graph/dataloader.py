@@ -20,6 +20,9 @@ class GraphDataset(Dataset):
             self.folder_path = '/local_datasets/image_resnet34_condition_train_datasets/' + self.data_type
         file_extension = '.gpickle'
 
+        # if data_type == 'test':
+        #     self.folder_path = '../../preprocessing/global_mapper/datasets/new_city_datasets/graph_condition_train_datasets/' + self.data_type
+
         count = 0
         try:
             for filename in os.listdir(self.folder_path):

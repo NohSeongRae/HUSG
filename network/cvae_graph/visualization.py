@@ -42,17 +42,6 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    save_path_2 = os.path.join(directory, "file_name_" + str(idx) + ".png")
-    with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
-        file_name = [data_path[0]]
-        print(file_name)
-
-        if 'stockholm' in file_name[0]:
-            print('It is stockholm')
-            return
-
-        pickle.dump(file_name, file)
-
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))
     rotation_scale = 45
@@ -80,23 +69,13 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
         x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
         gt_output_list.append([x, y, w, h, theta])
 
-    if polygon_path == None:
-        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + str(idx - 1) + '.pkl'
-        with open(filepath, 'rb') as f:
-            building_polygons = pickle.load(f)
-    else:
-        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + polygon_path[0]
-        with open(filepath, 'rb') as f:
-            building_polygons = pickle.load(f)
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
 
-    if data_path != None:
-        filepath = f'../../../..//local_datasets/{condition_type}_condition_train_datasets/' + 'test/' + data_path[0]
-        with open(filepath, 'rb') as f:
-            gpickle_file = pickle.load(f)
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
 
-    for building_polygon in building_polygons:
-        x, y = building_polygon
-        ax2.plot(x, y, color='k', label='Rotated Box')
+        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k', label='Rotated Box')
 
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
@@ -105,27 +84,20 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
     ax1.set_xlim([0.0, 1.0])
     ax1.set_ylim([0.0, 1.0])
     ax1.set_axis_off()
-    save_path_1 = os.path.join(directory, "prediction_" + str(idx) + ".png")
+    save_path_1 = os.path.join(directory, "prediction_" + data_path.replace('.gpickle', '') + ".png")
     ax1.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
+    plt.close(ax1.figure)  # ax1에 연결된 figure 닫기
 
     ax2.set_aspect('equal', adjustable='box')
     ax2.set_xlim([0.0, 1.0])
     ax2.set_ylim([0.0, 1.0])
     ax2.set_axis_off()
-    save_path_2 = os.path.join(directory, "ground_truth_" + str(idx) + ".png")
+    save_path_2 = os.path.join(directory, "ground_truth_" + data_path.replace('.gpickle', '') + ".png")
     ax2.figure.savefig(save_path_2, dpi=300, bbox_inches='tight')
+    plt.close(ax2.figure)  # ax2에 연결된 figure 닫기
 
     with open(save_path_1.replace('.png', '.pkl'), 'wb') as file:
         pickle.dump(pred_output_list, file)
 
     with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
         pickle.dump(gt_output_list, file)
-
-    with open(save_path_2.replace('.png', '.gpickle'), 'wb') as file:
-        pickle.dump(gpickle_file, file)
-
-    save_path_2 = os.path.join(directory, "real_polygon_" + str(idx) + ".png")
-    with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
-        pickle.dump(building_polygons, file)
-
-    print(save_path_1)
