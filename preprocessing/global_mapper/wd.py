@@ -7,7 +7,7 @@ import pickle
 
 
 base = 'grid_graph_figure'
-base = 'ours_output/gt_graph'
+base = 'ours_output/synthetic_graph'
 path = ''
 path = os.path.join(base, path)
 
