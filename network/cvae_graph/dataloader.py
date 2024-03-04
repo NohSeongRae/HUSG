@@ -14,6 +14,7 @@ class GraphDataset(Dataset):
 
         if condition_type == 'graph':
             self.folder_path = '/local_datasets/graph_condition_train_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/synthetic_train_datasets/' + self.data_type
         elif condition_type == 'image':
             self.folder_path = '/local_datasets/image_condition_train_datasets/' + self.data_type
         elif condition_type == 'image_resnet34':
@@ -21,7 +22,7 @@ class GraphDataset(Dataset):
         file_extension = '.gpickle'
 
         # if data_type == 'test':
-        #     self.folder_path = '../../preprocessing/global_mapper/datasets/new_city_datasets/graph_condition_train_datasets/' + self.data_type
+        #     self.folder_path = '../../preprocessing/global_mapper/datasets/new_city_datasets/synthetic_train_datasets/' + self.data_type
 
         count = 0
         try:
