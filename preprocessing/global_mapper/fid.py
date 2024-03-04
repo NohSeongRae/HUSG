@@ -10,6 +10,7 @@ from torchmetrics.image.fid import FrechetInceptionDistance
 # path = 'Abilation(T5 + GIN)'
 # path = os.path.join(base, path)
 path = 'grid_graph_figure'
+path = 'ours_output/gt_graph'
 
 list_output_all = os.listdir(path)
 
