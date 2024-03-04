@@ -121,6 +121,9 @@ def generate_datasets(idx, data_type):
     n_building = len(buildings)
     n_chunk = n_node - n_building
 
+    if n_building <= 1:
+        return
+
     for node in graph.nodes():
         if node >= n_chunk:
             x, y, w, h, theta = graph.nodes[node]['node_features']
@@ -417,7 +420,7 @@ def generate_datasets(idx, data_type):
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'test'
+    data_type = 'train'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []

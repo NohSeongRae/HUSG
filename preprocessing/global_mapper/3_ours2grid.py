@@ -85,6 +85,9 @@ def generate_datasets(idx, data_type):
     n_building = len(buildings)
     n_chunk = n_node - n_building
 
+    if n_building <= 1:
+        return
+
     building_polygons = []
     original_building_polygons = []
 
@@ -243,8 +246,6 @@ def generate_datasets(idx, data_type):
         output_file_path = f'grid_graph_datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
-
-
 
 if __name__ == '__main__':
     end_index = 208622 + 1
