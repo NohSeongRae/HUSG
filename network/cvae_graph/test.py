@@ -43,7 +43,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      condition_type,
                      polygon_path,
                      save_dir_path,
-                     data_path)
+                     data_path[0])
 
             elif condition_type == 'graph':
                 plot(output_pos.detach().cpu().numpy(),
