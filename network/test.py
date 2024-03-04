@@ -55,8 +55,12 @@ if __name__ == '__main__':
 
     transformer.eval()
     with torch.no_grad():
-        idx = 0
+        vis = False
+        save = True
         for data in tqdm(test_dataloader):
+            data, file = data
+            file = file[0].replace('.pickle', '')
+
             building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=device)
             boundary_adj_matrix_padded = data['boundary_adj_matrix_padded'].to(device=device)
             bb_adj_matrix_padded = data['bb_adj_matrix_padded'].to(device=device)
@@ -77,41 +81,58 @@ if __name__ == '__main__':
             pred_adj_matrix[:n_boundary, :n_boundary] = boundary_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_boundary, :n_boundary]
             pred_adj_matrix[n_boundary:, n_boundary:] = building_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_building]
             pred_adj_matrix[n_boundary:, :n_boundary] = output.squeeze(0).detach().cpu().numpy()[:n_building, :n_boundary]
+            pred_adj_matrix[:n_boundary, n_boundary:] = output.squeeze(0).detach().cpu().numpy().T[:n_boundary, :n_building]
 
             gt_adj_matrix[:n_boundary, :n_boundary] = boundary_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_boundary, :n_boundary]
             gt_adj_matrix[n_boundary:, n_boundary:] = building_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_building]
             gt_adj_matrix[n_boundary:, :n_boundary] = bb_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_boundary]
 
-            G_pred = nx.DiGraph(pred_adj_matrix)
-            G_gt = nx.DiGraph(gt_adj_matrix)
+            if vis:
+                G_pred = nx.DiGraph(pred_adj_matrix)
+                G_gt = nx.DiGraph(gt_adj_matrix)
 
-            union_graph = nx.compose(G_pred, G_gt)  # create a union of both graphs to ensure all nodes are considered
-            pos = nx.spring_layout(union_graph)
+                union_graph = nx.compose(G_pred, G_gt)  # create a union of both graphs to ensure all nodes are considered
+                pos = nx.spring_layout(union_graph)
 
-            # Assign colors based on the threshold
-            node_colors_pred = ['lightblue' if i < n_boundary else 'lightgreen' for i in G_pred.nodes()]
-            node_colors_gt = ['lightblue' if i < n_boundary else 'lightgreen' for i in G_gt.nodes()]
+                # Assign colors based on the threshold
+                node_colors_pred = ['lightblue' if i < n_boundary else 'lightgreen' for i in G_pred.nodes()]
+                node_colors_gt = ['lightblue' if i < n_boundary else 'lightgreen' for i in G_gt.nodes()]
 
-            plt.figure(figsize=(12, 5))
+                plt.figure(figsize=(12, 5))
 
-            plt.subplot(1, 2, 1)
-            nx.draw(G_pred, pos, with_labels=True, node_color=node_colors_pred, edge_color='gray')
-            plt.title("Prediction Graph")
+                plt.subplot(1, 2, 1)
+                nx.draw(G_pred, pos, with_labels=True, node_color=node_colors_pred, edge_color='gray')
+                plt.title("Prediction Graph")
 
-            plt.subplot(1, 2, 2)
-            nx.draw(G_gt, pos, with_labels=True, node_color=node_colors_gt, edge_color='gray')
-            plt.title("Ground Truth Graph")
+                plt.subplot(1, 2, 2)
+                nx.draw(G_gt, pos, with_labels=True, node_color=node_colors_gt, edge_color='gray')
+                plt.title("Ground Truth Graph")
 
-            plt.tight_layout()
+                plt.tight_layout()
 
-            # 저장할 경로 확인 및 폴더 생성
-            directory = "./images"  # 변경: 저장 경로를 /mnt/data/ 아래로 지정
-            if not os.path.exists(directory):
-                os.makedirs(directory)
+                # 저장할 경로 확인 및 폴더 생성
+                directory = "./images"  # 변경: 저장 경로를 /mnt/data/ 아래로 지정
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
 
-            # 이미지 파일로 저장
-            save_path = os.path.join(directory, "graph_comparison_" + str(idx) + ".png")
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                # 이미지 파일로 저장
+                save_path = os.path.join(directory, "graph_comparison_" + file + ".png")
+                plt.savefig(save_path, dpi=300, bbox_inches='tight')
 
-            idx += 1
+            if save:
+                path = f'../preprocessing/global_mapper/datasets/new_city_datasets/graph_condition_train_datasets/test/{file}.gpickle'
+                graph = nx.read_gpickle(path)
 
+                # 그래프의 모든 엣지를 제거
+                graph.remove_edges_from(list(graph.edges()))
+
+                # 사용자의 인접 행렬을 바탕으로 엣지 추가
+                for i, row in enumerate(pred_adj_matrix):
+                    for j, val in enumerate(row):
+                        if val == 1:  # i와 j 사이에 연결이 있는 경우
+                            graph.add_edge(i, j)
+
+                # 결과 그래프 검증 또는 사용
+                # 예: 그래프를 다시 gpickle 파일로 저장
+                path = path.replace('graph_condition_train_datasets', 'synthetic_train_datasets')
+                nx.write_gpickle(graph, path)

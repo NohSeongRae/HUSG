@@ -62,17 +62,31 @@ class GraphDataset(Dataset):
         bb_adj_matrix_padded, bb_pad_mask = self.pad_matrix(bb_adj_matrix, (120, 200))
         boundary_pos_padded, _ = self.pad_matrix(boundary_pos_feature, (200, 2))
 
-        return {
-            'boundary_adj_matrix_padded': torch.tensor(boundary_adj_matrix_padded, dtype=torch.float32),
-            'building_adj_matrix_padded': torch.tensor(building_adj_matrix_padded, dtype=torch.float32),
-            'bb_adj_matrix_padded': torch.tensor(bb_adj_matrix_padded, dtype=torch.float32),
-            'boundary_pos_padded': torch.tensor(boundary_pos_padded, dtype=torch.float32),
-            'boundary_pad_mask': torch.tensor(boundary_pad_mask, dtype=torch.bool)[:, 0],
-            'building_pad_mask': torch.tensor(building_pad_mask, dtype=torch.bool)[:, 0],
-            'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool),
-            'n_boundary': n_boundary,
-            'n_building': n_building
-        }
+        if self.data_type == 'test':
+            return {
+                'boundary_adj_matrix_padded': torch.tensor(boundary_adj_matrix_padded, dtype=torch.float32),
+                'building_adj_matrix_padded': torch.tensor(building_adj_matrix_padded, dtype=torch.float32),
+                'bb_adj_matrix_padded': torch.tensor(bb_adj_matrix_padded, dtype=torch.float32),
+                'boundary_pos_padded': torch.tensor(boundary_pos_padded, dtype=torch.float32),
+                'boundary_pad_mask': torch.tensor(boundary_pad_mask, dtype=torch.bool)[:, 0],
+                'building_pad_mask': torch.tensor(building_pad_mask, dtype=torch.bool)[:, 0],
+                'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool),
+                'n_boundary': n_boundary,
+                'n_building': n_building
+            }, self.pkl_files[idx]
+        else:
+            return {
+                'boundary_adj_matrix_padded': torch.tensor(boundary_adj_matrix_padded, dtype=torch.float32),
+                'building_adj_matrix_padded': torch.tensor(building_adj_matrix_padded, dtype=torch.float32),
+                'bb_adj_matrix_padded': torch.tensor(bb_adj_matrix_padded, dtype=torch.float32),
+                'boundary_pos_padded': torch.tensor(boundary_pos_padded, dtype=torch.float32),
+                'boundary_pad_mask': torch.tensor(boundary_pad_mask, dtype=torch.bool)[:, 0],
+                'building_pad_mask': torch.tensor(building_pad_mask, dtype=torch.bool)[:, 0],
+                'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool),
+                'n_boundary': n_boundary,
+                'n_building': n_building
+            }
+
 
     def __len__(self):
         return self.data_length
