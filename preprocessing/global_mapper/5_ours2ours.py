@@ -105,17 +105,32 @@ def create_rotated_rectangle(x, y, w, h, theta):
     return rotated_rectangle
 
 def generate_datasets(idx, data_type):
-    with open(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
+    with open(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
         buildings = pickle.load(file)
 
     building_polygons = []
     original_building_polygons = []
 
-    graph = nx.read_gpickle(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
+    graph = nx.read_gpickle(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
     n_node = graph.number_of_nodes()
     n_building = len(buildings)
     n_chunk = n_node - n_building
+
+    boundary_points = []
+    for node in graph.graph['condition'].nodes():
+        x_min, y_min, x_max, y_max, theta = graph.graph['condition'].nodes[node]['chunk_features']
+        cx, cy = (x_min + x_max) / 2, (y_min + y_max) / 2
+
+        boundary_points.append([cx * 2, cy * 2])
+
+    original_boundary_polygon = Polygon(boundary_points)
+
+    area_tolerance = 0.0005  # 허용되는 최대 면적 차이
+    simplified_polygon = simplify_polygon_randomly(original_boundary_polygon, area_tolerance)
+    scaled_mask, dx = insidemask(simplified_polygon, image_size=224)
+
+    graph.graph['condition'] = scaled_mask
 
     if n_building >= 2:
         output_file_path = f'ours_graph_datasets/{data_type}'
