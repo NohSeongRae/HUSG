@@ -120,7 +120,7 @@ if __name__ == '__main__':
                 plt.savefig(save_path, dpi=300, bbox_inches='tight')
 
             if save:
-                path = f'../preprocessing/global_mapper/datasets/new_city_datasets/graph_condition_train_datasets/test/{file}.gpickle'
+                path = f'../preprocessing/global_mapper/datasets/new_city_datasets/gt_train_datasets/test/{file}.gpickle'
                 graph = nx.read_gpickle(path)
 
                 # 그래프의 모든 엣지를 제거
@@ -134,5 +134,5 @@ if __name__ == '__main__':
 
                 # 결과 그래프 검증 또는 사용
                 # 예: 그래프를 다시 gpickle 파일로 저장
-                path = path.replace('graph_condition_train_datasets', 'synthetic_train_datasets')
+                path = path.replace('gt_train_datasets', 'synthetic_train_datasets')
                 nx.write_gpickle(graph, path)

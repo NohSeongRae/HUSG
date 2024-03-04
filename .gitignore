@@ -18,6 +18,8 @@ preprocessing/global_mapper/gt_graph_datasets/
 preprocessing/global_mapper/graph_generation_datasets/
 preprocessing/global_mapper/ours_output/
 preprocessing/global_mapper/ours_graph_datasets/
+preprocessing/global_mapper/synthetic_images_graph/
+preprocessing/global_mapper/gt_images_graph/
 GlobalMapper-main/
 *.pth
 *.tar
