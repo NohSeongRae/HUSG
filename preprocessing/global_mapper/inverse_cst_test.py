@@ -54,8 +54,9 @@ def move_polygon_center_to_midpoint(polygon):
 
     return moved_polygon, (shift_x, shift_y)
 
+count = 1
 for idx in tqdm(range(0, 13039)):
-    path = 'grid_graph_output'
+    path = 'spatial_graph_output'
     test_gt_graph = f"./{path}/gt/{str(idx)}.gpickle"
     test_pred_graph = f"./{path}/pred/{str(idx)}.gpickle"
 
@@ -154,3 +155,7 @@ for idx in tqdm(range(0, 13039)):
 
     with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
         pickle.dump(gt_output_list, file)
+
+    count += 1
+    if count % 1001 == 0:
+        break
