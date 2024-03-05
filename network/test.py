@@ -73,7 +73,24 @@ if __name__ == '__main__':
 
             output = transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                  building_pad_mask, boundary_pad_mask, boundary_pos_padded)
-            output = (output >= 0.5).float()
+            output *= bb_adj_matrix_padded
+            output_1 = (output >= 0.5).float()
+
+            k = 2  # 상위 k개 값을 선택
+
+            # 각 120x200 행렬에 대해 top k 값을 찾기
+            topk_values, topk_indices = torch.topk(output, k, dim=2)
+
+            # 모든 값을 0으로 설정한 다음, topk 인덱스에 해당하는 위치만 1로 설정
+            output_2 = torch.zeros_like(output)
+            output_2.scatter_(2, topk_indices, 1)
+
+            output = torch.zeros_like(output_1)
+            for i in range(120):
+                if torch.sum(output_1[0, i]) <= 1:
+                    output[0, i] = output_2[0, i]
+                else:
+                    output[0, i] = output_1[0, i]
 
             pred_adj_matrix = np.zeros((n_boundary + n_building, n_boundary + n_building))
             gt_adj_matrix = np.zeros((n_boundary + n_building, n_boundary + n_building))
