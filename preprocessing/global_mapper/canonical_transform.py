@@ -518,7 +518,7 @@ def modified_skel_to_medaxis(longest_skel, block):
     if len(longest_skel.coords[front_start:-end_start]) <= 1:
         midaxis_miss_bothend = LineString(longest_skel.coords[1:-1])
         print('no enough point on medaxis')
-        return None
+        # return None
     else:
         midaxis_miss_bothend = LineString(longest_skel.coords[front_start:-end_start])
 
@@ -572,7 +572,7 @@ def warp_bldg_by_midaxis(bldg, block, midaxis):
         insert_pos = get_insert_position(relative_cutoff, cur_x) - 1
         if insert_pos > vector_midaxis.shape[0] - 1:
             print('\n out of index in vector_midaxis. \n')
-            return np.array([None]), None, None, None
+            # return np.array([None]), None, None, None
 
             corres_midaxis_vector_idx.append(vector_midaxis.shape[0] - 1)
             continue

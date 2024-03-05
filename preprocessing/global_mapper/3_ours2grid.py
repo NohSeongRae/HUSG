@@ -120,20 +120,44 @@ def generate_datasets(idx, data_type):
     try:
         skel = skgeom.skeleton.create_interior_straight_skeleton(sk_boundary)
     except:
-        return
+        area_tolerance = 0.05  # 허용되는 최대 면적 차이
+        simplified_polygon = simplify_polygon_randomly(original_boundary_polygon, area_tolerance)
+
+        exterior_polyline = list(simplified_polygon.exterior.coords)[:-1]
+        exterior_polyline.reverse()
+        poly_list = []
+        for ix in range(len(exterior_polyline)):
+            poly_list.append(exterior_polyline[ix])
+        sk_boundary = skgeom.Polygon(poly_list)
+
+        try:
+            skel = skgeom.skeleton.create_interior_straight_skeleton(sk_boundary)
+        except:
+            original_boundary_polygon = Polygon([(-1, -1), (-1, 1), (1, 1), (1, -1), (-1, -1)])
+            area_tolerance = 0.05  # 허용되는 최대 면적 차이
+            simplified_polygon = simplify_polygon_randomly(original_boundary_polygon, area_tolerance)
+
+            exterior_polyline = list(simplified_polygon.exterior.coords)[:-1]
+            exterior_polyline.reverse()
+            poly_list = []
+            for ix in range(len(exterior_polyline)):
+                poly_list.append(exterior_polyline[ix])
+            sk_boundary = skgeom.Polygon(poly_list)
+
+            skel = skgeom.skeleton.create_interior_straight_skeleton(sk_boundary)
 
     G, longest_skel = get_polyskeleton_longest_path(skel, sk_boundary)
     ### get the medial axis of block
     medaxis = modified_skel_to_medaxis(longest_skel, simplified_polygon)
-    if medaxis == None:
-        print('저장 하지 않음 1')
-        return
+    # if medaxis == None:
+    #     print('저장 하지 않음 1')
+    #     return
 
     ### warp all building locations and sizes
     pos_xsorted, size_xsorted, xsort_idx, aspect_rto = warp_bldg_by_midaxis(building_polygons, simplified_polygon, medaxis)
-    if pos_xsorted.all() == None:
-        print('저장 하지 않음 2')
-        return
+    # if pos_xsorted.all() == None:
+    #     print('저장 하지 않음 2')
+    #     return
 
     is_vis = False
     if is_vis:
