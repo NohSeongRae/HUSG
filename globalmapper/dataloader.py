@@ -18,9 +18,9 @@ class GraphDataset(Dataset):
             self.folder_path = f'/local_datasets/gt_graph_datasets/{data_type}'
             self.folder_path = f'/local_datasets/grid_graph_datasets/{data_type}'
 
-            if data_type == 'test':
-                self.folder_path = f'../preprocessing/global_mapper/gt_graph_datasets/{data_type}'
-                self.folder_path = f'../preprocessing/global_mapper/grid_graph_datasets/{data_type}'
+            # if data_type == 'test':
+            #     self.folder_path = f'../preprocessing/global_mapper/gt_graph_datasets/{data_type}'
+            #     self.folder_path = f'../preprocessing/global_mapper/grid_graph_datasets/{data_type}'
         elif condition_type == 'image_resnet34':
             self.folder_path = '/local_datasets/globalmapper_datasets/'
         file_extension = '.gpickle'
