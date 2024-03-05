@@ -7,7 +7,7 @@ import pickle
 
 
 base = 'grid_graph_figure'
-base = 'gt_images_image_resnet34/cvae_graph_20240305_045442'
+base = 'output/GIN_ssw03270_aurora-g1/cvae_graph_20240305_152403'
 path = ''
 path = os.path.join(base, path)
 
