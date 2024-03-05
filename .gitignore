@@ -20,6 +20,8 @@ preprocessing/global_mapper/ours_output/
 preprocessing/global_mapper/ours_graph_datasets/
 preprocessing/global_mapper/synthetic_images_graph/
 preprocessing/global_mapper/gt_images_graph/
+preprocessing/global_mapper/gt_images_image_resnet34/
+preprocessing/global_mapper/synthetic_images_image_resnet34/
 GlobalMapper-main/
 *.pth
 *.tar
