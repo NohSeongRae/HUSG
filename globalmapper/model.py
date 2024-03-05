@@ -293,6 +293,15 @@ class GraphDecoder(nn.Module):
 
         return output_pos, output_size
 
+    def node_order_within_batch(self, batch):
+        order_within_batch = torch.zeros_like(batch)
+        unique_batches = batch.unique()
+        for ub in unique_batches:
+            mask = (batch == ub)
+            order_within_batch[mask] = torch.arange(mask.sum(), device=batch.device)
+        one_hot_order = torch.nn.functional.one_hot(order_within_batch, num_classes=120)
+        return one_hot_order
+
 class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
                  image_size=64, inner_channel=80, bottleneck=128,
