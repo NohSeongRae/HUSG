@@ -27,6 +27,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
     cvae.eval()
     with torch.no_grad():
+        count = 1
         for idx, data in enumerate(tqdm(test_dataloader)):
             data, polygon_path, data_path  = data
 
@@ -56,6 +57,10 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      polygon_path,
                      save_dir_path,
                      data_path[0])
+
+            count += 1
+            if count % 1001 == 0:
+                return
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
