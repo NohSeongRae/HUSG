@@ -29,6 +29,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
     cvae.eval()
     with torch.no_grad():
         idx = 0
+        count = 1
+
         for data in tqdm(test_dataloader):
             data, graph_file = data
             import pickle
@@ -66,6 +68,10 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
             idx += 1
+            count += 1
+
+            if count % 1001 == 0:
+                break
 
 
 if __name__ == '__main__':
