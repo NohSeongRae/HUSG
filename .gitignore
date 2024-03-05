@@ -11,3 +11,4 @@ Heatmap/model/ubuntu_copy/
 preprocessing/global_mapper/
 *.pth
 *.tar
+*.gpickle
