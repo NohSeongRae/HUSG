@@ -168,7 +168,7 @@ class Trainer:
             total_size_loss = torch.Tensor([0.0]).to(self.device)
             total_kl_loss = torch.Tensor([0.0]).to(self.device)
 
-            for data in self.train_dataloader:
+            for data in tqdm(self.train_dataloader):
                 self.optimizer.zero_grad()
 
                 data = data.to(device=self.device)
