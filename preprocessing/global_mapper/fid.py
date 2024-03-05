@@ -33,8 +33,11 @@ image_tensor = torch.zeros(1000, 3, 299, 299).type(torch.uint8)
 image_gt_tensor = torch.zeros(1000, 3, 299, 299).type(torch.uint8)
 
 for idx, (o, o_gt) in tqdm(enumerate(zip(list_output, list_output_gt)), total=len(list_output)):
-    image_sample = PIL.Image.open(os.path.join(path, o)).convert("RGB").resize((299, 299))
-    image_sample_gt = PIL.Image.open(os.path.join(path, o_gt)).convert("RGB").resize((299, 299))
+    try:
+        image_sample = PIL.Image.open(os.path.join(path, o)).convert("RGB").resize((299, 299))
+        image_sample_gt = PIL.Image.open(os.path.join(path, o_gt)).convert("RGB").resize((299, 299))
+    except:
+        continue
 
     # image_sample_tensor = (totensor(image_sample)*255).type(torch.uint8)
     # image_sample_gt_tensor = (totensor(image_sample)*255).type(torch.uint8)

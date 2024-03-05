@@ -226,7 +226,11 @@ def inverse_warp_bldg_by_midaxis(pos_sorted, size_sorted, midaxis, aspect_rto, r
     ###############################################################################   same as forward processing   ###################
     relative_cutoff = [0.0]
     vector_midaxis = []
-    coords = np.array(midaxis.coords.xy)
+    try:
+        coords = np.array(midaxis.coords.xy)
+    except:
+        for line in midaxis.geoms:
+            coords = np.array(line.coords.xy)
     for i in range(1, coords.shape[1]):
         relative_cutoff.append(midaxis.project(Point(coords[0, i], coords[1, i]), normalized=True))
         vector_midaxis.append(coords[:, i] - coords[:, i-1])
