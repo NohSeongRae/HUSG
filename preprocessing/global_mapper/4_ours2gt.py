@@ -105,7 +105,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     return rotated_rectangle
 
 def generate_datasets(idx, data_type):
-    with open(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
+    with open(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
         buildings = pickle.load(file)
 
     building_polygons = []
@@ -115,7 +115,7 @@ def generate_datasets(idx, data_type):
     #     x, y = poly.exterior.xy
     #     plt.plot(x, y)
 
-    graph = nx.read_gpickle(f'datasets/new_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
+    graph = nx.read_gpickle(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
     n_node = graph.number_of_nodes()
     n_building = len(buildings)
@@ -158,6 +158,18 @@ def generate_datasets(idx, data_type):
         skel = skgeom.skeleton.create_interior_straight_skeleton(sk_boundary)
     except:
         return
+
+        area_tolerance = 0.05  # 허용되는 최대 면적 차이
+        simplified_polygon = simplify_polygon_randomly(original_boundary_polygon, area_tolerance)
+
+        exterior_polyline = list(simplified_polygon.exterior.coords)[:-1]
+        exterior_polyline.reverse()
+        poly_list = []
+        for ix in range(len(exterior_polyline)):
+            poly_list.append(exterior_polyline[ix])
+        sk_boundary = skgeom.Polygon(poly_list)
+
+        skel = skgeom.skeleton.create_interior_straight_skeleton(sk_boundary)
 
     G, longest_skel = get_polyskeleton_longest_path(skel, sk_boundary)
     ### get the medial axis of block
@@ -420,7 +432,7 @@ def generate_datasets(idx, data_type):
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'train'
+    data_type = 'test'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
