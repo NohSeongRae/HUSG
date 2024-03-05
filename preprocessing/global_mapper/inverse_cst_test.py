@@ -56,7 +56,7 @@ def move_polygon_center_to_midpoint(polygon):
 
 count = 1
 for idx in tqdm(range(0, 13039)):
-    path = 'spatial_graph_output'
+    path = 'grid_graph_output'
     test_gt_graph = f"./{path}/gt/{str(idx)}.gpickle"
     test_pred_graph = f"./{path}/pred/{str(idx)}.gpickle"
 
@@ -109,9 +109,6 @@ for idx in tqdm(range(0, 13039)):
 
         # 중심 좌표 구하기
         center = norm_polygon.centroid.coords[0]
-        if not (0 <= center[0] <= 1) or not (0 <= center[0] <= 1):
-            print('111111')
-            continue
 
         x, y, w, h, theta = get_bbox_details(norm_polygon)
         pred_output_list.append([x, y, w, h, theta])
