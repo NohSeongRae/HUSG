@@ -7,7 +7,7 @@ import pickle
 
 
 base = 'grid_graph_figure'
-base = 'output/without_image_condition_spatial_graph_ariel-k1/cvae_graph_20240306_115843'
+base = 'output/synthetic_T3_dnpcs_ariel-k1/cvae_graph_20240305_045442'
 path = ''
 path = os.path.join(base, path)
 
