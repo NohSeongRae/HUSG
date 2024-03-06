@@ -79,7 +79,7 @@ class Trainer:
         self.cvae = GraphCVAE(T=T, feature_dim=d_feature, latent_dim=d_latent, n_head=n_head,
                               condition_type=condition_type,
                               convlayer=convlayer).to(device=self.device)
-        self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank])
+        self.cvae = nn.parallel.DistributedDataParallel(self.cvae, device_ids=[local_rank], find_unused_parameters=True)
 
         base_batch_size = 16
         new_batch_size = self.batch_size
