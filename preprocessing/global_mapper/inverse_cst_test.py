@@ -56,7 +56,7 @@ def move_polygon_center_to_midpoint(polygon):
 
 count = 1
 for idx in tqdm(range(0, 13039)):
-    path = 'grid_graph_output'
+    path = 'gt_graph_output'
     test_gt_graph = f"./{path}/gt/{str(idx)}.gpickle"
     test_pred_graph = f"./{path}/pred/{str(idx)}.gpickle"
 
