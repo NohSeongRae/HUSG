@@ -94,7 +94,7 @@ class GraphDataset(Dataset):
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
             mask = (edge_index[0] > n_boundary) & (edge_index[1] > n_boundary)
-            edge_index = edge_index[:, mask]
+            edge_index = edge_index[:, mask] - n_boundary
 
             data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
