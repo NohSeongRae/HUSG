@@ -98,7 +98,7 @@ class GraphDataset(Dataset):
 
             data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
-                        edge_index=edge_index, num_nodes=graph.number_of_nodes())
+                        edge_index=edge_index, num_nodes=n_building)
 
             return data
         else:
