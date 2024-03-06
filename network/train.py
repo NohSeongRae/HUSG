@@ -81,9 +81,9 @@ class Trainer:
         return masked_loss.sum() / pad_mask.float().sum()
 
     def edge_sum_loss(self, pred, trg, pad_mask):
-        pred = pred.reshape(-1, 200)
-        trg = trg.reshape(-1, 200)
-        pad_mask = pad_mask.reshape(-1, 200)
+        pred = pred.reshape(-1, pred.shape[-1])
+        trg = trg.reshape(-1, trg.shape[-1])
+        pad_mask = pad_mask.reshape(-1, pad_mask.shape[-1])
 
         pred = pred * pad_mask
         loss = F.mse_loss(torch.sum(pred, dim=-1), torch.sum(trg, dim=-1), reduction='none')
@@ -142,7 +142,8 @@ class Trainer:
                                           building_pad_mask, boundary_pad_mask, boundary_pos_padded)
 
                 exist_loss = self.cross_entropy_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
-                count_loss = self.edge_sum_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                count_loss = self.edge_sum_loss(output, bb_adj_matrix_padded.detach(), bb_pad_mask.detach()) + \
+                             self.edge_sum_loss(output.permute(0, 2, 1), bb_adj_matrix_padded.permute(0, 2, 1).detach(), bb_pad_mask.permute(0, 2, 1).detach())
                 loss = exist_loss + count_loss
                 correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
@@ -203,7 +204,8 @@ class Trainer:
                                                   building_pad_mask, boundary_pad_mask, boundary_pos_padded)
 
                         exist_loss = self.cross_entropy_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
-                        count_loss = self.edge_sum_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
+                        count_loss = self.edge_sum_loss(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach()) + \
+                                     self.edge_sum_loss(output.permute(0, 2, 1), bb_adj_matrix_padded.permute(0, 2, 1).detach(), bb_pad_mask.permute(0, 2, 1).detach())
                         loss = exist_loss + count_loss
                         correct, problem = self.correct_data(output.detach(), bb_adj_matrix_padded.detach(), bb_pad_mask.detach())
 
