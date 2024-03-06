@@ -110,9 +110,8 @@ class GraphDataset(Dataset):
                                          dtype=torch.float32)
             # 객체 배열로 변환
             building_masks = np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()], dtype=object)
-
-            # PyTorch 텐서로 변환 (필요한 경우)
-            building_masks = torch.tensor(list(building_masks), dtype=torch.long)
+            building_masks = [x[0] if isinstance(x, (list, tuple)) else x for x in building_masks]
+            building_masks = torch.tensor(building_masks, dtype=torch.long)
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
