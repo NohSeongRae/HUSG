@@ -20,7 +20,7 @@ class GraphDataset(Dataset):
         elif condition_type == 'image_resnet34':
             self.folder_path = '/local_datasets/synthetic_train_datasets/' + self.data_type
             # self.folder_path = '/local_datasets/ours_graph_datasets/' + self.data_type
-            self.folder_path = '/local_datasets/gt_train_datasets/' + self.data_type
+            # self.folder_path = '/local_datasets/gt_train_datasets/' + self.data_type
         file_extension = '.gpickle'
 
         # if data_type == 'test':
