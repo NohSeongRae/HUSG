@@ -166,18 +166,20 @@ class Trainer:
         for epoch in range(epoch_start, self.max_epoch):
             total_pos_loss = torch.Tensor([0.0]).to(self.device)
             total_size_loss = torch.Tensor([0.0]).to(self.device)
+            total_exist_loss = torch.Tensor([0.0]).to(self.device)
             total_kl_loss = torch.Tensor([0.0]).to(self.device)
 
             for data in tqdm(self.train_dataloader):
                 self.optimizer.zero_grad()
 
                 data = data.to(device=self.device)
-                output_pos, output_size, mu, log_var = self.cvae(data)
+                output_pos, output_size, output_exist, mu, log_var = self.cvae(data)
 
                 mask = data.exist_features.detach().unsqueeze(1)
 
                 loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
                 loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
+                loss_exist = self.recon_exist_loss(output_exist, data.exist_features.detach())
                 loss_kl = self.kl_loss(mu, log_var)
 
                 # loss_pos를 전체 노드와 공유하여 모든 노드에서의 최대 값을 얻음
@@ -192,7 +194,7 @@ class Trainer:
                     continue
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
-                             loss_kl * self.kl_weight
+                             loss_kl * self.kl_weight + loss_exist
 
                 loss_total.backward()
                 self.optimizer.step()
@@ -200,10 +202,12 @@ class Trainer:
                 dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
                 dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
+                dist.all_reduce(loss_exist, op=dist.ReduceOp.SUM)
 
                 total_pos_loss += loss_pos
                 total_size_loss += loss_size
                 total_kl_loss += loss_kl
+                total_exist_loss += loss_exist
                 # if self.local_rank == 0:
                 #     print(loss_pos, loss_size, loss_kl)
 
@@ -211,31 +215,36 @@ class Trainer:
                 loss_pos_mean = total_pos_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_size_mean = total_size_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
                 loss_kl_mean = total_kl_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
+                loss_exist_mean = total_exist_loss.item() / (len(self.train_dataloader) * dist.get_world_size())
 
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Pos: {loss_pos_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Size: {loss_size_mean:.4f}")
                 print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss KL: {loss_kl_mean:.4f}")
+                print(f"Epoch {epoch + 1}/{self.max_epoch} - Loss Exist: {loss_exist_mean:.4f}")
 
                 if self.use_tensorboard:
                     wandb.log({"Train pos loss": loss_pos_mean}, step=epoch + 1)
                     wandb.log({"Train size loss": loss_size_mean}, step=epoch + 1)
                     wandb.log({"Train kl loss": loss_kl_mean}, step=epoch + 1)
+                    wandb.log({"Train exist loss": loss_exist_mean}, step=epoch + 1)
 
             if (epoch + 1) % self.val_epoch == 0:
                 self.cvae.module.eval()
                 total_pos_loss = torch.Tensor([0.0]).to(self.device)
                 total_size_loss = torch.Tensor([0.0]).to(self.device)
                 total_kl_loss = torch.Tensor([0.0]).to(self.device)
+                total_exist_loss = torch.Tensor([0.0]).to(self.device)
 
                 with torch.no_grad():
                     for data in self.val_dataloader:
                         data = data.to(device=self.device)
-                        output_pos, output_size, mu, log_var = self.cvae(data)
+                        output_pos, output_size, output_exist, mu, log_var = self.cvae(data)
 
                         mask = data.exist_features.detach().unsqueeze(1)
 
                         loss_pos = self.recon_pos_loss(output_pos, data.pos_features.detach(), mask)
                         loss_size = self.recon_size_loss(output_size, data.size_features.detach(), mask)
+                        loss_exist = self.recon_exist_loss(output_exist, data.exist_features.detach())
                         loss_kl = self.kl_loss(mu, log_var)
 
                         # loss_pos를 전체 노드와 공유하여 모든 노드에서의 최대 값을 얻음
@@ -251,27 +260,32 @@ class Trainer:
 
                         dist.all_reduce(loss_pos, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_size, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(loss_exist, op=dist.ReduceOp.SUM)
                         dist.all_reduce(loss_kl, op=dist.ReduceOp.SUM)
 
                         total_pos_loss += loss_pos
                         total_size_loss += loss_size
+                        total_exist_loss += loss_exist
                         total_kl_loss += loss_kl
 
                     if self.local_rank == 0:
                         loss_pos_mean = total_pos_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_size_mean = total_size_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
                         loss_kl_mean = total_kl_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
+                        loss_exist_mean = total_exist_loss.item() / (len(self.val_dataloader) * dist.get_world_size())
 
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Pos: {loss_pos_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Size: {loss_size_mean:.4f}")
                         print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss KL: {loss_kl_mean:.4f}")
+                        print(f"Epoch {epoch + 1}/{self.max_epoch} - Validation Loss Exist: {loss_exist_mean:.4f}")
 
                         if self.use_tensorboard:
                             wandb.log({"Validation pos loss": loss_pos_mean}, step=epoch + 1)
                             wandb.log({"Validation size loss": loss_size_mean}, step=epoch + 1)
                             wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
+                            wandb.log({"Validation exist loss": loss_exist_mean}, step=epoch + 1)
 
-                            loss_total = loss_pos_mean + loss_size_mean + loss_kl_mean
+                            loss_total = loss_pos_mean + loss_size_mean + loss_kl_mean + loss_exist_mean
                             wandb.log({"Validation total loss": loss_total}, step=epoch + 1)
 
                             if min_loss > loss_total:
