@@ -62,6 +62,19 @@ if __name__ == '__main__':
         for data in tqdm(test_dataloader):
             data, file = data
             file = file[0].replace('.pickle', '')
+            if 'grid' in file:
+                file_idx = file.replace('grid_', '')
+                graph_type = 'grid_graph'
+            elif 'ring' in file:
+                file_idx = file.replace('ring_', '')
+                graph_type = 'ring_graph'
+            elif 'line' in file:
+                file_idx = file.replace('line_', '')
+                graph_type = 'line_graph'
+            elif 'random' in file:
+                file_idx = file.replace('random_', '')
+                graph_type = 'random_graph'
+
 
             building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=device)
             boundary_adj_matrix_padded = data['boundary_adj_matrix_padded'].to(device=device)
@@ -138,7 +151,7 @@ if __name__ == '__main__':
                 plt.savefig(save_path, dpi=300, bbox_inches='tight')
 
             if save:
-                path = f'../preprocessing/global_mapper/datasets/new_city_datasets/gt_train_datasets/test/{file}.gpickle'
+                path = f'../preprocessing/global_mapper/datasets/new_city_datasets/gt_train_datasets/test/{file_idx}.gpickle'
                 graph = nx.read_gpickle(path)
 
                 # 그래프의 모든 엣지를 제거
@@ -152,7 +165,7 @@ if __name__ == '__main__':
 
                 # 결과 그래프 검증 또는 사용
                 # 예: 그래프를 다시 gpickle 파일로 저장
-                path = path.replace('gt_train_datasets', 'synthetic_train_datasets')
+                path = path.replace('gt_train_datasets', f'{graph_type}_train_datasets')
                 nx.write_gpickle(graph, path)
 
             count += 1
