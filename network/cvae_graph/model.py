@@ -184,8 +184,8 @@ class GraphDecoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer):
         super(GraphDecoder, self).__init__()
 
-        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
-        # self.dec_feature_init = nn.Linear(latent_dim, feature_dim)
+        # self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
+        self.dec_feature_init = nn.Linear(latent_dim, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -227,7 +227,7 @@ class GraphDecoder(nn.Module):
         self.fc_theta = nn.Linear(feature_dim, 1)
 
     def forward(self, z, node_mask, condition, edge_index, batch):
-        z = torch.cat([z, condition], dim=1)
+        # z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
 
