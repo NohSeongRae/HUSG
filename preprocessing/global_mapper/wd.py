@@ -7,7 +7,7 @@ import pickle
 
 
 base = 'grid_graph_figure'
-# base = 'output/synthetic_GIN_ssw03270_aurora-g1/cvae_graph_20240305_152403'
+base = 'output/without_boundary_ariel-k1/cvae_graph_20240306_115320'
 path = ''
 path = os.path.join(base, path)
 
@@ -52,8 +52,8 @@ wh = np.array(wh)
 wh_gt = np.array(wh_gt)
 theta = np.array(theta)
 theta_gt = np.array(theta_gt)
-theta = (np.array(theta) * 2 - 1) * 45
-theta_gt = (np.array(theta_gt) * 2 - 1) * 45
+# theta = (np.array(theta) * 2 - 1) * 45
+# theta_gt = (np.array(theta_gt) * 2 - 1) * 45
 
 wd_xy = np.mean([
     wasserstein_distance(xy[:, i], xy_gt[:, i])
