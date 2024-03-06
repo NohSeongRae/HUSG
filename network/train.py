@@ -127,7 +127,7 @@ class Trainer:
             total_correct = torch.Tensor([0.0]).to(self.device)
             total_problem = torch.Tensor([0.0]).to(self.device)
 
-            for data in tqdm(self.train_dataloader):
+            for data in self.train_dataloader:
                 self.optimizer.zero_grad()
 
                 building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=self.device)
