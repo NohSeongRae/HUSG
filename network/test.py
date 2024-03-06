@@ -57,6 +57,8 @@ if __name__ == '__main__':
     with torch.no_grad():
         vis = False
         save = True
+
+        count = 1
         for data in tqdm(test_dataloader):
             data, file = data
             file = file[0].replace('.pickle', '')
@@ -92,7 +94,7 @@ if __name__ == '__main__':
             #     else:
             #         output[0, i] = output_1[0, i]
 
-            k = 4  # 상위 k개 값을 선택
+            k = 2  # 상위 k개 값을 선택
 
             # 각 120x200 행렬에 대해 top k 값을 찾기
             topk_values, topk_indices = torch.topk(output, k, dim=2)
@@ -162,3 +164,7 @@ if __name__ == '__main__':
                 # 예: 그래프를 다시 gpickle 파일로 저장
                 path = path.replace('gt_train_datasets', 'synthetic_train_datasets')
                 nx.write_gpickle(graph, path)
+
+            count += 1
+            if count % 1001 == 0:
+                break
