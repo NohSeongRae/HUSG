@@ -55,8 +55,8 @@ if __name__ == '__main__':
 
     transformer.eval()
     with torch.no_grad():
-        vis = True
-        save = False
+        vis = False
+        save = True
 
         count = 1
         for data in tqdm(test_dataloader):
