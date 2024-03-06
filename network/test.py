@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
             output = transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                  building_pad_mask, boundary_pad_mask, boundary_pos_padded)
-            output *= bb_adj_matrix_padded
+            output *= bb_pad_mask
             output = (output >= 0.5).float()
 
             # k = 3  # 상위 k개 값을 선택
