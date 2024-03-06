@@ -165,9 +165,9 @@ if __name__ == '__main__':
 
                 for node in range(n_boundary + n_building):
                     if node < n_boundary:
-                        graph.add_node(node, building_masks=0, node_features=[0, 0, 0, 0, 0])
+                        graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
                     else:
-                        graph.add_node(node, building_masks=1, node_features=[0, 0, 0, 0, 0])
+                        graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
                 # 결과 그래프 검증 또는 사용
                 # 예: 그래프를 다시 gpickle 파일로 저장
                 path = path.replace('gt_train_datasets', f'{graph_type}_train_datasets')
