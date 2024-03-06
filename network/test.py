@@ -78,7 +78,7 @@ if __name__ == '__main__':
             output *= bb_adj_matrix_padded
             output_1 = (output >= 0.5).float()
 
-            k = 6  # 상위 k개 값을 선택
+            k = 3  # 상위 k개 값을 선택
 
             # 각 120x200 행렬에 대해 top k 값을 찾기
             topk_values, topk_indices = torch.topk(output, k, dim=2)
