@@ -116,20 +116,18 @@ if __name__ == '__main__':
             graph = nx.read_gpickle(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
             n_node = graph.number_of_nodes()
-            n_building = len(buildings)
+            n_building = max(max(edge) for edge in building_edge) + 1
             n_chunk = n_node - n_building
 
             adj_matrix = nx.adjacency_matrix(graph).todense()
             boundary_adj_matrix = adj_matrix[:n_chunk, :n_chunk]
-            bb_adj_matrix = np.zeros_like(adj_matrix[n_chunk:, :n_chunk])
+            bb_adj_matrix = np.zeros((n_building, n_chunk))
             boundary_pos_feature = []
 
             for node in graph.nodes():
                 if node < n_chunk:
                     boundary_pos_feature.append(graph.nodes[node]['node_features'][:2])
             boundary_pos_feature = np.array(boundary_pos_feature)
-
-            n_building = max(max(edge) for edge in building_edge) + 1
 
             data = {'boundary_adj_matrix': boundary_adj_matrix,
                     'building_adj_matrix': building_adj_matrix,
