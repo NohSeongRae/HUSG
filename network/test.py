@@ -172,17 +172,19 @@ if __name__ == '__main__':
                 graph.remove_edges_from(list(graph.edges()))
                 graph.remove_nodes_from(list(graph.nodes()))
 
+                for node in range(n_boundary + n_building):
+                    if node < n_boundary:
+                        graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
+                    else:
+                        graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
+
+
                 # 사용자의 인접 행렬을 바탕으로 엣지 추가
                 for i, row in enumerate(pred_adj_matrix):
                     for j, val in enumerate(row):
                         if val == 1:  # i와 j 사이에 연결이 있는 경우
                             graph.add_edge(i, j)
 
-                for node in range(n_boundary + n_building):
-                    if node < n_boundary:
-                        graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
-                    else:
-                        graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
                 # 결과 그래프 검증 또는 사용
                 # 예: 그래프를 다시 gpickle 파일로 저장
                 path = path.replace('gt_train_datasets', f'{graph_type}_{size_type}_train_datasets')
