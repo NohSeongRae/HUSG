@@ -117,6 +117,13 @@ def generate_datasets(idx, data_type):
     n_building = len(buildings)
     n_chunk = n_node - n_building
 
+    # for node in graph.nodes():
+    #     if node >= n_chunk:
+    #         x, y, w, h, theta = graph.nodes[node]['node_features']
+    #         polygon = create_rotated_rectangle(x, y, w, h, (theta * 2 - 1) * 45)
+    #         x, y = polygon.exterior.coords.xy
+    #         plt.plot(x, y, '-', color='red', label='Boundary')
+
     boundary_points = []
     for node in graph.graph['condition'].nodes():
         x_min, y_min, x_max, y_max, theta = graph.graph['condition'].nodes[node]['chunk_features']
@@ -125,6 +132,18 @@ def generate_datasets(idx, data_type):
         boundary_points.append([cx * 2, cy * 2])
 
     original_boundary_polygon = Polygon(boundary_points)
+    # x, y = original_boundary_polygon.exterior.coords.xy
+    # plt.plot(x, y, '-', color='blue', label='Boundary')
+
+
+    # for node1 in graph.nodes():
+    #     for node2 in graph.nodes():
+    #         if graph.has_edge(node1, node2):
+    #             x1, y1, w, h, theta = graph.nodes[node1]['node_features']
+    #             x2, y2, w, h, theta = graph.nodes[node2]['node_features']
+    #
+    #             plt.plot([x1, x2], [y1, y2], color='green')
+    # plt.show()
 
     area_tolerance = 0.0005  # 허용되는 최대 면적 차이
     simplified_polygon = simplify_polygon_randomly(original_boundary_polygon, area_tolerance)
