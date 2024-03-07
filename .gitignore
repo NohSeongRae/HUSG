@@ -22,6 +22,7 @@ preprocessing/global_mapper/random_graph_generation_datasets/
 preprocessing/global_mapper/eu_grid_graph_datasets/
 preprocessing/global_mapper/eu_gt_graph_datasets/
 preprocessing/global_mapper/eu_ours_graph_datasets/
+preprocessing/global_mapper/eu_graph_generation_datasets/
 GlobalMapper-main/
 *.pth
 *.tar

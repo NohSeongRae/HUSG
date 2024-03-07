@@ -24,7 +24,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
-base = 'output/line_small/cvae_graph_20240305_145257'
+base = 'output/random_large/cvae_graph_20240305_145257'
 model = base.split('/')[-1]
 path = ''
 path = os.path.join(base, path)
@@ -83,5 +83,9 @@ for output in tqdm(list_output):
     ax.set_ylim([-0.1, 1.1])
     ax.set_axis_off()
     save_path_1 = os.path.join(directory, file_idx + ".png")
+
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+
     ax.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
     plt.close(ax.figure)
