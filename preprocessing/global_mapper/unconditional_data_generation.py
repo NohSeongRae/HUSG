@@ -105,7 +105,10 @@ if __name__ == '__main__':
 
             node_mapping = {node: i for i, node in enumerate(sorted_nodes)}
             new_indices = [node_mapping[node] for node in G_visualized.nodes()]
-            building_adj_matrix = adj_matrix_original[np.ix_(new_indices, new_indices)]
+            if 'grid' in graph_type or 'random' in graph_type:
+                building_adj_matrix = adj_matrix_original[np.ix_(new_indices, new_indices)]
+            else:
+                building_adj_matrix = adj_matrix_original
 
             with open(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
                 buildings = pickle.load(file)
