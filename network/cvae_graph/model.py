@@ -244,13 +244,13 @@ class GraphDecoder(nn.Module):
             d_embed_t = F.relu(d_conv_t(d_embed_t, edge_index))
 
         output_pos = F.relu(self.dec_pos(d_embed_t))
-        output_pos = self.fc_pos(output_pos)
+        output_pos = F.sigmoid(self.fc_pos(output_pos))
 
         output_size = F.relu(self.dec_size(d_embed_t))
-        output_size = self.fc_size(output_size)
+        output_size = F.sigmoid(self.fc_size(output_size))
 
         output_theta = F.relu(self.dec_theta(d_embed_t))
-        output_theta = self.fc_theta(output_theta)
+        output_theta = F.sigmoid(self.fc_theta(output_theta))
 
         return output_pos, output_size, output_theta
 
