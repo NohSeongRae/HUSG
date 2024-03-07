@@ -165,8 +165,11 @@ if __name__ == '__main__':
                 plt.savefig(save_path, dpi=300, bbox_inches='tight')
 
             if save:
-                path = f'../preprocessing/global_mapper/datasets/new_city_datasets/gt_train_datasets/test/{file_idx}.gpickle'
-                graph = nx.read_gpickle(path)
+                try:
+                    path = f'../preprocessing/global_mapper/datasets/new_city_datasets/gt_train_datasets/test/{file_idx}.gpickle'
+                    graph = nx.read_gpickle(path)
+                except:
+                    continue
 
                 # 그래프의 모든 엣지를 제거
                 graph.remove_edges_from(list(graph.edges()))
@@ -197,5 +200,5 @@ if __name__ == '__main__':
                 nx.write_gpickle(graph, path)
 
             count += 1
-            if count % 1001 == 0:
-                break
+            # if count % 1001 == 0:
+            #     break
