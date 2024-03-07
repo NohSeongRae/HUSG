@@ -21,7 +21,7 @@ class GraphDataset(Dataset):
             # self.folder_path = '/local_datasets/uncondition_graph_datasets/ring_graph_small_train_datasets/' + self.data_type
             # self.folder_path = '/local_datasets/eu_ours_graph_datasets/' + self.data_type
             # self.folder_path = '/local_datasets/gt_train_datasets/' + self.data_type
-            self.folder_path = '/local_datasets/eu_graph_condition_synthetic_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/eu_synthetic_datasets/' + self.data_type
         file_extension = '.gpickle'
 
         # if data_type == 'test':
