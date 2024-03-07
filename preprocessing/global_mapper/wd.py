@@ -6,7 +6,7 @@ from scipy.stats import wasserstein_distance
 import pickle
 
 
-base = 'eu_gt_graph_figure'
+base = 'output/eu_ours_output/cvae_graph_20240307_165433'
 # base = 'output/without_image_condition_spatial_graph_ariel-k1/cvae_graph_20240306_115843'
 path = ''
 path = os.path.join(base, path)
@@ -52,8 +52,8 @@ wh = np.array(wh)
 wh_gt = np.array(wh_gt)
 theta = np.array(theta)
 theta_gt = np.array(theta_gt)
-theta = (np.array(theta) * 2 - 1) * 45
-theta_gt = (np.array(theta_gt) * 2 - 1) * 45
+# theta = (np.array(theta) * 2 - 1) * 45
+# theta_gt = (np.array(theta_gt) * 2 - 1) * 45
 
 wd_xy = np.mean([
     wasserstein_distance(xy[:, i], xy_gt[:, i])
