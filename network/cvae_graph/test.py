@@ -33,7 +33,6 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
             data = data.to(device=device)
             output_pos, output_size, output_theta = cvae.test(data)
-            print(data.node_features.detach().cpu().numpy())
 
             if condition_type == 'image' or condition_type == 'image_resnet34':
                 plot(output_pos.detach().cpu().numpy(),
