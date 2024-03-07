@@ -67,10 +67,10 @@ class GraphDataset(Dataset):
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
-            n_building = torch.sum(building_masks)
-            n_boundary = building_masks.shape[0] - n_building
-            node_features = node_features[n_boundary:]
-            building_masks = building_masks[n_boundary:]
+            # n_building = torch.sum(building_masks)
+            # n_boundary = building_masks.shape[0] - n_building
+            # node_features = node_features[n_boundary:]
+            # building_masks = building_masks[n_boundary:]
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
@@ -92,12 +92,12 @@ class GraphDataset(Dataset):
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
 
-            mask = (edge_index[0] > n_boundary) & (edge_index[1] > n_boundary)
-            edge_index = edge_index[:, mask] - n_boundary
+            # mask = (edge_index[0] > n_boundary) & (edge_index[1] > n_boundary)
+            # edge_index = edge_index[:, mask] - n_boundary
 
             data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
-                        edge_index=edge_index, num_nodes=n_building)
+                        edge_index=edge_index, num_nodes=graph.number_of_nodes())
 
             return data
         else:
