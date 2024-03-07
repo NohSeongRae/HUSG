@@ -9,7 +9,7 @@ from torchmetrics.image.fid import FrechetInceptionDistance
 # base = 'Z:/iiixr-drive/Projects/2023_City_Team/0_others/vis/cvae_graph/Abilation'
 # path = 'Abilation(T5 + GIN)'
 # path = os.path.join(base, path)
-path = 'gt_graph_figure'
+path = 'eu_gt_graph_figure'
 # path = 'output/without_image_condition_spatial_graph_ariel-k1/cvae_graph_20240306_115843'
 
 list_output_all = os.listdir(path)
@@ -23,14 +23,15 @@ for name in list_output_all:
     elif 'prediction' in name and 'png' in name:
         list_output.append(name)
 
-list_output_gt = list_output_gt[:1000]
-list_output = list_output[:1000]
+length = len(list_output_gt)
+list_output_gt = list_output_gt[:length]
+list_output = list_output[:length]
 
-assert len(list_output_gt) == 1000
-assert len(list_output) == 1000
+assert len(list_output_gt) == length
+assert len(list_output) == length
 
-image_tensor = torch.zeros(1000, 3, 299, 299).type(torch.uint8)
-image_gt_tensor = torch.zeros(1000, 3, 299, 299).type(torch.uint8)
+image_tensor = torch.zeros(length, 3, 299, 299).type(torch.uint8)
+image_gt_tensor = torch.zeros(length, 3, 299, 299).type(torch.uint8)
 
 for idx, (o, o_gt) in tqdm(enumerate(zip(list_output, list_output_gt)), total=len(list_output)):
     try:
