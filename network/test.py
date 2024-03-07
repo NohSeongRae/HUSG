@@ -62,28 +62,28 @@ if __name__ == '__main__':
         for data in tqdm(test_dataloader):
             data, file = data
             file = file[0].replace('.pickle', '')
-            if 'grid' in file:
-                file_idx = file.replace('grid_', '')
-                graph_type = 'grid_graph'
-            elif 'ring' in file:
-                file_idx = file.replace('ring_', '')
-                graph_type = 'ring_graph'
-            elif 'line' in file:
-                file_idx = file.replace('line_', '')
-                graph_type = 'line_graph'
-            elif 'random' in file:
-                file_idx = file.replace('random_', '')
-                graph_type = 'random_graph'
-
-            if 'small' in file:
-                file_idx = file_idx.replace('small_', '')
-                size_type = 'small'
-            elif 'middle' in file:
-                file_idx = file_idx.replace('middle_', '')
-                size_type = 'middle'
-            elif 'large' in file:
-                file_idx = file_idx.replace('large_', '')
-                size_type = 'large'
+            # if 'grid' in file:
+            #     file_idx = file.replace('grid_', '')
+            #     graph_type = 'grid_graph'
+            # elif 'ring' in file:
+            #     file_idx = file.replace('ring_', '')
+            #     graph_type = 'ring_graph'
+            # elif 'line' in file:
+            #     file_idx = file.replace('line_', '')
+            #     graph_type = 'line_graph'
+            # elif 'random' in file:
+            #     file_idx = file.replace('random_', '')
+            #     graph_type = 'random_graph'
+            #
+            # if 'small' in file:
+            #     file_idx = file_idx.replace('small_', '')
+            #     size_type = 'small'
+            # elif 'middle' in file:
+            #     file_idx = file_idx.replace('middle_', '')
+            #     size_type = 'middle'
+            # elif 'large' in file:
+            #     file_idx = file_idx.replace('large_', '')
+            #     size_type = 'large'
 
 
             building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=device)
@@ -166,7 +166,7 @@ if __name__ == '__main__':
 
             if save:
                 try:
-                    path = f'../preprocessing/global_mapper/datasets/new_city_datasets/gt_train_datasets/test/{file_idx}.gpickle'
+                    path = f'../preprocessing/global_mapper/datasets/eu_graph_condition_train_datasets/test/{file}.gpickle'
                     graph = nx.read_gpickle(path)
                 except:
                     continue
@@ -190,7 +190,8 @@ if __name__ == '__main__':
 
                 # 결과 그래프 검증 또는 사용
                 # 예: 그래프를 다시 gpickle 파일로 저장
-                path = path.replace('gt_train_datasets', f'{graph_type}_{size_type}_train_datasets')
+                # path = path.replace('gt_train_datasets', f'{graph_type}_{size_type}_train_datasets')
+                path = path.replace('eu_graph_condition_train_datasets', f'eu_graph_condition_synthetic_datasets')
 
                 # 폴더가 존재하는지 확인하고, 없으면 생성
                 directory = os.path.dirname(path)
@@ -200,5 +201,5 @@ if __name__ == '__main__':
                 nx.write_gpickle(graph, path)
 
             count += 1
-            # if count % 1001 == 0:
-            #     break
+            if count % 1001 == 0:
+                break
