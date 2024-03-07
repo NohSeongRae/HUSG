@@ -129,7 +129,7 @@ if __name__ == '__main__':
                     boundary_pos_feature.append(graph.nodes[node]['node_features'][:2])
             boundary_pos_feature = np.array(boundary_pos_feature)
 
-            n_building = max_node = max(max(edge) for edge in building_edge)
+            n_building = max(max(edge) for edge in building_edge) + 1
 
             data = {'boundary_adj_matrix': boundary_adj_matrix,
                     'building_adj_matrix': building_adj_matrix,
