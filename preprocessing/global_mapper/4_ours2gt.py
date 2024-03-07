@@ -115,7 +115,7 @@ def generate_datasets(idx, data_type):
     #     x, y = poly.exterior.xy
     #     plt.plot(x, y)
 
-    graph = nx.read_gpickle(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
+    graph = nx.read_gpickle(f'datasets/eu_graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
     n_node = graph.number_of_nodes()
     n_building = len(buildings)
@@ -426,13 +426,13 @@ def generate_datasets(idx, data_type):
         G.graph['block_scale'] = 1 / abs(dx)
         G.graph['building_polygons'] = building_polygons
 
-        output_file_path = f'gt_graph_datasets/{data_type}'
+        output_file_path = f'eu_gt_graph_datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'test'
+    data_type = 'val'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
