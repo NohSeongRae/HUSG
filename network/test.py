@@ -75,6 +75,16 @@ if __name__ == '__main__':
                 file_idx = file.replace('random_', '')
                 graph_type = 'random_graph'
 
+            if 'small' in file:
+                file_idx = file_idx.replace('small_', '')
+                size_type = 'small'
+            elif 'middle' in file:
+                file_idx = file_idx.replace('middle_', '')
+                size_type = 'middle'
+            elif 'large' in file:
+                file_idx = file_idx.replace('large_', '')
+                size_type = 'large'
+
 
             building_adj_matrix_padded = data['building_adj_matrix_padded'].to(device=device)
             boundary_adj_matrix_padded = data['boundary_adj_matrix_padded'].to(device=device)
@@ -170,7 +180,13 @@ if __name__ == '__main__':
                         graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
                 # 결과 그래프 검증 또는 사용
                 # 예: 그래프를 다시 gpickle 파일로 저장
-                path = path.replace('gt_train_datasets', f'{graph_type}_train_datasets')
+                path = path.replace('gt_train_datasets', f'{graph_type}_{size_type}_train_datasets')
+
+                # 폴더가 존재하는지 확인하고, 없으면 생성
+                directory = os.path.dirname(path)
+                if not os.path.exists(directory):
+                    os.makedirs(directory, exist_ok=True)
+
                 nx.write_gpickle(graph, path)
 
             count += 1
