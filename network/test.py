@@ -173,13 +173,13 @@ if __name__ == '__main__':
 
                 # 그래프의 모든 엣지를 제거
                 graph.remove_edges_from(list(graph.edges()))
-                graph.remove_nodes_from(list(graph.nodes()))
+                # graph.remove_nodes_from(list(graph.nodes()))
 
-                for node in range(n_boundary + n_building):
-                    if node < n_boundary:
-                        graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
-                    else:
-                        graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
+                # for node in range(n_boundary + n_building):
+                #     if node < n_boundary:
+                #         graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
+                #     else:
+                #         graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
 
 
                 # 사용자의 인접 행렬을 바탕으로 엣지 추가
