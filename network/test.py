@@ -170,6 +170,7 @@ if __name__ == '__main__':
 
                 # 그래프의 모든 엣지를 제거
                 graph.remove_edges_from(list(graph.edges()))
+                graph.remove_nodes_from(list(graph.nodes()))
 
                 # 사용자의 인접 행렬을 바탕으로 엣지 추가
                 for i, row in enumerate(pred_adj_matrix):
