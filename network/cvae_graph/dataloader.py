@@ -67,7 +67,7 @@ class GraphDataset(Dataset):
                                          dtype=torch.float32)
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
-
+            print(node_features)
             # n_building = torch.sum(building_masks)
             # n_boundary = building_masks.shape[0] - n_building
             # node_features = node_features[n_boundary:]
