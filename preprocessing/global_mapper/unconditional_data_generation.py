@@ -116,8 +116,10 @@ if __name__ == '__main__':
             graph = nx.read_gpickle(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
             n_node = graph.number_of_nodes()
-            n_building = max(max(edge) for edge in building_edge) + 1
+            n_building = len(buildings)
             n_chunk = n_node - n_building
+
+            n_building = max(max(edge) for edge in building_edge) + 1
 
             adj_matrix = nx.adjacency_matrix(graph).todense()
             boundary_adj_matrix = adj_matrix[:n_chunk, :n_chunk]
