@@ -57,8 +57,6 @@ class GraphDataset(Dataset):
         n_boundary = self.data['n_boundary']
         n_building = self.data['n_building']
 
-        print(building_adj_matrix.shape, boundary_adj_matrix.shape, bb_adj_matrix.shape, boundary_pos_feature.shape, n_building, n_boundary)
-
         # 각 행렬을 원하는 크기로 패딩
         boundary_adj_matrix_padded, boundary_pad_mask = self.pad_matrix(boundary_adj_matrix, (200, 200))
         building_adj_matrix_padded, building_pad_mask = self.pad_matrix(building_adj_matrix, (120, 120))

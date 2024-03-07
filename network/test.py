@@ -96,6 +96,10 @@ if __name__ == '__main__':
             n_boundary = data['n_boundary']
             n_building = data['n_building']
 
+            if boundary_adj_matrix_padded.shape[1] > 200:
+                print(boundary_adj_matrix_padded.shape)
+                continue
+
             output = transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                  building_pad_mask, boundary_pad_mask, boundary_pos_padded)
             output *= bb_pad_mask
