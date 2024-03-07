@@ -76,10 +76,10 @@ def create_rotated_rectangle(x, y, w, h, theta):
     return rotated_rectangle
 
 def generate_datasets(idx, data_type):
-    with open(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
+    with open(f'datasets/eu_graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
         buildings = pickle.load(file)
 
-    graph = nx.read_gpickle(f'datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
+    graph = nx.read_gpickle(f'datasets/eu_graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
     n_node = graph.number_of_nodes()
     n_building = len(buildings)
@@ -149,15 +149,15 @@ def generate_datasets(idx, data_type):
     G, longest_skel = get_polyskeleton_longest_path(skel, sk_boundary)
     ### get the medial axis of block
     medaxis = modified_skel_to_medaxis(longest_skel, simplified_polygon)
-    # if medaxis == None:
-    #     print('저장 하지 않음 1')
-    #     return
+    if medaxis == None:
+        print('저장 하지 않음 1')
+        return
 
     ### warp all building locations and sizes
     pos_xsorted, size_xsorted, xsort_idx, aspect_rto = warp_bldg_by_midaxis(building_polygons, simplified_polygon, medaxis)
-    # if pos_xsorted.all() == None:
-    #     print('저장 하지 않음 2')
-    #     return
+    if pos_xsorted.all() == None:
+        print('저장 하지 않음 2')
+        return
 
     is_vis = False
     if is_vis:
@@ -267,13 +267,13 @@ def generate_datasets(idx, data_type):
         G.graph['block_scale'] = 1 / abs(dx)
         G.graph['building_polygons'] = building_polygons
 
-        output_file_path = f'grid_graph_datasets/{data_type}'
+        output_file_path = f'eu_grid_graph_datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'test'
+    data_type = 'train'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
