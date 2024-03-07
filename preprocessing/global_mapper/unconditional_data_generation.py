@@ -74,24 +74,20 @@ def edges_to_adj_matrix(edges):
     return adj_matrix
 
 if __name__ == '__main__':
-    end_index = 208622 + 1
+    end_index = 1000
     data_type = 'test'
-    indices = [1004, 1012, 1003, 109, 105, 1063, 1065, 1067, 1071, 1072,
-               1078, 1111, 10002, 1109, 10018, 10013, 10073, 10077, 10080, 10073,
-               10196, 10207, 10211, 10212, 10273, 10270, 10291, 10292, 10297, 10301,
-               10332, 10320, 10399, 10441, 10483, 10698, 10765, 10792, 10835, 10843, 10841]
 
     graphs = [create_line_graph(6), create_line_graph(10), create_line_graph(16),
               create_ring_graph(6), create_ring_graph(10), create_ring_graph(16),
-              create_grid_graph(2, 6), create_grid_graph(3, 4), create_grid_graph(4, 5),
-              create_random_graph(5, 0.5), create_random_graph(10, 0.4), create_random_graph(15, 0.3)]
+              create_grid_graph(2, 4), create_grid_graph(3, 3), create_grid_graph(4, 5),
+              create_random_graph(5, 0.5), create_random_graph(7, 0.4), create_random_graph(9, 0.3)]
 
     graph_types = ['line_small', 'line_middle', 'line_large',
                   'ring_small', 'ring_middle', 'ring_large',
                   'grid_small', 'grid_middle', 'grid_large',
                   'random_small', 'random_middle', 'random_large']
 
-    for idx in indices:
+    for idx in tqdm(range(end_index)):
         for building_edge, graph_type in zip(graphs, graph_types):
             # 에지 리스트를 사용하여 NetworkX 그래프 객체 생성
             G_visualized = nx.Graph()
