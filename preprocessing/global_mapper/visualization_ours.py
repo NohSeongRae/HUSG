@@ -25,6 +25,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     return rotated_rectangle
 
 base = 'output/synthetic_T4_dnpcs_ariel-k1/cvae_graph_20240305_145257'
+base = 'output/eu_ours_output/cvae_graph_20240307_165433'
 model = base.split('/')[-1]
 path = ''
 path = os.path.join(base, path)
@@ -60,6 +61,7 @@ for output in tqdm(list_output):
     file_idx = file_path.split('/')[-1].replace('prediction_', '').replace('.pkl', '')
 
     boundary_path = f'datasets/graph_condition_train_datasets/test/{file_idx}.gpickle'
+    boundary_path = f'datasets/eu_graph_condition_train_datasets/test/{file_idx}.gpickle'
     graph = nx.read_gpickle(boundary_path)
 
     boundary_points = []
@@ -77,12 +79,12 @@ for output in tqdm(list_output):
     plt.xlim([-0.1, 1.1])
     plt.ylim([-0.1, 1.1])
 
-    directory = path.replace(model, 'figure_pred_sample')
+    directory = path.replace(model, 'figure_pred_all')
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlim([-0.1, 1.1])
     ax.set_ylim([-0.1, 1.1])
     ax.set_axis_off()
     save_path_1 = os.path.join(directory, file_idx + ".png")
-    if os.path.isfile(f'./output/synthetic_T4_dnpcs_ariel-k1/figure_gt_sample/{file_idx}.png'):
-        ax.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
-        plt.close(ax.figure)
+    # if os.path.isfile(f'./output/synthetic_T4_dnpcs_ariel-k1/figure_gt_sample/{file_idx}.png'):
+    ax.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
+    plt.close(ax.figure)

@@ -25,6 +25,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     return rotated_rectangle
 
 base = 'grid_graph_figure/output'
+base = 'eu_grid_graph_figure/output'
 model = base.split('/')[-1]
 path = ''
 path = os.path.join(base, path)
@@ -59,7 +60,7 @@ for output in tqdm(list_output):
 
     file_idx = file_path.split('/')[-1].replace('prediction_', '').replace('.pkl', '')
 
-    boundary_path = f'datasets/graph_condition_train_datasets/test/{file_idx}.gpickle'
+    boundary_path = f'datasets/eu_graph_condition_train_datasets/test/{file_idx}.gpickle'
     graph = nx.read_gpickle(boundary_path)
 
     boundary_points = []
@@ -83,6 +84,6 @@ for output in tqdm(list_output):
     ax.set_ylim([-0.1, 1.1])
     ax.set_axis_off()
     save_path_1 = os.path.join(directory, file_idx + ".png")
-    if os.path.isfile(f'./output/synthetic_T4_dnpcs_ariel-k1/figure_pred_sample/{file_idx}.png'):
+    if os.path.isfile(f'./output/eu_ours_output/figure_pred_sample/{file_idx}.png'):
         ax.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
         plt.close(ax.figure)

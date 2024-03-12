@@ -25,6 +25,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     return rotated_rectangle
 
 base = 'output/synthetic_T4_dnpcs_ariel-k1/cvae_graph_20240305_145257'
+base = 'output/eu_ours_output/cvae_graph_20240307_165433'
 model = base.split('/')[-1]
 path = ''
 path = os.path.join(base, path)
@@ -47,7 +48,7 @@ for output in tqdm(list_output):
     file_path = f'{path}/{output}'
     file_idx = file_path.split('/')[-1].replace('ground_truth_', '').replace('.pkl', '')
 
-    with open(f'datasets/graph_condition_train_datasets/test/{file_idx}.pkl', 'rb') as file:
+    with open(f'datasets/eu_graph_condition_train_datasets/test/{file_idx}.pkl', 'rb') as file:
         building_polygon = pickle.load(file)
         for building in building_polygon:
             x, y = Polygon(building.T).exterior.coords.xy
@@ -56,7 +57,7 @@ for output in tqdm(list_output):
                 facecolor[i] /= 256
             ax.fill(x, y, edgecolor='black', facecolor=facecolor)
 
-    boundary_path = f'datasets/graph_condition_train_datasets/test/{file_idx}.gpickle'
+    boundary_path = f'datasets/eu_graph_condition_train_datasets/test/{file_idx}.gpickle'
     graph = nx.read_gpickle(boundary_path)
 
     boundary_points = []

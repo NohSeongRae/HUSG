@@ -149,15 +149,15 @@ def generate_datasets(idx, data_type):
     G, longest_skel = get_polyskeleton_longest_path(skel, sk_boundary)
     ### get the medial axis of block
     medaxis = modified_skel_to_medaxis(longest_skel, simplified_polygon)
-    if medaxis == None:
-        print('저장 하지 않음 1')
-        return
+    # if medaxis == None:
+    #     print('저장 하지 않음 1')
+    #     return
 
     ### warp all building locations and sizes
     pos_xsorted, size_xsorted, xsort_idx, aspect_rto = warp_bldg_by_midaxis(building_polygons, simplified_polygon, medaxis)
-    if pos_xsorted.all() == None:
-        print('저장 하지 않음 2')
-        return
+    # if pos_xsorted.all() == None:
+    #     print('저장 하지 않음 2')
+    #     return
 
     is_vis = False
     if is_vis:
@@ -273,7 +273,7 @@ def generate_datasets(idx, data_type):
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'train'
+    data_type = 'test'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
