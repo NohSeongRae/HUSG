@@ -24,7 +24,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
-base = 'output/ring_graph_small/cvae_graph_20240305_145257'
+base = 'output/grid_graph_small/cvae_graph_20240305_145257'
 model = base.split('/')[-1]
 path = ''
 path = os.path.join(base, path)
