@@ -52,7 +52,7 @@ for output in tqdm(list_output):
         building_polygon = create_rotated_rectangle(t[0], t[1], t[2], t[3], t[4])
 
         x, y = building_polygon.exterior.coords.xy
-        facecolor = [207, 211, 220]
+        facecolor = [168, 168, 168]
         for i in range(3):
             facecolor[i] /= 256
         ax.fill(x, y, edgecolor='black', facecolor=facecolor)

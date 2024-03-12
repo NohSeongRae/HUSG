@@ -77,7 +77,7 @@ for output in tqdm(list_output):
     plt.xlim([-0.1, 1.1])
     plt.ylim([-0.1, 1.1])
 
-    directory = path.replace(model, 'figure_pred_sample')
+    directory = path.replace(model, 'gm_figure_pred_sample')
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlim([-0.1, 1.1])
     ax.set_ylim([-0.1, 1.1])
