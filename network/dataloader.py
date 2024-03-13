@@ -10,7 +10,7 @@ class GraphDataset(Dataset):
 
         self.data_type = data_type
 
-        self.folder_path = f'/local_datasets/eu_graph_generation_datasets/{data_type}'
+        self.folder_path = f'/local_datasets/graph_generation_datasets/{data_type}'
         if data_type == 'test':
             self.folder_path = f'../preprocessing/global_mapper/graph_generation_datasets/{data_type}'
             # self.folder_path = f'../preprocessing/global_mapper/random_graph_generation_datasets/{data_type}'
