@@ -67,20 +67,7 @@ if __name__ == '__main__':
             output = transformer(building_adj_matrix_padded, boundary_adj_matrix_padded,
                                  building_pad_mask, boundary_pad_mask, boundary_pos_padded)
             output *= bb_pad_mask
-            output_1 = (output >= 0.5).float()
-
-            k = 3
-
-            topk_values, topk_indices = torch.topk(output, k, dim=2)
-
-            output_2 = torch.zeros_like(output)
-            output_2.scatter_(2, topk_indices, 1)
-
-            output = torch.zeros_like(output_1)
-            if torch.sum(output_1) <= n_building * k:
-                output = output_2
-            else:
-                output = output_1
+            output = (output >= 0.5).float()
 
             pred_adj_matrix = np.zeros((n_boundary + n_building, n_boundary + n_building))
             gt_adj_matrix = np.zeros((n_boundary + n_building, n_boundary + n_building))
