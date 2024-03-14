@@ -7,6 +7,13 @@ import torchvision.models as models
 
 class ResNet34(nn.Module):
     def __init__(self, bottleneck):
+        """
+        Initializes the model.
+
+        Parameters:
+        - bottleneck (int): The size of the output features before the final layer.
+        """
+
         super(ResNet34, self).__init__()
         self.model = models.resnet34(weights='ResNet34_Weights.IMAGENET1K_V1')
 
@@ -14,11 +21,30 @@ class ResNet34(nn.Module):
         self.model.fc = nn.Linear(num_features, bottleneck)
 
     def forward(self, mask):
+        """
+        Forward pass through ResNet-34.
+
+        Parameters:
+        - mask (Tensor): The input tensor.
+
+        Returns:
+        - Tensor: Output features of the model.
+        """
+
         mask = mask.view(-1, 3, 224, 224)
         return self.model(mask)
 
 class BoundaryMaskEncoder(nn.Module):
     def __init__(self, image_size, inner_channel, bottleneck):
+        """
+        Initializes the encoder.
+
+        Parameters:
+        - image_size (int): Size of the input images.
+        - inner_channel (int): Number of channels in the inner convolution layers.
+        - bottleneck (int): The size of the output bottleneck features.
+        """
+
         super(BoundaryMaskEncoder, self).__init__()
 
         self.image_size = image_size
@@ -42,73 +68,35 @@ class BoundaryMaskEncoder(nn.Module):
         self.linear = nn.Linear(channel_num, bottleneck)
 
     def forward(self, mask):
+        """
+        Forward pass for the mask encoder.
+
+        Parameters:
+        - mask (Tensor): The input mask tensor.
+
+        Returns:
+        - Tensor: Encoded features of the mask.
+        """
+
         mask = mask.view(-1, 1, self.image_size, self.image_size)
         mask = self.cnn_encoder(mask)
         mask = torch.flatten(mask, 1)
         mask = self.linear(mask)
         return mask
 
-
-class GraphConditionEncoder(nn.Module):
-    def __init__(self, T, feature_dim, bottleneck, n_head, convlayer):
-        super(GraphConditionEncoder, self).__init__()
-
-        self.bbox_fc = nn.Linear(5, feature_dim)
-        if convlayer == 'gat':
-            self.convlayer = torch_geometric.nn.GATConv
-        elif convlayer == 'gcn':
-            self.convlayer = torch_geometric.nn.GCNConv
-        elif convlayer == 'gin':
-            self.convlayer = lambda in_channels, out_channels: torch_geometric.nn.GINConv(
-                nn.Sequential(
-                    nn.Linear(in_channels, out_channels),
-                    nn.ReLU(),
-                    nn.Linear(out_channels, out_channels)
-                )
-            )
-
-        self.global_pool = torch_geometric.nn.global_max_pool
-
-        if convlayer == 'gat':
-            self.e_conv1 = self.convlayer(feature_dim, feature_dim, heads=n_head)
-            self.layer_stack = nn.ModuleList([
-                self.convlayer(feature_dim * n_head, feature_dim, heads=n_head)
-                for _ in range(T -1)
-            ])
-            self.aggregate = nn.Linear(int(feature_dim * (1.0 + n_head * T)), bottleneck)
-        else:
-            self.e_conv1 = self.convlayer(feature_dim, feature_dim)
-            self.layer_stack = nn.ModuleList([
-                self.convlayer(feature_dim, feature_dim)
-                for _ in range(T - 1)
-            ])
-            self.aggregate = nn.Linear(int(feature_dim * (1.0 + T)), bottleneck)
-
-    def forward(self, data, edge_index):
-        street_feature = data.condition_street_feature
-        street_feature = self.bbox_fc(street_feature)
-        street_feature = F.relu(street_feature)
-
-        n_embed_0 = street_feature
-        g_embed_0 = self.global_pool(n_embed_0, data.batch)
-
-        n_embed_t = F.relu(self.e_conv1(n_embed_0, edge_index))
-        g_embed_t = self.global_pool(n_embed_t, data.batch)
-
-        g_embed = torch.cat((g_embed_0, g_embed_t), dim=1)
-
-        for e_conv_t in self.layer_stack:
-            n_embed_t = F.relu(e_conv_t(n_embed_t, edge_index))
-            g_embed_t = self.global_pool(n_embed_t, data.batch)
-
-            g_embed = torch.cat((g_embed, g_embed_t), dim=1)
-
-        latent = self.aggregate(g_embed)
-        return latent
-
-
 class GraphEncoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, convlayer):
+        """
+        Initializes the graph encoder.
+
+        Parameters:
+        - T (int): Number of convolution layers.
+        - feature_dim (int): Dimension of node features.
+        - latent_dim (int): Dimension of the latent_dim features.
+        - n_head (int): Number of heads for GATConv.
+        - convlayer (str): Type of convolution layer ('gat', 'gcn', or 'gin').
+        """
+
         super(GraphEncoder, self).__init__()
 
         self.bbox_fc = nn.Linear(5, feature_dim)
@@ -149,6 +137,15 @@ class GraphEncoder(nn.Module):
         self.fc_var = nn.Linear(latent_dim, latent_dim)
 
     def forward(self, data, edge_index):
+        """
+        Forward pass for the graph encoder.
+
+        Parameters: Similar to GraphConditionEncoder forward method.
+
+        Returns:
+        - Tuple[Tensor, Tensor]: Means and log variances of the latent representations.
+        """
+
         node_feature = data.node_features
         node_feature = self.bbox_fc(node_feature)
         node_feature = F.relu(node_feature)
@@ -182,6 +179,12 @@ class GraphEncoder(nn.Module):
 
 class GraphDecoder(nn.Module):
     def __init__(self, T, feature_dim, latent_dim, n_head, bottleneck, convlayer):
+        """
+        Initializes the graph decoder.
+
+        Parameters: Similar to GraphEncoder, with the addition of bottleneck dimension.
+        """
+
         super(GraphDecoder, self).__init__()
 
         self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
@@ -227,6 +230,20 @@ class GraphDecoder(nn.Module):
         self.fc_theta = nn.Linear(feature_dim, 1)
 
     def forward(self, z, node_mask, condition, edge_index, batch):
+        """
+        Forward pass for the graph decoder.
+
+        Parameters:
+        - z (Tensor): The latent vector.
+        - node_mask (Tensor): Mask to apply to nodes.
+        - condition (Tensor): Condition vector or tensor.
+        - edge_index (Tensor): Edge indices for graph reconstruction.
+        - batch (Tensor): Batch tensor for grouping node features.
+
+        Returns:
+        - Tuple[Tensor, Tensor, Tensor]: Predicted positions, sizes, and angles for each node.
+        """
+
         z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
@@ -269,6 +286,11 @@ class GraphCVAE(nn.Module):
     def __init__(self, T=3, feature_dim=256, latent_dim=256, n_head=8,
                  image_size=64, inner_channel=80, bottleneck=128,
                  condition_type='graph', convlayer='gat'):
+        """
+        Initializes the GraphCVAE model.
+
+        Parameters: A combination of parameters for the encoders and decoder.
+        """
         super(GraphCVAE, self).__init__()
 
         self.latent_dim = latent_dim
@@ -279,9 +301,6 @@ class GraphCVAE(nn.Module):
                                                          bottleneck=bottleneck)
         elif condition_type == 'image_resnet34':
             self.condition_encoder = ResNet34(bottleneck=bottleneck)
-        elif condition_type == 'graph':
-            self.condition_encoder = GraphConditionEncoder(T=T, feature_dim=feature_dim, bottleneck=bottleneck,
-                                                           n_head=n_head, convlayer=convlayer)
 
         self.encoder = GraphEncoder(T=T, feature_dim=feature_dim, latent_dim=latent_dim, n_head=n_head,
                                     convlayer=convlayer)
@@ -289,9 +308,30 @@ class GraphCVAE(nn.Module):
                                     bottleneck=bottleneck, convlayer=convlayer)
 
     def reparameterize(self, mu, logvar):
+        """
+        Performs the reparameterization trick to sample from the latent space.
+
+        Parameters:
+        - mu (Tensor): Mean of the latent space.
+        - logvar (Tensor): Log variance of the latent space.
+
+        Returns:
+        - Tensor: Sampled latent vector.
+        """
+
         return (torch.exp(0.5 * logvar)) * (torch.randn_like(torch.exp(0.5 * logvar))) + mu
 
     def forward(self, data):
+        """
+        Defines the forward pass of the CVAE model.
+
+        Parameters:
+        - data (Data): PyG data object containing the graph data.
+
+        Returns:
+        - Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]: Model outputs including positions, sizes, angles, means, and log variances.
+        """
+
         edge_index = data.edge_index
         mu, log_var = self.encoder(data, edge_index)
         z = self.reparameterize(mu, log_var)
@@ -307,6 +347,16 @@ class GraphCVAE(nn.Module):
         return output_pos, output_size, output_theta, mu, log_var
 
     def test(self, data):
+        """
+        Generates graph node features from a conditioned latent space without needing real graph input.
+
+        Parameters:
+        - data (Data): PyG data object for condition encoding.
+
+        Returns:
+        - Tuple[Tensor, Tensor, Tensor]: Generated positions, sizes, and angles for each node.
+        """
+
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
 
         if self.condition_type == 'image' or self.condition_type == 'image_resnet34':

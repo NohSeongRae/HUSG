@@ -7,6 +7,16 @@ import os
 
 class GraphDataset(Dataset):
     def __init__(self, data_type='train', transform=None, pre_transform=None, condition_type='graph'):
+        """
+        Initializes the GraphDataset.
+
+        Parameters:
+        - data_type (str): Specifies whether the dataset is for training, validation, or testing.
+        - transform (callable, optional): A function/transform that takes in a Data object and returns a transformed version.
+        - pre_transform (callable, optional): A function/transform that is applied to the Data object before saving it to disk.
+        - condition_type (str): Specifies the type of condition used for the graph. Can be 'graph', 'image', or 'image_resnet34'.
+        """
+
         super(GraphDataset, self).__init__(transform, pre_transform)
 
         self.condition_type = condition_type
@@ -18,15 +28,8 @@ class GraphDataset(Dataset):
         elif condition_type == 'image':
             self.folder_path = '/local_datasets/image_condition_train_datasets/' + self.data_type
         elif condition_type == 'image_resnet34':
-            # self.folder_path = '/local_datasets/uncondition_graph_datasets/random_graph_small_train_datasets/' + self.data_type
-            # self.folder_path = '/local_datasets/ours_graph_datasets/' + self.data_type
-            self.folder_path = '/local_datasets/synthetic_datasets_layer_8/' + self.data_type
-            # self.folder_path = '/local_datasets/gt_train_datasets/' + self.data_type
-            # self.folder_path = '/local_datasets/eu_synthetic_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/gt_train_datasets/' + self.data_type
         file_extension = '.gpickle'
-
-        # if data_type == 'test':
-        #     self.folder_path = '../../preprocessing/global_mapper/datasets/new_city_datasets/synthetic_train_datasets/' + self.data_type
 
         count = 0
         try:
@@ -40,24 +43,21 @@ class GraphDataset(Dataset):
                     count += 1
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
 
-        # if data_type == 'train':
-        #     self.train_split_path = 'network/cvae_graph/whole_city/train_split.pkl'
-        #     with open(self.train_split_path, 'rb') as f:
-        #         self.gpickle_files = pickle.load(f)
-        # elif data_type == 'val':
-        #     self.val_split_path = 'network/cvae_graph/whole_city/val_split.pkl'
-        #     with open(self.val_split_path, 'rb') as f:
-        #         self.gpickle_files = pickle.load(f)
-        # elif data_type == 'test':
-        #     self.test_split_path = 'network/cvae_graph/whole_city/test_split.pkl'
-        #     with open(self.test_split_path, 'rb') as f:
-        #         self.gpickle_files = pickle.load(f)
-
         self.gpickle_files.sort()
         self.data_length = len(self.gpickle_files)
         print(self.data_length)
 
     def get(self, idx):
+        """
+        Gets the graph data object at a specific index in the dataset.
+
+        Parameters:
+        - idx (int): The index of the data object to retrieve.
+
+        Returns:
+        - Data object or tuple: Depending on the data type, returns either a Data object for the graph data or a tuple containing the Data object, the path to polygon data, and the filename for test data.
+        """
+
         if self.data_type == 'train' or self.data_type == 'val':
             load_path = self.folder_path + '/' + self.gpickle_files[idx]
             with open(load_path, 'rb') as f:
@@ -68,10 +68,6 @@ class GraphDataset(Dataset):
                                          dtype=torch.float32)
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
-            # n_building = torch.sum(building_masks)
-            # n_boundary = building_masks.shape[0] - n_building
-            # node_features = node_features[n_boundary:]
-            # building_masks = building_masks[n_boundary:]
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
@@ -92,9 +88,6 @@ class GraphDataset(Dataset):
 
             edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
             edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
-
-            # mask = (edge_index[0] > n_boundary) & (edge_index[1] > n_boundary)
-            # edge_index = edge_index[:, mask] - n_boundary
 
             data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
@@ -138,5 +131,13 @@ class GraphDataset(Dataset):
 
             polygon_path = self.gpickle_files[idx].replace('.gpickle', '.pkl')
             return (data, polygon_path, self.gpickle_files[idx])
+
     def len(self):
+        """
+        Returns the total number of items in the dataset.
+
+        Returns:
+        - int: The total number of graph data objects in the dataset.
+        """
+
         return self.data_length

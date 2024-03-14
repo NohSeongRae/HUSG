@@ -8,7 +8,6 @@ from torch_geometric.loader import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
 import torch.distributed as dist
-import matplotlib.pyplot as plt
 
 import numpy as np
 import random
@@ -25,15 +24,27 @@ class Trainer:
                  pos_weight, size_weight, theta_weight, kl_weight, distance_weight,
                  condition_type, convlayer, weight_decay):
         """
-        Initialize the trainer with the specified parameters.
+        Initializes the Trainer with specified configurations for the training process.
 
-        Args:
-        - batch_size (int): Size of each training batch.
-        - max_epoch (int): Maximum number of training epochs.
-        - pad_idx (int): Padding index for sequences.
-        - d_model (int): Dimension of the model.
-        - n_layer (int): Number of cvae layers.
-        - n_head (int): Number of multi-head attentions.
+        Parameters:
+        - batch_size (int): Size of each data batch.
+        - max_epoch (int): Maximum number of epochs for training.
+        - use_checkpoint (bool): Whether to start training from a saved checkpoint.
+        - checkpoint_epoch (int): The epoch number from which to start if using a checkpoint.
+        - use_tensorboard (bool): Whether to use TensorBoard for logging.
+        - val_epoch (int): Frequency (in epochs) to perform validation.
+        - save_epoch (int): Frequency (in epochs) to save model checkpoints.
+        - local_rank (int): Local rank of the process in distributed training.
+        - save_dir_path (str): Directory path to save training artifacts.
+        - lr (float): Learning rate for the optimizer.
+        - T, d_feature, d_latent, n_head (int): Model-specific parameters (e.g., dimensions and number of heads).
+        - pos_weight, size_weight, theta_weight, kl_weight, distance_weight (float): Weights for different components of the loss.
+        - condition_type (str): Type of condition (e.g., 'graph', 'image').
+        - convlayer (str): Type of convolutional layer used in the model.
+        - weight_decay (float): Weight decay parameter for the optimizer.
+
+        Returns:
+        None
         """
 
         # Initialize trainer parameters
@@ -91,6 +102,18 @@ class Trainer:
                                           betas=(0.9, 0.98))
 
     def recon_pos_loss(self, pred, trg, mask):
+        """
+        Computes the reconstruction loss for the positions.
+
+        Parameters:
+        - pred (Tensor): Predicted positions.
+        - trg (Tensor): Target (true) positions.
+        - mask (Tensor): Mask to apply to the loss, indicating valid positions.
+
+        Returns:
+        - Tensor: The computed loss value.
+        """
+
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
@@ -100,6 +123,18 @@ class Trainer:
         return recon_loss.sum() / mask.sum()
 
     def recon_size_loss(self, pred, trg, mask):
+        """
+        Computes the reconstruction loss for the sizes.
+
+        Parameters:
+        - pred (Tensor): Predicted sizes.
+        - trg (Tensor): Target (true) sizes.
+        - mask (Tensor): Mask to apply to the loss, indicating valid sizes.
+
+        Returns:
+        - Tensor: The computed loss value.
+        """
+
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
@@ -109,6 +144,18 @@ class Trainer:
         return recon_loss.sum() / mask.sum()
 
     def recon_theta_loss(self, pred, trg, mask):
+        """
+        Computes the reconstruction loss for angles or orientations.
+
+        Parameters:
+        - pred (Tensor): Predicted angles.
+        - trg (Tensor): Target (true) angles.
+        - mask (Tensor): Mask to apply to the loss, indicating valid angles.
+
+        Returns:
+        - Tensor: The computed loss value.
+        """
+
         recon_loss = F.mse_loss(pred, trg, reduction='none')
 
         if mask is None:
@@ -118,10 +165,34 @@ class Trainer:
         return recon_loss.sum() / mask.sum()
 
     def kl_loss(self, mu, log_var):
+        """
+        Computes the KL divergence part of the loss.
+
+        Parameters:
+        - mu (Tensor): Mean from the latent space.
+        - log_var (Tensor): Log variance from the latent space.
+
+        Returns:
+        - Tensor: The computed KL divergence loss.
+        """
+
         kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
         return kl_loss
 
     def distance_loss(self, pred, trg, mask, edge_index):
+        """
+        Computes the loss based on distances between connected nodes.
+
+        Parameters:
+        - pred (Tensor): Predicted positions.
+        - trg (Tensor): Target (true) positions.
+        - mask (Tensor): Mask indicating valid positions.
+        - edge_index (LongTensor): Tensor containing the indices of edges.
+
+        Returns:
+        - Tensor: The computed distance loss.
+        """
+
         if mask is not None:
             mask = ((mask[edge_index[0]] == 1) & (mask[edge_index[1]] == 1)).squeeze(-1)
             selected_edge_index = edge_index[:, mask]
@@ -137,6 +208,16 @@ class Trainer:
         return loss / len(start_nodes)
 
     def train(self):
+        """
+        Runs the training process.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
+
         epoch_start = 0
         min_loss = 999
         early_stop_count = 0
@@ -306,37 +387,37 @@ class Trainer:
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Initialize a cvae with user-defined hyperparameters.")
+    parser = argparse.ArgumentParser(description="Initializes a Conditional Variational Autoencoder (CVAE) with user-defined hyperparameters for graph data processing.")
 
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
-    parser.add_argument("--max_epoch", type=int, default=500, help="Maximum number of epochs for training.")
-    parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
-    parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
-    parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
-    parser.add_argument("--n_head", type=int, default=8, help="Dimension of the model.")
-    parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
-    parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
-    parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
-    parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
-    parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
-    parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
-    parser.add_argument("--local-rank", type=int)
-    parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
-    parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
-    parser.add_argument("--weight_decay", type=float, default=5e-4, help="save dir path")
-    parser.add_argument("--pos_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--size_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--theta_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
-    parser.add_argument("--distance_weight", type=float, default=4.0, help="save dir path")
-    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="save dir path")
-    parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
+    parser.add_argument("--batch_size", type=int, default=32, help="The batch size used for training the model.")
+    parser.add_argument("--max_epoch", type=int, default=500, help="The maximum number of training epochs.")
+    parser.add_argument("--T", type=int, default=3, help="The number of layers in the CVAE model.")
+    parser.add_argument("--d_feature", type=int, default=256, help="The dimensionality of the input feature vectors.")
+    parser.add_argument("--d_latent", type=int, default=512, help="The size of the latent vector in the CVAE model.")
+    parser.add_argument("--n_head", type=int, default=8, help="The number of heads in the multi-head attention mechanism.")
+    parser.add_argument("--seed", type=int, default=327, help="The seed for random number generation, ensuring reproducibility.")
+    parser.add_argument("--use_tensorboard", type=bool, default=True, help="Flag to enable logging to TensorBoard.")
+    parser.add_argument("--use_checkpoint", type=bool, default=False, help="Flag to start training from a saved checkpoint.")
+    parser.add_argument("--checkpoint_epoch", type=int, default=0, help="The checkpoint epoch number from which to start training. Use '0' for the latest checkpoint.")
+    parser.add_argument("--val_epoch", type=int, default=1, help="The frequency (in epochs) at which to perform validation.")
+    parser.add_argument("--save_epoch", type=int, default=10, help="The frequency (in epochs) at which to save the model checkpoints.")
+    parser.add_argument("--local-rank", type=int, help="The local rank of the GPU for distributed training. Necessary for multi-GPU setups")
+    parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="The directory path to save the model checkpoints and outputs")
+    parser.add_argument("--lr", type=float, default=3e-5, help="The learning rate for the optimizer.")
+    parser.add_argument("--weight_decay", type=float, default=5e-4, help="The weight decay (L2 penalty) used by the optimizer for regularization.")
+    parser.add_argument("--pos_weight", type=float, default=4.0, help="Weight for the position loss component in the total loss calculation.")
+    parser.add_argument("--size_weight", type=float, default=4.0, help="Weight for the size loss component in the total loss calculation.")
+    parser.add_argument("--theta_weight", type=float, default=4.0, help="Weight for the orientation (theta) loss component in the total loss calculation.")
+    parser.add_argument("--kl_weight", type=float, default=0.5, help="Weight for the KL divergence loss component in the total loss calculation.")
+    parser.add_argument("--distance_weight", type=float, default=4.0, help="Weight for the distance loss component in the total loss calculation.")
+    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="The type of conditional input used for the model.")
+    parser.add_argument("--convlayer", type=str, default='gat', help="The type of convolutional layer used in the model ('gat', 'gcn', 'gin').")
 
     opt = parser.parse_args()
 
     if opt.local_rank == 0:
-        wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
-        wandb.init(project='cvae_graph', config=vars(opt))
+        wandb.login(key='key')
+        wandb.init(project='project', config=vars(opt))
 
         for key, value in wandb.config.items():
             setattr(opt, key, value)

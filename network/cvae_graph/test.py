@@ -1,6 +1,5 @@
 import argparse
 import torch
-import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
 import numpy as np
@@ -12,6 +11,25 @@ from dataloader import GraphDataset
 from visualization import plot
 
 def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condition_type, convlayer):
+    """
+    Tests the model and visualizes the results.
+
+    Parameters:
+    - d_feature (int): Dimension of the features in the model.
+    - d_latent (int): Dimension of the latent vectors.
+    - n_head (int): Number of attention heads.
+    - T (int): The number of layers or time steps in the model.
+    - checkpoint_epoch (int/str): Epoch number of the checkpoint to load for testing. Use 'best' to load the best checkpoint.
+    - save_dir_path (str): Directory path where the model checkpoints are saved.
+    - condition_type (str): The type of condition used in the model (e.g., 'image', 'image_resnet34', 'graph').
+    - convlayer (str): The type of convolutional layer used in the model (e.g., 'gat', 'gcn', 'gin').
+
+    The function loads the test dataset based on the specified condition type, initializes the GraphCVAE model with the provided
+    parameters, loads the model weights from the specified checkpoint, and evaluates the model on the test dataset.
+    The results are visualized using the 'plot' function, which is expected to handle different condition types and
+    generate appropriate visualizations.
+    """
+
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
 
     test_dataset = GraphDataset(data_type='test', condition_type=condition_type)
@@ -63,17 +81,17 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                 return
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
+    parser = argparse.ArgumentParser(description="Initializes a GraphCVAE model with user-defined hyperparameters for testing.")
 
-    parser.add_argument("--T", type=int, default=3, help="Dimension of the model.")
-    parser.add_argument("--d_feature", type=int, default=256, help="Dimension of the model.")
-    parser.add_argument("--d_latent", type=int, default=512, help="Dimension of the model.")
-    parser.add_argument("--n_head", type=int, default=8, help="Dimension of the model.")
-    parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
-    parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
-    parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
-    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="save dir path")
-    parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
+    parser.add_argument("--T", type=int, default=3, help="Number of transformation layers or depth of the GraphCVAE model.")
+    parser.add_argument("--d_feature", type=int, default=256, help="Dimensionality of the input feature vectors in the GraphCVAE model.")
+    parser.add_argument("--d_latent", type=int, default=512, help="Size of the latent space in the GraphCVAE model.")
+    parser.add_argument("--n_head", type=int, default=8, help="Number of heads in the multi-head attention mechanism of the GraphCVAE model.")
+    parser.add_argument("--seed", type=int, default=327, help="Seed for random number generators to ensure reproducibility.")
+    parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Epoch number of the model checkpoint to load for testing. Use 0 to specify the latest checkpoint.")
+    parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="Directory path where the model checkpoints and test outputs are saved")
+    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="Type of conditional input used by the GraphCVAE model.")
+    parser.add_argument("--convlayer", type=str, default='gat', help="Type of convolutional layer used in the GraphCVAE model (e.g., 'gat', 'gcn', 'gin').")
 
     opt = parser.parse_args()
 
