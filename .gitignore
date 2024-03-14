@@ -28,6 +28,11 @@ preprocessing/global_mapper/eu_gt_graph_output/
 preprocessing/global_mapper/eu_grid_graph_figure/
 preprocessing/global_mapper/eu_gt_graph_figure/
 preprocessing/global_mapper/eu_synthetic_datasets/
+preprocessing/global_mapper/synthetic_datasets_feature_256/
+preprocessing/global_mapper/synthetic_datasets_feature_768/
+preprocessing/global_mapper/synthetic_datasets_head_4/
+preprocessing/global_mapper/synthetic_datasets_layer_4/
+preprocessing/global_mapper/synthetic_datasets_layer_8/
 GlobalMapper-main/
 *.pth
 *.tar

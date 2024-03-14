@@ -6,7 +6,7 @@ from scipy.stats import wasserstein_distance
 import pickle
 
 
-base = 'output/eu_ours_output/cvae_graph_20240307_165433'
+base = 'output/tf-head_4/cvae_graph_20240305_145257'
 # base = 'output/without_image_condition_spatial_graph_ariel-k1/cvae_graph_20240306_115843'
 path = ''
 path = os.path.join(base, path)
