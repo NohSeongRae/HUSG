@@ -8,11 +8,9 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
 import torch.distributed as dist
-import matplotlib.pyplot as plt
 
 import numpy as np
 import random
-from tqdm import tqdm
 
 from model import GraphTransformer
 from dataloader import GraphDataset
@@ -23,18 +21,28 @@ class Trainer:
     def __init__(self, batch_size, max_epoch, use_checkpoint, checkpoint_epoch, use_tensorboard, dropout,
                  val_epoch, save_epoch, local_rank, save_dir_path, lr, d_model, n_layer, n_head, weight_decay):
         """
-        Initialize the trainer with the specified parameters.
+        Initializes the Trainer class.
 
-        Args:
-        - batch_size (int): Size of each training batch.
-        - max_epoch (int): Maximum number of training epochs.
-        - pad_idx (int): Padding index for sequences.
-        - d_model (int): Dimension of the model.
-        - n_layer (int): Number of transformer layers.
-        - n_head (int): Number of multi-head attentions.
+        Parameters:
+        - batch_size (int): Batch size for training and validation.
+        - max_epoch (int): Maximum number of epochs for training.
+        - use_checkpoint (bool): Whether to use a pre-trained model checkpoint.
+        - checkpoint_epoch (int): The epoch of the checkpoint to use.
+        - use_tensorboard (bool): Whether to log data to TensorBoard.
+        - dropout (float): Dropout rate used in the transformer model.
+        - val_epoch (int): Frequency of validation in terms of epochs.
+        - save_epoch (int): Frequency of saving the model in terms of epochs.
+        - local_rank (int): The rank of the current process in the distributed training setup.
+        - save_dir_path (str): Path to save the model checkpoints.
+        - lr (float): Learning rate for the optimizer.
+        - d_model (int): Dimension of the model (embeddings).
+        - n_layer (int): Number of layers in the transformer model.
+        - n_head (int): Number of attention heads in the transformer model.
+        - weight_decay (float): Weight decay (L2 penalty) for the optimizer.
+
+        Initializes training and validation datasets, dataloaders, model, and optimizer. Sets up distributed training if applicable.
         """
 
-        # Initialize trainer parameters
         self.batch_size = batch_size
         self.max_epoch = max_epoch
         self.use_checkpoint = use_checkpoint
@@ -73,14 +81,36 @@ class Trainer:
                                           betas=(0.9, 0.98))
 
     def cross_entropy_loss(self, pred, trg, pad_mask):
+        """
+        Calculates the cross-entropy loss with padding mask applied.
+
+        Parameters:
+        - pred (Tensor): Predictions from the model.
+        - trg (Tensor): Target values.
+        - pad_mask (Tensor): Padding mask to ignore certain positions in the input.
+
+        Returns:
+        - Tensor: The average loss computed over all non-masked elements.
+        """
+
         loss = F.binary_cross_entropy(pred, trg, reduction='none')
 
-        # mask 적용
         masked_loss = loss * pad_mask.float() + loss * trg
-        # 손실의 평균 반환
         return masked_loss.sum() / pad_mask.float().sum()
 
     def edge_sum_loss(self, pred, trg, pad_mask):
+        """
+        Calculates the mean squared error loss for the sum of edges, considering the padding.
+
+        Parameters:
+        - pred (Tensor): Predictions from the model.
+        - trg (Tensor): Target values.
+        - pad_mask (Tensor): Padding mask to exclude padded areas from the loss calculation.
+
+        Returns:
+        - Tensor: The average loss computed over all non-masked elements, specifically for the sum of edges.
+        """
+
         pred = pred.reshape(-1, pred.shape[-1])
         trg = trg.reshape(-1, trg.shape[-1])
         pad_mask = pad_mask.reshape(-1, pad_mask.shape[-1])
@@ -88,23 +118,39 @@ class Trainer:
         pred = pred * pad_mask
         loss = F.mse_loss(torch.sum(pred, dim=-1), torch.sum(trg, dim=-1), reduction='none')
 
-        # mask 적용
         masked_loss = loss * pad_mask[:, 0].float()
-        # 손실의 평균 반환
         return masked_loss.sum() / pad_mask.float().sum()
 
     def correct_data(self, pred, trg, pad_mask):
+        """
+        Computes the number of correctly predicted data points, considering the padding.
+
+        Parameters:
+        - pred (Tensor): Predictions from the model, with a threshold applied to determine binary outcomes.
+        - trg (Tensor): Target values.
+        - pad_mask (Tensor): Padding mask to consider only non-padded elements in the accuracy calculation.
+
+        Returns:
+        - tuple: A tuple containing the number of correct predictions and the number of non-masked elements, used to compute accuracy.
+        """
+
         predictions = (pred >= 0.5).float()
 
-        # 마스크가 참인 위치에서 예측값과 실제값이 일치하는지 확인
         correct_predictions = (predictions == trg).float() * pad_mask
 
-        # 마스크가 참인 위치의 총 개수
         masked_elements_count = pad_mask.sum().item()
 
         return correct_predictions.sum().item(), masked_elements_count
 
     def train(self):
+        """
+        Executes the training loop over the dataset for a specified number of epochs.
+        Validates the model at specified intervals, saves model checkpoints, and logs to TensorBoard/WandB.
+
+        Returns:
+        None
+        """
+
         epoch_start = 0
         min_loss = 99999999999
         early_stop_count = 0
@@ -277,28 +323,28 @@ class Trainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
 
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
-    parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
-    parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
-    parser.add_argument("--n_layer", type=int, default=6, help="Number of transformer layers.")
-    parser.add_argument("--n_head", type=int, default=8, help="Number of attention heads.")
-    parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
-    parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
-    parser.add_argument("--use_tensorboard", type=bool, default=True, help="Use tensorboard.")
-    parser.add_argument("--use_checkpoint", type=bool, default=False, help="Use checkpoint model.")
-    parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
-    parser.add_argument("--val_epoch", type=int, default=1, help="Use checkpoint index.")
-    parser.add_argument("--save_epoch", type=int, default=10, help="Use checkpoint index.")
-    parser.add_argument("--local-rank", type=int)
-    parser.add_argument("--save_dir_path", type=str, default="transformer_graph", help="save dir path")
-    parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
-    parser.add_argument("--weight_decay", type=float, default=5e-4, help="save dir path")
+    parser.add_argument("--batch_size", type=int, default=32, help="The batch size used during training.")
+    parser.add_argument("--max_epoch", type=int, default=1000, help="The maximum number of epochs to train for.")
+    parser.add_argument("--d_model", type=int, default=512, help="The dimensionality of the model's embeddings.")
+    parser.add_argument("--n_layer", type=int, default=6, help="The number of layers in the transformer model.")
+    parser.add_argument("--n_head", type=int, default=8, help="The number of attention heads in the transformer model.")
+    parser.add_argument("--dropout", type=float, default=0.1, help="The dropout rate used in the transformer model.")
+    parser.add_argument("--seed", type=int, default=327, help="A seed for random number generation to ensure reproducibility.")
+    parser.add_argument("--use_tensorboard", type=bool, default=True, help="Flag to enable logging to TensorBoard..")
+    parser.add_argument("--use_checkpoint", type=bool, default=False, help="Flag to enable loading the model from a checkpoint.")
+    parser.add_argument("--checkpoint_epoch", type=int, default=0, help="The epoch number of the checkpoint to load for training continuation.")
+    parser.add_argument("--val_epoch", type=int, default=1, help="Frequency (in epochs) with which to perform validation.")
+    parser.add_argument("--save_epoch", type=int, default=10, help="Frequency (in epochs) with which to save model checkpoints.")
+    parser.add_argument("--local-rank", type=int, help="The local rank of the process for distributed training. Required for multi-GPU setups.")
+    parser.add_argument("--save_dir_path", type=str, default="transformer_graph", help="Directory path where model checkpoints will be saved")
+    parser.add_argument("--lr", type=float, default=3e-5, help="The learning rate for the optimizer")
+    parser.add_argument("--weight_decay", type=float, default=5e-4, help="The weight decay (L2 penalty) used by the optimizer")
 
     opt = parser.parse_args()
 
     if opt.local_rank == 0:
-        wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
-        wandb.init(project='transformer_graph', config=vars(opt))
+        wandb.login(key='key')
+        wandb.init(project='project', config=vars(opt))
 
         for key, value in wandb.config.items():
             setattr(opt, key, value)

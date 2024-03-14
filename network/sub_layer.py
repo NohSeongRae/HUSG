@@ -4,6 +4,15 @@ from module import ScaledDotProductAttention
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, n_head=8, d_model=512, dropout=0.1):
+        """
+        Initializes the multi-head attention mechanism.
+
+        Parameters:
+        - n_head (int): Number of attention heads.
+        - d_model (int): Total dimension of the model.
+        - dropout (float): Dropout rate.
+        """
+
         super(MultiHeadAttention, self).__init__()
 
         self.n_head = n_head
@@ -19,6 +28,17 @@ class MultiHeadAttention(nn.Module):
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
 
     def forward(self, q, k, v, mask=None):
+        """
+        Forward pass for the multi-head attention mechanism.
+
+        Parameters:
+        - q, k, v (Tensor): Queries, keys, and values.
+        - mask (Tensor, optional): Mask to prevent attention to certain positions.
+
+        Returns:
+        - Tensor: Output of the multi-head attention mechanism.
+        """
+
         d_k, d_v, n_head = self.d_model // self.n_head, self.d_model // self.n_head, self.n_head
         sz_b, len_q, len_k, len_v = q.size(0), q.size(1), k.size(1), v.size(1)
         residual = q
@@ -43,16 +63,16 @@ class MultiHeadAttention(nn.Module):
         return q
 
 class PositionwiseFeedForward(nn.Module):
-    """
-    Implements the position-wise feed-forward sub-layer.
-
-    Args:
-    - d_in (int): Input dimensionality.
-    - d_hid (int): Dimensionality of the hidden layer.
-    - dropout (float, optional): Dropout rate. Default is 0.1.
-    """
-
     def __init__(self, d_model, d_inner, dropout=0.1):
+        """
+        Initializes the position-wise feed-forward layer.
+
+        Parameters:
+        - d_model (int): Dimensionality of the input and output.
+        - d_inner (int): Dimensionality of the hidden layer.
+        - dropout (float): Dropout rate.
+        """
+
         super().__init__()
         self.w1 = nn.Linear(d_model, d_inner)
         self.w2 = nn.Linear(d_inner, d_model)
@@ -60,6 +80,16 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
+        """
+        Forward pass of the position-wise feed-forward layer.
+
+        Parameters:
+        - x (Tensor): Input tensor.
+
+        Returns:
+        - Tensor: Output tensor of the feed-forward layer.
+        """
+
         residual = x
         x = self.w1(x)
         x = torch.relu(x)
