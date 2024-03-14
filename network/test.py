@@ -166,7 +166,7 @@ if __name__ == '__main__':
 
             if save:
                 try:
-                    path = f'../preprocessing/global_mapper/eu_ours_graph_datasets/test/{file}.gpickle'
+                    path = f'../preprocessing/global_mapper/ours_graph_datasets/test/{file}.gpickle'
                     graph = nx.read_gpickle(path)
                 except:
                     continue
@@ -191,7 +191,7 @@ if __name__ == '__main__':
                 # 결과 그래프 검증 또는 사용
                 # 예: 그래프를 다시 gpickle 파일로 저장
                 # path = path.replace('gt_train_datasets', f'{graph_type}_{size_type}_train_datasets')
-                path = path.replace('eu_ours_graph_datasets', f'eu_synthetic_datasets')
+                path = path.replace('ours_graph_datasets', f'synthetic_datasets')
 
                 # 폴더가 존재하는지 확인하고, 없으면 생성
                 directory = os.path.dirname(path)
