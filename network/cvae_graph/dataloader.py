@@ -74,6 +74,7 @@ class GraphDataset(Dataset):
                 condition = condition.repeat(3, 1, 1)
             else:
                 condition_graph = graph.graph['condition']
+                print(condition_graph)
                 condition_edge_index = nx.to_scipy_sparse_matrix(condition_graph).tocoo()
                 condition_edge_index = torch.tensor(np.vstack((condition_edge_index.row, condition_edge_index.col)),
                                                     dtype=torch.long)
