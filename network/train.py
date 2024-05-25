@@ -343,8 +343,8 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     if opt.local_rank == 0:
-        wandb.login(key='key')
-        wandb.init(project='project', config=vars(opt))
+        wandb.login(key='5a8475b9b95df52a68ae430b3491fe9f67c327cd')
+        wandb.init(project='transformer_graph', config=vars(opt))
 
         for key, value in wandb.config.items():
             setattr(opt, key, value)
