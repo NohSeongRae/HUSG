@@ -410,7 +410,7 @@ if __name__ == '__main__':
     parser.add_argument("--theta_weight", type=float, default=4.0, help="Weight for the orientation (theta) loss component in the total loss calculation.")
     parser.add_argument("--kl_weight", type=float, default=0.5, help="Weight for the KL divergence loss component in the total loss calculation.")
     parser.add_argument("--distance_weight", type=float, default=4.0, help="Weight for the distance loss component in the total loss calculation.")
-    parser.add_argument("--condition_type", type=str, default='graph', help="The type of conditional input used for the model.")
+    parser.add_argument("--condition_type", type=str, default='image_resnet34', help="The type of conditional input used for the model.")
     parser.add_argument("--convlayer", type=str, default='gat', help="The type of convolutional layer used in the model ('gat', 'gcn', 'gin').")
 
     opt = parser.parse_args()
