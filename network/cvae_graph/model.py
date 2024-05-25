@@ -99,7 +99,7 @@ class GraphEncoder(nn.Module):
 
         super(GraphEncoder, self).__init__()
 
-        self.bbox_fc = nn.Linear(5, feature_dim)
+        self.bbox_fc = nn.Linear(4, feature_dim)
         self.mask_embed = nn.Embedding(2, feature_dim)
         self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
 
@@ -146,7 +146,7 @@ class GraphEncoder(nn.Module):
         - Tuple[Tensor, Tensor]: Means and log variances of the latent representations.
         """
 
-        node_feature = data.node_features
+        node_feature = data.node_features[:, :4]
         node_feature = self.bbox_fc(node_feature)
         node_feature = F.relu(node_feature)
 
@@ -226,8 +226,8 @@ class GraphDecoder(nn.Module):
         self.dec_size = nn.Linear(feature_dim * n_head, feature_dim)
         self.fc_size = nn.Linear(feature_dim, 2)
 
-        self.dec_theta = nn.Linear(feature_dim * n_head, feature_dim)
-        self.fc_theta = nn.Linear(feature_dim, 1)
+        # self.dec_theta = nn.Linear(feature_dim * n_head, feature_dim)
+        # self.fc_theta = nn.Linear(feature_dim, 1)
 
     def forward(self, z, node_mask, condition, edge_index, batch):
         """
@@ -266,10 +266,10 @@ class GraphDecoder(nn.Module):
         output_size = F.relu(self.dec_size(d_embed_t))
         output_size = self.fc_size(output_size)
 
-        output_theta = F.relu(self.dec_theta(d_embed_t))
-        output_theta = self.fc_theta(output_theta)
+        # output_theta = F.relu(self.dec_theta(d_embed_t))
+        # output_theta = self.fc_theta(output_theta)
 
-        return output_pos, output_size, output_theta
+        return output_pos, output_size
 
     def node_order_within_batch(self, batch):
         order_within_batch = torch.zeros_like(batch)
@@ -342,9 +342,9 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, edge_index, data.batch)
+        output_pos, output_size = self.decoder(z, data.building_mask, condition, edge_index, data.batch)
 
-        return output_pos, output_size, output_theta, mu, log_var
+        return output_pos, output_size, mu, log_var
 
     def test(self, data):
         """
@@ -365,6 +365,6 @@ class GraphCVAE(nn.Module):
             condition = Batch.from_data_list(data.condition)
             condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, data.edge_index, data.batch)
+        output_pos, output_size = self.decoder(z, data.building_mask, condition, data.edge_index, data.batch)
 
-        return output_pos, output_size, output_theta
+        return output_pos, output_size
