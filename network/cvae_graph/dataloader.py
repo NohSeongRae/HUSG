@@ -74,15 +74,7 @@ class GraphDataset(Dataset):
                 condition = condition.repeat(3, 1, 1)
             else:
                 condition_graph = graph.graph['condition']
-                # condition_graph가 스파스 행렬인지 확인
-                from scipy.sparse import coo_matrix, isspmatrix
-                if not isspmatrix(condition_graph):
-                    raise ValueError("condition_graph는 스파스 행렬이어야 합니다.")
-
-                # 스파스 행렬을 COOrdinate 형식으로 변환
-                condition_edge_index = condition_graph.tocoo()
-                # print(condition_graph)
-                # condition_edge_index = nx.to_scipy_sparse_matrix(condition_graph).tocoo()
+                condition_edge_index = nx.to_scipy_sparse_matrix(condition_graph).tocoo()
                 condition_edge_index = torch.tensor(np.vstack((condition_edge_index.row, condition_edge_index.col)),
                                                     dtype=torch.long)
                 condition_street_feature = torch.tensor(
