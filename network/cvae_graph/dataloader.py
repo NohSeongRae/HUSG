@@ -23,8 +23,7 @@ class GraphDataset(Dataset):
         self.data_type = data_type
 
         if condition_type == 'graph':
-            self.folder_path = '/local_datasets/graph_condition_train_datasets/' + self.data_type
-            self.folder_path = '/local_datasets/gt_train_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/urban_datasets/datasets/ours_graph_datasets/' + self.data_type
         elif condition_type == 'image':
             self.folder_path = '/local_datasets/image_condition_train_datasets/' + self.data_type
         elif condition_type == 'image_resnet34':
