@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="Maximum number of epochs for training.")
     parser.add_argument("--d_model", type=int, default=512, help="Dimension of the model.")
-    parser.add_argument("--n_layer", type=int, default=6, help="Number of transformer layers.")
+    parser.add_argument("--n_layer", type=int, default=4, help="Number of transformer layers.")
     parser.add_argument("--n_head", type=int, default=8, help="Number of attention heads.")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
@@ -81,7 +81,7 @@ if __name__ == '__main__':
             gt_adj_matrix[n_boundary:, n_boundary:] = building_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_building]
             gt_adj_matrix[n_boundary:, :n_boundary] = bb_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_boundary]
 
-            path = f'/local_datasets/urban_datasets/datasets/graph_generation_datasets/test/{file}.gpickle'
+            path = f'/local_datasets/urban_datasets/datasets/ours_graph_datasets/test/{file}.gpickle'
             graph = nx.read_gpickle(path)
 
             graph.remove_edges_from(list(graph.edges()))
