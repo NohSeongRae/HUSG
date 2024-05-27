@@ -104,20 +104,18 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
 
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))
+    rotation_scale = 45
 
     pred_output_list = []
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
             continue
 
-        x, y, w, h = pos[i][0], pos[i][1], size[i][0], size[i][1]
-        # closest_angle, closest_segment = find_closest_boundary_segment([x, y], boundary_coords)
-        # angle = np.degrees(closest_angle)
-
-        pred_output_list.append([x, y, w, h, 0])
+        x, y, w, h, theta = pos[i][0], pos[i][1], size[i][0], size[i][1], (rot[i][0] * 2 - 1) * rotation_scale
+        pred_output_list.append([x, y, w, h, theta])
 
         points = get_bbox_corners(x, y, w, h)
-        rotated_points = rotate_points_around_center(points, [x, y], 0)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
@@ -128,7 +126,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
             continue
-        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * 45
+        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale
         gt_output_list.append([x, y, w, h, theta])
 
         points = get_bbox_corners(x, y, w, h)
