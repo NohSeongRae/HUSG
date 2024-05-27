@@ -87,12 +87,25 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
 
         x, y, w, h = pos[i][0], pos[i][1], size[i][0], size[i][1]
         closest_angle, closest_segment = find_closest_boundary_segment([x, y], boundary_coords)
-        angle = np.degrees(closest_angle)
+        angle_deg = np.degrees(closest_angle)
 
-        pred_output_list.append([x, y, w, h, angle])
+        # Get the current angle of the building (assuming it's aligned with axes initially)
+        current_angle = 0  # Replace with the actual current angle if available
+        angle_difference = angle_deg - current_angle
+
+        # Normalize the angle difference to be within -180 to 180 degrees
+        angle_difference = (angle_difference + 180) % 360 - 180
+
+        # Apply rotation only if the angle difference is within -45 to 45 degrees
+        if -45 <= angle_difference <= 45:
+            angle_to_apply = angle_difference
+        else:
+            angle_to_apply = 0
+
+        pred_output_list.append([x, y, w, h, angle_to_apply])
 
         points = get_bbox_corners(x, y, w, h)
-        rotated_points = rotate_points_around_center(points, [x, y], angle)
+        rotated_points = rotate_points_around_center(points, [x, y], angle_to_apply)
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
