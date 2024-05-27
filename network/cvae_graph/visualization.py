@@ -111,14 +111,13 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
             continue
 
         x, y, w, h = pos[i][0], pos[i][1], size[i][0], size[i][1]
+        # closest_angle, closest_segment = find_closest_boundary_segment([x, y], boundary_coords)
+        # angle = np.degrees(closest_angle)
+
+        pred_output_list.append([x, y, w, h, 0])
 
         points = get_bbox_corners(x, y, w, h)
-        best_alignment_angle = find_best_alignment_angle(points, boundary_coords)
-        angle_deg = np.degrees(best_alignment_angle)
-
-        pred_output_list.append([x, y, w, h, angle_deg])
-
-        rotated_points = rotate_points_around_center(points, [x, y], angle_deg)
+        rotated_points = rotate_points_around_center(points, [x, y], 0)
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
