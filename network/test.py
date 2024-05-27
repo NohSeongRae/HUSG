@@ -81,7 +81,7 @@ if __name__ == '__main__':
             gt_adj_matrix[n_boundary:, n_boundary:] = building_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_building]
             gt_adj_matrix[n_boundary:, :n_boundary] = bb_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_boundary]
 
-            path = f'../preprocessing/global_mapper/ours_graph_datasets/test/{file}.gpickle'
+            path = f'/local_datasets/urban_datasets/datasets/graph_generation_datasets/test/{file}.gpickle'
             graph = nx.read_gpickle(path)
 
             graph.remove_edges_from(list(graph.edges()))
@@ -91,7 +91,7 @@ if __name__ == '__main__':
                     if val == 1:
                         graph.add_edge(i, j)
 
-            path = path.replace('ours_graph_datasets', f'synthetic_datasets')
+            path = f'./outputs/synthetic_datasets/{file}.gpickle'
 
             directory = os.path.dirname(path)
             if not os.path.exists(directory):
