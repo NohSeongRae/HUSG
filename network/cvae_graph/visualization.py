@@ -10,15 +10,13 @@ def get_random_color(seed):
     return color
 
 def get_bbox_corners(x, y, w, h):
-    half_w = w / 2
-    half_h = h / 2
-
-    top_left = [x - half_w, y - half_h]
-    top_right = [x + half_w, y - half_h]
-    bottom_left = [x - half_w, y + half_h]
-    bottom_right = [x + half_w, y + half_h]
-
-    return [top_left, top_right, bottom_right, bottom_left]
+    # This function should return the four corners of the bounding box
+    return [
+        [x - w / 2, y - h / 2],
+        [x + w / 2, y - h / 2],
+        [x + w / 2, y + h / 2],
+        [x - w / 2, y + h / 2]
+    ]
 
 def rotate_points_around_center(points, center, angle):
     # This function should rotate points around the given center by the given angle
