@@ -65,6 +65,31 @@ def find_closest_boundary_segment(building_center, boundary_coords):
 
     return closest_angle, closest_segment
 
+def find_best_alignment_angle(building_points, boundary_coords):
+    """
+    Find the best alignment angle for the building to align with the boundary.
+    """
+    min_angle_diff = float('inf')
+    best_alignment_angle = None
+
+    for i in range(len(building_points)):
+        p1 = building_points[i]
+        p2 = building_points[(i + 1) % len(building_points)]
+        building_segment_angle = calculate_angle(p1, p2)
+
+        for j in range(len(boundary_coords) - 1):
+            b1 = boundary_coords[j]
+            b2 = boundary_coords[j + 1]
+            boundary_segment_angle = calculate_angle(b1, b2)
+
+            angle_diff = (boundary_segment_angle - building_segment_angle + np.pi) % (2 * np.pi) - np.pi
+
+            if abs(angle_diff) < abs(min_angle_diff):
+                min_angle_diff = angle_diff
+                best_alignment_angle = building_segment_angle + angle_diff
+
+    return best_alignment_angle
+
 def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, polygon_path=None, save_dir_path='', data_path=None):
     directory = f"./synthetic_images_{condition_type}/{save_dir_path}/"
     if not os.path.exists(directory):
@@ -86,25 +111,20 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
             continue
 
         x, y, w, h = pos[i][0], pos[i][1], size[i][0], size[i][1]
-        closest_angle, closest_segment = find_closest_boundary_segment([x, y], boundary_coords)
-        angle_deg = np.degrees(closest_angle)
-
-        # Get the current angle of the building (assuming it's aligned with axes initially)
-        current_angle = 0  # Replace with the actual current angle if available
-        angle_difference = angle_deg - current_angle
-
-        # Normalize the angle difference to be within -180 to 180 degrees
-        angle_difference = (angle_difference + 180) % 360 - 180
-
-        # Apply rotation only if the angle difference is within -45 to 45 degrees
-        if -45 <= angle_difference <= 45:
-            angle_to_apply = angle_difference
-        else:
-            angle_to_apply = 0
-
-        pred_output_list.append([x, y, w, h, angle_to_apply])
 
         points = get_bbox_corners(x, y, w, h)
+        best_alignment_angle = find_best_alignment_angle(points, boundary_coords)
+        angle_deg = np.degrees(best_alignment_angle)
+
+        # Normalize the angle to be within -180 to 180 degrees
+        angle_to_apply = (angle_deg + 180) % 360 - 180
+
+        # Apply rotation only if the angle difference is within -45 to 45 degrees
+        if -45 <= angle_to_apply <= 45:
+            pred_output_list.append([x, y, w, h, angle_to_apply])
+        else:
+            pred_output_list.append([x, y, w, h, 0])
+
         rotated_points = rotate_points_around_center(points, [x, y], angle_to_apply)
 
         rotated_points = np.array(rotated_points)
