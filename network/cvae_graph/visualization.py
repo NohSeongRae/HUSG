@@ -116,16 +116,9 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
         best_alignment_angle = find_best_alignment_angle(points, boundary_coords)
         angle_deg = np.degrees(best_alignment_angle)
 
-        # Normalize the angle to be within -180 to 180 degrees
-        angle_to_apply = (angle_deg + 180) % 360 - 180
+        pred_output_list.append([x, y, w, h, angle_deg])
 
-        # Apply rotation only if the angle difference is within -45 to 45 degrees
-        if -45 <= angle_to_apply <= 45:
-            pred_output_list.append([x, y, w, h, angle_to_apply])
-        else:
-            pred_output_list.append([x, y, w, h, 0])
-
-        rotated_points = rotate_points_around_center(points, [x, y], angle_to_apply)
+        rotated_points = rotate_points_around_center(points, [x, y], angle_deg)
 
         rotated_points = np.array(rotated_points)
         rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
@@ -136,7 +129,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
             continue
-        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * 45,
+        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * 45
         gt_output_list.append([x, y, w, h, theta])
 
         points = get_bbox_corners(x, y, w, h)
