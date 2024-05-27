@@ -6,10 +6,8 @@ from scipy.stats import wasserstein_distance
 import pickle
 
 
-base = 'output/tf-head_4/cvae_graph_20240305_145257'
-# base = 'output/without_image_condition_spatial_graph_ariel-k1/cvae_graph_20240306_115843'
-path = ''
-path = os.path.join(base, path)
+path = "C:/Users/Dobby/Downloads/without_top_k/synthetic_images_image_resnet34/cvae_graph_20240525_184225"
+
 
 list_output_all = os.listdir(path)
 
@@ -26,8 +24,6 @@ xy = []
 xy_gt = []
 wh = []
 wh_gt = []
-theta = []
-theta_gt = []
 
 for o, o_gt in zip(list_output, list_output_gt):
     with open(f'{path}/{o}', 'rb') as f:
@@ -39,19 +35,15 @@ for o, o_gt in zip(list_output, list_output_gt):
     for t in tmp:
         xy.append([t[0], t[1]])
         wh.append([t[2], t[3]])
-        theta.append(t[4])
 
     for t_gt in tmp_gt:
         xy_gt.append([t_gt[0], t_gt[1]])
         wh_gt.append([t_gt[2], t_gt[3]])
-        theta_gt.append(t[4])
 
 xy = np.array(xy)
 xy_gt = np.array(xy_gt)
 wh = np.array(wh)
 wh_gt = np.array(wh_gt)
-theta = np.array(theta)
-theta_gt = np.array(theta_gt)
 # theta = (np.array(theta) * 2 - 1) * 45
 # theta_gt = (np.array(theta_gt) * 2 - 1) * 45
 
@@ -65,6 +57,4 @@ wd_wh = np.mean([
     for i in range(2)
 ])
 
-wd_theta = wasserstein_distance(theta, theta_gt)
-
-print(wd_xy, wd_wh, wd_theta)
+print(round(wd_xy, 3), round(wd_wh, 3))
