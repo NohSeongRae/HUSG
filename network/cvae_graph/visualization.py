@@ -36,7 +36,7 @@ def calculate_angle(p1, p2):
     """
     Calculate the angle of the line segment connecting points p1 and p2.
     """
-    return np.arctan2(p2[1] - p1[1], p1[0] - p2[0])
+    return np.arctan2(p2[1] - p1[1], p2[0] - p1[0])  # Correct order
 
 def find_closest_boundary_segment(building_center, boundary_coords):
     """
@@ -76,7 +76,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
             continue
         x, y = gt_features[i][0], gt_features[i][1]
         boundary_coords.append([x, y])
-    print(boundary_coords)
+
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))
 
