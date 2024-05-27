@@ -6,7 +6,7 @@ from scipy.stats import wasserstein_distance
 import pickle
 
 
-path = "C:/Users/Dobby/Downloads/cvae_graph_20240525_184225"
+path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_20240525_184225"
 
 
 list_output_all = os.listdir(path)
