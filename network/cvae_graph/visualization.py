@@ -76,7 +76,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
             continue
         x, y = gt_features[i][0], gt_features[i][1]
         boundary_coords.append([x, y])
-
+    print(boundary_coords)
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))
 
