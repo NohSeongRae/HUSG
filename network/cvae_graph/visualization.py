@@ -20,21 +20,18 @@ def get_bbox_corners(x, y, w, h):
 
     return [top_left, top_right, bottom_right, bottom_left]
 
-def rotate_points_around_center(points, center, theta_deg):
-    theta_rad = np.radians(theta_deg)
-
-    rotation_matrix = np.array([
-        [np.cos(theta_rad), -np.sin(theta_rad)],
-        [np.sin(theta_rad), np.cos(theta_rad)]
-    ])
-
-    points = np.array(points)
-    center = np.array(center)
-    translated_points = points - center
-
-    rotated_points = np.dot(translated_points, rotation_matrix.T)
-    rotated_points = rotated_points + center
-
+def rotate_points_around_center(points, center, angle):
+    # This function should rotate points around the given center by the given angle
+    angle_rad = np.radians(angle)
+    cos_angle = np.cos(angle_rad)
+    sin_angle = np.sin(angle_rad)
+    cx, cy = center
+    rotated_points = []
+    for x, y in points:
+        tx, ty = x - cx, y - cy
+        rx = tx * cos_angle - ty * sin_angle
+        ry = tx * sin_angle + ty * cos_angle
+        rotated_points.append([rx + cx, ry + cy])
     return rotated_points
 
 def calculate_angle(p1, p2):
