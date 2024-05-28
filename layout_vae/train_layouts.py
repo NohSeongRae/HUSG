@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--seed", type=int, default=42, help="random seed")
     parser.add_argument("--epochs", type=int, default=50, help="number of epochs")
-    parser.add_argument("--batch_size", type=int, default=32, help="batch size")
+    parser.add_argument("--batch_size", type=int, default=8, help="batch size")
     parser.add_argument("--lr", type=float, default=0.0001, help="learning rate")
     parser.add_argument("--beta_1", type=float, default=0.9, help="beta_1 for adam")
     parser.add_argument('--evaluate', action='store_true', help="evaluate only")
