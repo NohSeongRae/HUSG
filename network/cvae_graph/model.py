@@ -99,7 +99,7 @@ class GraphEncoder(nn.Module):
 
         super(GraphEncoder, self).__init__()
 
-        self.bbox_fc = nn.Linear(4, feature_dim)
+        self.bbox_fc = nn.Linear(5, feature_dim)
         self.mask_embed = nn.Embedding(2, feature_dim)
         self.node_fc = nn.Linear(feature_dim + feature_dim, feature_dim)
 
@@ -146,7 +146,7 @@ class GraphEncoder(nn.Module):
         - Tuple[Tensor, Tensor]: Means and log variances of the latent representations.
         """
 
-        node_feature = data.node_features[:, :4]
+        node_feature = data.node_features
         node_feature = self.bbox_fc(node_feature)
         node_feature = F.relu(node_feature)
 
