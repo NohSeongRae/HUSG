@@ -6,8 +6,8 @@ from scipy.stats import wasserstein_distance
 import pickle
 
 
-path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_20240525_184225"
-path = "C:/Users/Dobby/Documents/GitHub/HUSG/preprocessing/global_mapper/grid_graph_figure"
+path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_20240528_203924"
+# path = "C:/Users/Dobby/Documents/GitHub/HUSG/preprocessing/global_mapper/grid_graph_figure"
 
 
 list_output_all = os.listdir(path)
