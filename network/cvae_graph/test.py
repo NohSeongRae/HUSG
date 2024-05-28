@@ -83,7 +83,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initializes a GraphCVAE model with user-defined hyperparameters for testing.")
 
-    parser.add_argument("--T", type=int, default=3, help="Number of transformation layers or depth of the GraphCVAE model.")
+    parser.add_argument("--T", type=int, default=4, help="Number of transformation layers or depth of the GraphCVAE model.")
     parser.add_argument("--d_feature", type=int, default=256, help="Dimensionality of the input feature vectors in the GraphCVAE model.")
     parser.add_argument("--d_latent", type=int, default=512, help="Size of the latent space in the GraphCVAE model.")
     parser.add_argument("--n_head", type=int, default=8, help="Number of heads in the multi-head attention mechanism of the GraphCVAE model.")
