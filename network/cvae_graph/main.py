@@ -391,7 +391,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--batch_size", type=int, default=32, help="The batch size used for training the model.")
     parser.add_argument("--max_epoch", type=int, default=500, help="The maximum number of training epochs.")
-    parser.add_argument("--T", type=int, default=3, help="The number of layers in the CVAE model.")
+    parser.add_argument("--T", type=int, default=4, help="The number of layers in the CVAE model.")
     parser.add_argument("--d_feature", type=int, default=256, help="The dimensionality of the input feature vectors.")
     parser.add_argument("--d_latent", type=int, default=512, help="The size of the latent vector in the CVAE model.")
     parser.add_argument("--n_head", type=int, default=8, help="The number of heads in the multi-head attention mechanism.")
