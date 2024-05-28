@@ -10,97 +10,37 @@ def get_random_color(seed):
     return color
 
 def get_bbox_corners(x, y, w, h):
-    # This function should return the four corners of the bounding box
-    return [
-        [x - w / 2, y - h / 2],
-        [x + w / 2, y - h / 2],
-        [x + w / 2, y + h / 2],
-        [x - w / 2, y + h / 2]
-    ]
+    half_w = w / 2
+    half_h = h / 2
 
-def rotate_points_around_center(points, center, angle):
-    # This function should rotate points around the given center by the given angle
-    angle_rad = np.radians(angle)
-    cos_angle = np.cos(angle_rad)
-    sin_angle = np.sin(angle_rad)
-    cx, cy = center
-    rotated_points = []
-    for x, y in points:
-        tx, ty = x - cx, y - cy
-        rx = tx * cos_angle - ty * sin_angle
-        ry = tx * sin_angle + ty * cos_angle
-        rotated_points.append([rx + cx, ry + cy])
+    top_left = [x - half_w, y - half_h]
+    top_right = [x + half_w, y - half_h]
+    bottom_left = [x - half_w, y + half_h]
+    bottom_right = [x + half_w, y + half_h]
+
+    return [top_left, top_right, bottom_right, bottom_left]
+
+def rotate_points_around_center(points, center, theta_deg):
+    theta_rad = np.radians(theta_deg)
+
+    rotation_matrix = np.array([
+        [np.cos(theta_rad), -np.sin(theta_rad)],
+        [np.sin(theta_rad), np.cos(theta_rad)]
+    ])
+
+    points = np.array(points)
+    center = np.array(center)
+    translated_points = points - center
+
+    rotated_points = np.dot(translated_points, rotation_matrix.T)
+    rotated_points = rotated_points + center
+
     return rotated_points
-
-def calculate_angle(p1, p2):
-    """
-    Calculate the angle of the line segment connecting points p1 and p2.
-    """
-    return np.arctan2(p2[1] - p1[1], p2[0] - p1[0])  # Correct order
-
-def find_closest_boundary_segment(building_center, boundary_coords):
-    """
-    Find the closest boundary segment to the given building center
-    and return the angle of that segment and the points of the closest segment.
-    """
-    min_distance = float('inf')
-    closest_angle = None
-    closest_segment = None
-
-    for i in range(len(boundary_coords) - 1):
-        p1 = boundary_coords[i]
-        p2 = boundary_coords[i + 1]
-        segment_angle = calculate_angle(p1, p2)
-
-        # Calculate the midpoint of the boundary segment
-        segment_midpoint = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]
-
-        # Calculate the distance between the building center and the segment midpoint
-        dist = np.linalg.norm(np.array(building_center) - np.array(segment_midpoint))
-
-        if dist < min_distance:
-            min_distance = dist
-            closest_angle = segment_angle
-            closest_segment = (p1, p2)
-
-    return closest_angle, closest_segment
-
-def find_best_alignment_angle(building_points, boundary_coords):
-    """
-    Find the best alignment angle for the building to align with the boundary.
-    """
-    min_angle_diff = float('inf')
-    best_alignment_angle = None
-
-    for i in range(len(building_points)):
-        p1 = building_points[i]
-        p2 = building_points[(i + 1) % len(building_points)]
-        building_segment_angle = calculate_angle(p1, p2)
-
-        for j in range(len(boundary_coords) - 1):
-            b1 = boundary_coords[j]
-            b2 = boundary_coords[j + 1]
-            boundary_segment_angle = calculate_angle(b1, b2)
-
-            angle_diff = (boundary_segment_angle - building_segment_angle + np.pi) % (2 * np.pi) - np.pi
-
-            if abs(angle_diff) < abs(min_angle_diff):
-                min_angle_diff = angle_diff
-                best_alignment_angle = building_segment_angle + angle_diff
-
-    return best_alignment_angle
 
 def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, polygon_path=None, save_dir_path='', data_path=None):
     directory = f"./synthetic_images_{condition_type}/{save_dir_path}/"
     if not os.path.exists(directory):
         os.makedirs(directory)
-
-    boundary_coords = []
-    for i in range(len(pos)):
-        if building_exist_mask[i] == 1:
-            continue
-        x, y = gt_features[i][0], gt_features[i][1]
-        boundary_coords.append([x, y])
 
     fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))
     fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))
@@ -126,7 +66,7 @@ def plot(pos, size, rot, building_exist_mask, gt_features, idx, condition_type, 
     for i in range(len(pos)):
         if building_exist_mask[i] == 0:
             continue
-        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale
+        x, y, w, h, theta = gt_features[i][0], gt_features[i][1], gt_features[i][2], gt_features[i][3], (gt_features[i][4] * 2 - 1) * rotation_scale,
         gt_output_list.append([x, y, w, h, theta])
 
         points = get_bbox_corners(x, y, w, h)
