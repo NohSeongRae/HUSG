@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 
+import os
 import numpy as np
 import random
 from tqdm import tqdm
@@ -34,11 +35,13 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
         for data in tqdm(test_dataloader):
             data, graph_file = data
             import pickle
-            load_path = '../preprocessing/global_mapper/eu_gt_graph_datasets/test/' + graph_file[0]
+            load_path = f'/local_datasets/urban_datasets/datasets/blockplanner_datasets/test/{graph_file[0]}'
             with open(load_path, 'rb') as f:
                 graph = pickle.load(f)
 
-            output_file_path = '../preprocessing/global_mapper/eu_gt_graph_output/gt'
+            output_file_path = './output/gt'
+            if not os.path.exists(output_file_path):
+                os.makedirs(output_file_path)
             file_name = graph_file[0].replace('.gpickle', '')
             with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
@@ -64,7 +67,9 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                     graph.nodes[node]['shape'] = 0
                     graph.nodes[node]['iou'] = 0.0
 
-            output_file_path = '../preprocessing/global_mapper/eu_gt_graph_output/pred'
+            output_file_path = './output/pred'
+            if not os.path.exists(output_file_path):
+                os.makedirs(output_file_path)
             with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
             idx += 1
