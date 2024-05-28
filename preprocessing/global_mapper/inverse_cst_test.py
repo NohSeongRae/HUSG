@@ -56,7 +56,7 @@ def move_polygon_center_to_midpoint(polygon):
 
 count = 1
 for idx in tqdm(range(0, 20032)):
-    path = 'eu_grid_graph_output'
+    path = 'grid_graph_output'
     test_gt_graph = f"./{path}/gt/{str(idx)}.gpickle"
     test_pred_graph = f"./{path}/pred/{str(idx)}.gpickle"
 
@@ -131,6 +131,8 @@ for idx in tqdm(range(0, 20032)):
     plt.ylim([0.0, 1.0])
 
     directory = path.replace('output', 'figure')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     ax1.set_aspect('equal', adjustable='box')
     ax1.set_xlim([0.0, 1.0])
     ax1.set_ylim([0.0, 1.0])
@@ -138,7 +140,6 @@ for idx in tqdm(range(0, 20032)):
     save_path_1 = os.path.join(directory, "prediction_" + str(idx) + ".png")
     ax1.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
     plt.close(ax1.figure)  # ax1에 연결된 figure 닫기
-
     ax2.set_aspect('equal', adjustable='box')
     ax2.set_xlim([0.0, 1.0])
     ax2.set_ylim([0.0, 1.0])
