@@ -12,7 +12,7 @@ class GraphDataset(Dataset):
         self.condition_type = condition_type
         self.data_type = data_type
 
-        self.folder_path = f'/local_datasets/urban_datasets/datasets/blockplanner_datasets/{data_type}'
+        self.folder_path = f'/local_datasets/urban_datasets/blockplanner_datasets/{data_type}'
         file_extension = '.gpickle'
 
         count = 0
