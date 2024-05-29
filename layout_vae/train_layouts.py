@@ -354,7 +354,7 @@ if __name__ == "__main__":
         #   print("validation loss [{0}/{1}: {2:4f}".format(epoch_number, NUMBER_EPOCHS, validation_loss.item()))
         #   # write out a checkpoint too.
         prefix = os.path.join(samples_dir, f"epoch_{epoch_number+1:03d}")
-        evaluate(autoencoder, validation_loader, box_loss, prefix=prefix, colors=colors)
+        # evaluate(autoencoder, validation_loader, box_loss, prefix=prefix, colors=colors)
         torch.save({
             "epoch": epoch_number,
             "model_state_dict": autoencoder.state_dict(),
