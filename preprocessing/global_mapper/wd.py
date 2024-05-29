@@ -8,6 +8,7 @@ import pickle
 
 path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_20240528_203924"
 # path = "C:/Users/Dobby/Documents/GitHub/HUSG/preprocessing/global_mapper/grid_graph_figure"
+path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_20240528_203924_T4"
 
 
 list_output_all = os.listdir(path)
@@ -25,6 +26,8 @@ xy = []
 xy_gt = []
 wh = []
 wh_gt = []
+theta = []
+theta_gt = []
 
 for o, o_gt in zip(list_output, list_output_gt):
     with open(f'{path}/{o}', 'rb') as f:
@@ -36,15 +39,19 @@ for o, o_gt in zip(list_output, list_output_gt):
     for t in tmp:
         xy.append([t[0], t[1]])
         wh.append([t[2], t[3]])
+        theta.append(t[4])
 
     for t_gt in tmp_gt:
         xy_gt.append([t_gt[0], t_gt[1]])
         wh_gt.append([t_gt[2], t_gt[3]])
+        theta_gt.append(t[4])
 
 xy = np.array(xy)
 xy_gt = np.array(xy_gt)
 wh = np.array(wh)
 wh_gt = np.array(wh_gt)
+theta = np.array(theta)
+theta_gt = np.array(theta_gt)
 # theta = (np.array(theta) * 2 - 1) * 45
 # theta_gt = (np.array(theta_gt) * 2 - 1) * 45
 
@@ -58,4 +65,6 @@ wd_wh = np.mean([
     for i in range(2)
 ])
 
-print(round(wd_xy, 3), round(wd_wh, 3))
+wd_theta = wasserstein_distance(theta, theta_gt)
+
+print(round(wd_xy, 3), round(wd_wh, 3), round(wd_theta, 3))
