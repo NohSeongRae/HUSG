@@ -75,46 +75,41 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
+def make_edge():
+    # 그리드의 크기
+    rows, cols = 2, 60
 
-def calculate_distance(point1, point2):
-    return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
+    # 각 노드의 상하좌우 인접 노드와의 연결을 나타내는 간선 인덱스 생성
+    edge_indices = []
 
-def create_ring_graph(pos_xsorted):
-    G = nx.Graph()
+    for row in range(rows):
+        for col in range(cols):
+            node_index = row * cols + col  # 현재 노드의 인덱스
 
-    # 노드 추가 및 위치 저장
-    node_positions = {}
-    for i, xy in enumerate(pos_xsorted):
-        x, y = xy[0], xy[1]
-        G.add_node(i)
-        node_positions[i] = (x, y)
+            # 모서리 노드인지 확인
+            is_corner = (row == 0 or row == rows - 1)
 
-    # 각 노드에 대해 가장 가까운 노드 찾기 (이미 선택된 노드 제외)
-    num_nodes = len(pos_xsorted)
-    current_node = 0
-    visited = set([current_node])
-    path = [current_node]
+            # 이웃 노드 설정
+            if is_corner:
+                neighbors = [
+                    (row - 1, col),  # 상
+                    (row + 1, col),  # 하
+                    (row, col - 1),  # 좌
+                    (row, col + 1)   # 우
+                ]
+            else:
+                neighbors = [
+                    (row, col - 1),  # 좌
+                    (row, col + 1)   # 우
+                ]
 
-    while len(visited) < num_nodes:
-        min_distance = float('inf')
-        closest_node = None
-        for j in range(num_nodes):
-            if j not in visited:
-                distance = calculate_distance(node_positions[current_node], node_positions[j])
-                if distance < min_distance:
-                    min_distance = distance
-                    closest_node = j
-
-        visited.add(closest_node)
-        path.append(closest_node)
-        current_node = closest_node
-
-    # 노드를 순서대로 연결하여 링 구조로 만듭니다.
-    for i in range(num_nodes):
-        G.add_edge(path[i], path[(i + 1) % num_nodes])
-        G.add_edge(path[(i + 1) % num_nodes], path[i])
-
-    return G
+            for n_row, n_col in neighbors:
+                # 인접 노드가 그리드 범위 내에 있는지 확인
+                if 0 <= n_row < rows and 0 <= n_col < cols:
+                    neighbor_index = n_row * cols + n_col
+                    # 간선 인덱스에 추가 (방향성이 없는 그래프 가정)
+                    edge_indices.append([node_index, neighbor_index])
+    return edge_indices
 
 def generate_datasets(idx, data_type):
     with open(f'C:/Users/Dobby/Downloads/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
@@ -190,7 +185,6 @@ def generate_datasets(idx, data_type):
     try:
         G, longest_skel = get_polyskeleton_longest_path(skel, sk_boundary)
     except:
-        print('저장 하지 않음 0')
         return
     ### get the medial axis of block
     medaxis = modified_skel_to_medaxis(longest_skel, simplified_polygon)
@@ -251,7 +245,10 @@ def generate_datasets(idx, data_type):
         b_shape = [b_shape[i] for i in xsort_idx]
         b_iou = [b_iou[i] for i in xsort_idx]
 
-        G = create_ring_graph(pos_xsorted)
+        node_indices = mapping(x_pos, y_pos)
+
+        G = nx.Graph()
+        G.add_edges_from(make_edge())
 
         graph_nodes_list = graph_node()
 
@@ -273,17 +270,33 @@ def generate_datasets(idx, data_type):
             return
 
         for node in G.nodes():
-            G.nodes[node]['old_label'] = graph_nodes_list[node]
-            G.nodes[node]['posx'] = x_pos[node]
-            G.nodes[node]['posy'] = y_pos[node]
-            G.nodes[node]['exist'] = 1.0
-            G.nodes[node]['merge'] = 0
-            G.nodes[node]['size_x'] = size_x[node]
-            G.nodes[node]['size_y'] = size_y[node]
-            G.nodes[node]['shape'] = b_shape[node]
-            G.nodes[node]['iou'] = b_iou[node]
-            G.nodes[node]['height'] = 0.0
-            G.nodes[node]['polygon'] = original_building_polygons[node]
+            if node_indices[node] > 0:
+                building_index = node_indices[node] - 1
+
+                G.nodes[node]['old_label'] = graph_nodes_list[node]
+                G.nodes[node]['posx'] = x_pos[building_index]
+                G.nodes[node]['posy'] = y_pos[building_index]
+                G.nodes[node]['exist'] = 1.0
+                G.nodes[node]['merge'] = 0
+                G.nodes[node]['size_x'] = size_x[building_index]
+                G.nodes[node]['size_y'] = size_y[building_index]
+                G.nodes[node]['shape'] = b_shape[building_index]
+                G.nodes[node]['iou'] = b_iou[building_index]
+                G.nodes[node]['height'] = 0.0
+                G.nodes[node]['polygon'] = original_building_polygons[building_index]
+
+            else:
+                G.nodes[node]['old_label'] = graph_nodes_list[node]
+                G.nodes[node]['posx'] = 0  # ((node % 40) / 39 * 2 - 1) / 42 * 40
+                G.nodes[node]['posy'] = 0  # ((node // 40) / 2 * 2 - 1) / 5 * 3
+                G.nodes[node]['exist'] = 0.0
+                G.nodes[node]['merge'] = 0
+                G.nodes[node]['size_x'] = 0.0
+                G.nodes[node]['size_y'] = 0.0
+                G.nodes[node]['shape'] = 0.0
+                G.nodes[node]['iou'] = 0.0
+                G.nodes[node]['height'] = 0.0
+                G.nodes[node]['polygon'] = original_building_polygons[0]
 
         G.graph['aspect_ratio'] = aspect_rto
         G.graph['long_side'] = 0.0
@@ -293,16 +306,13 @@ def generate_datasets(idx, data_type):
         G.graph['block_scale'] = 1 / abs(dx)
         G.graph['building_polygons'] = building_polygons
 
-        # nx.draw(G, pos_xsorted, with_labels=True, node_color='lightblue', edge_color='gray')
-        # plt.show()
-
         output_file_path = f'ring_graph_datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'train'
+    data_type = 'val'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []

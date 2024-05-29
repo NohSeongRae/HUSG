@@ -58,6 +58,33 @@ def draw_skeleton(polygon, skeleton, show_time=False):
                 (v.point.x(), v.point.y()),
                 v.time, color='blue', fill=False))
 
+def make_edge():
+    # 그리드의 크기
+    rows, cols = 4, 30
+
+    # 각 노드의 상하좌우 인접 노드와의 연결을 나타내는 간선 인덱스 생성
+    edge_indices = []
+
+    for row in range(rows):
+        for col in range(cols):
+            node_index = row * cols + col  # 현재 노드의 인덱스
+
+            neighbors = [
+                (row - 1, col),  # 상
+                # (row + 1, col),  # 하
+                # (row, col - 1),  # 좌
+                (row, col + 1)  # 우
+            ]
+
+            # edge_indices.append([node_index, node_index])
+            for n_row, n_col in neighbors:
+                # 인접 노드가 그리드 범위 내에 있는지 확인
+                if 0 <= n_row < rows and 0 <= n_col < cols:
+                    neighbor_index = n_row * cols + n_col
+                    # 간선 인덱스에 추가 (방향성이 없는 그래프 가정)
+                    edge_indices.append([node_index, neighbor_index])
+    return edge_indices
+
 def create_rotated_rectangle(x, y, w, h, theta):
     # 사각형의 중심을 기준으로 초기 꼭짓점을 계산합니다.
     dx = w / 2
