@@ -8,8 +8,9 @@ import pickle
 
 path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_20240528_203924"
 # path = "C:/Users/Dobby/Documents/GitHub/HUSG/preprocessing/global_mapper/grid_graph_figure"
-path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_20240528_203924_T4"
+path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_20240529_135822_GIN"
 
+# path = "C:/Users/Dobby/Downloads/blockplanner_figure"
 
 list_output_all = os.listdir(path)
 
@@ -44,7 +45,7 @@ for o, o_gt in zip(list_output, list_output_gt):
     for t_gt in tmp_gt:
         xy_gt.append([t_gt[0], t_gt[1]])
         wh_gt.append([t_gt[2], t_gt[3]])
-        theta_gt.append(t[4])
+        theta_gt.append(t_gt[4])
 
 xy = np.array(xy)
 xy_gt = np.array(xy_gt)

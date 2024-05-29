@@ -37,7 +37,6 @@ def get_bbox_details(rotated_rectangle):
     dx = x[idx + 1] - x[idx]
     dy = y[idx + 1] - y[idx]
     theta = math.degrees(math.atan2(dy, dx))
-    theta = (theta + 45) / 90
 
     # 좌하단 꼭짓점을 x, y로 선택
     x, y = rotated_rectangle.centroid.x, rotated_rectangle.centroid.y
@@ -56,7 +55,7 @@ def move_polygon_center_to_midpoint(polygon):
 
 count = 1
 for idx in tqdm(range(0, 20032)):
-    path = 'grid_graph_output'
+    path = 'blockplanner_output'
     test_gt_graph = f"./{path}/gt/{str(idx)}.gpickle"
     test_pred_graph = f"./{path}/pred/{str(idx)}.gpickle"
 
