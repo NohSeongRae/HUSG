@@ -90,7 +90,7 @@ if __name__ == '__main__':
     parser.add_argument("--checkpoint_epoch", type=int, default=0, help="Use checkpoint index.")
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
     parser.add_argument("--condition_type", type=str, default='image', help="save dir path")
-    parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
+    parser.add_argument("--convlayer", type=str, default='gcn', help="save dir path")
 
     opt = parser.parse_args()
 
