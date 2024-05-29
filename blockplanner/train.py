@@ -336,7 +336,7 @@ if __name__ == '__main__':
     parser.add_argument("--kl_weight", type=float, default=1, help="save dir path")
     parser.add_argument("--shape_weight", type=float, default=0.05, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='image', help="save dir path")
-    parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
+    parser.add_argument("--convlayer", type=str, default='gcn', help="save dir path")
 
     opt = parser.parse_args()
 
