@@ -116,19 +116,19 @@ def evaluate(model, loader, loss, prefix='', colors=None):
                 h[has_box, :] = state[0][-1]
                 c[has_box, :] = state[1][-1]
 
-        if batch_i == 0 and colors is not None:
-            # try plotting the first batch.
-            for i in range(batch_size):
-                count = number_boxes[i]
-                plotted = plot_layout(
-                    boxes[i].detach().cpu().numpy(),
-                    predicted_boxes[i, :count],
-                    labels[i].detach().cpu().numpy()-1,
-                    target[i].width,
-                    target[i].height,
-                    colors=colors)
-
-                plotted.save(f"{prefix}_{i:05d}.png")
+        # if batch_i == 0 and colors is not None:
+        #     # try plotting the first batch.
+        #     for i in range(batch_size):
+        #         count = number_boxes[i]
+        #         plotted = plot_layout(
+        #             boxes[i].detach().cpu().numpy(),
+        #             predicted_boxes[i, :count],
+        #             labels[i].detach().cpu().numpy()-1,
+        #             target[i].width,
+        #             target[i].height,
+        #             colors=colors)
+        #
+        #         plotted.save(f"{prefix}_{i:05d}.png")
 
         # pdb.set_trace()
     average_loss = torch.mean(losses)
@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--seed", type=int, default=42, help="random seed")
     parser.add_argument("--epochs", type=int, default=50, help="number of epochs")
-    parser.add_argument("--batch_size", type=int, default=1, help="batch size")
+    parser.add_argument("--batch_size", type=int, default=32, help="batch size")
     parser.add_argument("--lr", type=float, default=0.0001, help="learning rate")
     parser.add_argument("--beta_1", type=float, default=0.9, help="beta_1 for adam")
     parser.add_argument('--evaluate', action='store_true', help="evaluate only")
