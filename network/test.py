@@ -45,7 +45,13 @@ if __name__ == '__main__':
 
     transformer = GraphTransformer(opt.d_model, opt.d_model * 4, opt.n_layer, opt.n_head, opt.dropout).to(device=device)
 
-    checkpoint = torch.load("./models/" + opt.save_dir_path + "/epoch_"+ 'best' + ".pth")
+    if opt.checkpoint_epoch == 0:
+        checkpoint_path = "./models/" + opt.save_dir_path + "/epoch_"+ 'best' + ".pth"
+        checkpoint = torch.load(checkpoint_path)
+    else:
+        checkpoint_path = "./models/" + opt.save_dir_path + "/epoch_" + str(opt.checkpoint_epoch) + ".pth"
+        checkpoint = torch.load(checkpoint_path)
+    print(checkpoint_path)
     transformer.load_state_dict(checkpoint['model_state_dict'])
 
     transformer.eval()
