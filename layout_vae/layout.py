@@ -14,7 +14,7 @@ class BatchCollator(object):
 
 
 class TargetLayout(object):
-    def __init__(self, label_set, count, bbox, label, width, height, annotation_id, permutation, image_id):
+    def __init__(self, label_set, count, bbox, label, width, height, annotation_id, permutation, image_id, filename):
         device = bbox.device if isinstance(bbox, torch.Tensor) else torch.device("cpu")
 
         self.label_set = torch.as_tensor(label_set, dtype=torch.float32, device=device)
@@ -26,6 +26,7 @@ class TargetLayout(object):
         self.annotation_id = torch.as_tensor(annotation_id, device=device)
         self.permutation = torch.as_tensor(permutation, device=device)
         self.image_id = image_id
+        self.filename = filename
 
     def to(self, device):
         result = TargetLayout(
@@ -37,7 +38,8 @@ class TargetLayout(object):
             self.height,
             self.annotation_id.to(device),
             self.permutation.to(device),
-            self.image_id)
+            self.image_id,
+            self.filename)
 
         return result
 
@@ -85,6 +87,7 @@ class LayoutDataset(Dataset):
         heights = []
         image_ids = []
         permutations = []
+        filenames = []
 
         self.images = []
         self.annotations = []
@@ -92,6 +95,7 @@ class LayoutDataset(Dataset):
         for image in self.data["images"]:
             image_id = image["id"]
             height, width = float(image["height"]), float(image["width"])
+            filename = image["file_name"]
 
             if image_id not in self.image_to_annotations:
                 continue
@@ -143,6 +147,7 @@ class LayoutDataset(Dataset):
             annotation_ids.append(annotation_id)
             image_ids.append(image_id)
             permutations.append(permutation)
+            filenames.append(filename)
             self.images.append(image)
 
         self.label_sets = np.stack(label_sets, axis=0)
@@ -154,6 +159,7 @@ class LayoutDataset(Dataset):
         self.annotation_ids = annotation_ids
         self.image_ids = image_ids
         self.permutations = permutations
+        self.filenames = filenames
 
         print("{0} images retained".format(len(self)))
 
@@ -172,7 +178,8 @@ class LayoutDataset(Dataset):
         annotation_id = torch.from_numpy(self.annotation_ids[index])
         image_id = self.image_ids[index]
         permutation = self.permutations[index]
+        filename = self.filenames[index]
 
-        target = TargetLayout(label_set, count, box, label, width, height, annotation_id, permutation, image_id)
+        target = TargetLayout(label_set, count, box, label, width, height, annotation_id, permutation, image_id, filename)
 
         return index, target
