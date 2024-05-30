@@ -9,8 +9,9 @@ class BatchCollator(object):
         transposed_batch = list(zip(*batch))
         indexes = transposed_batch[0]
         targets = transposed_batch[1]
+        filename = transposed_batch[2]
 
-        return indexes, targets
+        return indexes, targets, filename
 
 
 class TargetLayout(object):
