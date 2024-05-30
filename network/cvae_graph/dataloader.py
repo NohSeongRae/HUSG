@@ -30,7 +30,7 @@ class GraphDataset(Dataset):
             self.folder_path = '/local_datasets/urban_datasets/datasets/ours_graph_datasets/' + self.data_type
 
         if self.data_type == 'test':
-            self.folder_path = './synthetic_datasets_d_model_256/'
+            self.folder_path = './synthetic_datasets_d_model_768/'
 
         file_extension = '.gpickle'
 
