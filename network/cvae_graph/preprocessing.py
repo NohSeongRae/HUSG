@@ -9,7 +9,7 @@ import random
 
 def preprocesing_dataset(condition_type='graph'):
 
-    dataset_path = '../../datasets/sorted_europe_dataset/'
+    dataset_path = f'C:/Users/Dobby/Downloads/sorted_europe_dataset'
 
     city_names = ['annecy', 'athens', 'barcelona', 'belgrade',
                   'bologna', 'brasov', 'budapest', 'dublin',
