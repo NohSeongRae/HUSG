@@ -159,6 +159,8 @@ class LayoutDataset(Dataset):
         self.permutations = permutations
         self.filenames = filenames
 
+        print(sorted(self.filenames)[:10])
+
         print("{0} images retained".format(len(self)))
 
     def __len__(self):
