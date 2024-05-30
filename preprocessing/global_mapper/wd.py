@@ -11,6 +11,7 @@ path = "C:/Users/Dobby/Downloads/synthetic_images_image_resnet34/cvae_graph_2024
 path = "C:/Users/Dobby/Downloads/gt_images_image_resnet34/cvae_graph_20240528_133554_T3"
 
 path = "C:/Users/Dobby/Downloads/eu_blockplanner_figure"
+path = "C:/Users/Dobby/Downloads/transformer_ablation/synthetic_images_epoch110/cvae_graph_20240528_203924"
 # path = "C:/Users/Dobby/Downloads/blockplanner_figure"
 
 list_output_all = os.listdir(path)
