@@ -161,6 +161,7 @@ class AutoregressiveBoxVariationalAutoencoder(nn.Module):
         mu, s, condition, state = self.encoder(x, label_set, current_label, labels_so_far, boxes_so_far, state)
 
         z, kl_divergence = self.sample(mu, s)
+        z = torch.normal(mean=0, std=1, size=(1, self.representation_size)).to(device=device)
         boxes = self.decoder(z, condition)
 
         return boxes, kl_divergence, z, state
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     parser.add_argument("--log_dir", default="./logs", help="/path/to/logs/dir")
     parser.add_argument("--test_json", default="test_dataset.json", help="/path/to/test/json")
     parser.add_argument("--max_length", type=int, default=128, help="max length for dataset")
-    parser.add_argument("--batch_size", type=int, default=32, help="batch size")
+    parser.add_argument("--batch_size", type=int, default=1, help="batch size")
     parser.add_argument("--seed", type=int, default=42, help="random seed")
     parser.add_argument("--epoch", required=True, help="checkpoint to evaluate")
     parser.add_argument("--save_dir", default="./visualization", help="directory to save visualizations")
