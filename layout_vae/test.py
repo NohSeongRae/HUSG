@@ -51,12 +51,15 @@ def plot_layout(real_boxes, predicted_boxes, labels, width, height, colors=None)
     return blank_image
 
 
-def evaluate(model, loader, loss, prefix='', colors=None):
+def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None):
     errors = []
     model.eval()
     losses = None
     box_losses = []
     divergence_losses = []
+
+    # Save directory for visualization
+    os.makedirs(save_dir, exist_ok=True)
 
     for batch_i, (indexes, target) in tqdm(enumerate(loader)):
         label_set = torch.stack([t.label_set for t in target], dim=0).to(device)
@@ -103,6 +106,12 @@ def evaluate(model, loader, loss, prefix='', colors=None):
                 h, c = torch.zeros((batch_size, 128)).to(device), torch.zeros((batch_size, 128)).to(device)
                 h[has_box, :] = state[0][-1]
                 c[has_box, :] = state[1][-1]
+
+        # Visualize some examples
+        if batch_i < 5:  # Save the first 5 batches for visualization
+            for i in range(batch_size):
+                img = plot_layout(boxes[i].cpu().numpy(), predicted_boxes[i].cpu().numpy(), labels[i].cpu().numpy(), 500, 500, colors=colors)
+                img.save(os.path.join(save_dir, f"batch_{batch_i}_sample_{i}.png"))
 
     average_loss = torch.mean(losses)
     print(f"validation: average loss: {average_loss}")
@@ -198,5 +207,5 @@ if __name__ == "__main__":
     print(f"Loaded checkpoint from {checkpoint_path}")
 
     # Evaluate the model on the test set
-    test_loss = evaluate(autoencoder, test_loader, box_loss, colors=colors)
+    test_loss = evaluate_and_visualize(autoencoder, test_loader, box_loss, save_dir=args.save_dir, colors=colors)
     print(f"Test Loss: {test_loss}")
