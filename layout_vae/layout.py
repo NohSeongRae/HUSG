@@ -159,8 +159,6 @@ class LayoutDataset(Dataset):
         self.permutations = permutations
         self.filenames = filenames
 
-        print(sorted(self.filenames)[:10])
-
         print("{0} images retained".format(len(self)))
 
     def __len__(self):
@@ -178,8 +176,8 @@ class LayoutDataset(Dataset):
         annotation_id = torch.from_numpy(self.annotation_ids[index])
         image_id = self.image_ids[index]
         permutation = self.permutations[index]
-        print(self.filenames[index])
+        filename = self.filenames[index]
 
         target = TargetLayout(label_set, count, box, label, width, height, annotation_id, permutation, image_id)
 
-        return index, target
+        return index, target, filename
