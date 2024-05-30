@@ -57,7 +57,7 @@ def plot_layout(real_boxes, predicted_boxes, labels, width, height, colors=None,
         label = int(labels[i])
 
         # 실제 박스
-        x, y, w, h, theta = real_box[0], real_box[1], real_box[2], real_box[3], (real_box[4] * 2 - 1) * rotation_scale
+        x, y, w, h, theta = real_box[0], real_box[1], real_box[2], real_box[3], 0
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
         rotated_points = np.array(rotated_points)
@@ -66,7 +66,7 @@ def plot_layout(real_boxes, predicted_boxes, labels, width, height, colors=None,
         ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color='k')
 
         # 예측 박스
-        x, y, w, h, theta = predicted_box[0], predicted_box[1], predicted_box[2], predicted_box[3], (predicted_box[4] * 2 - 1) * rotation_scale
+        x, y, w, h, theta = predicted_box[0], predicted_box[1], predicted_box[2], predicted_box[3], 0
         points = get_bbox_corners(x, y, w, h)
         rotated_points = rotate_points_around_center(points, [x, y], theta)
         rotated_points = np.array(rotated_points)
