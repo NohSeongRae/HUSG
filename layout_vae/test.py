@@ -239,7 +239,7 @@ class AutoregressiveBoxVariationalAutoencoder(nn.Module):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Box VAE Test')
     parser.add_argument("--log_dir", default="./logs", help="/path/to/logs/dir")
-    parser.add_argument("--test_json", default="instances_test.json", help="/path/to/test/json")
+    parser.add_argument("--test_json", default="eu_instances_test.json", help="/path/to/test/json")
     parser.add_argument("--max_length", type=int, default=128, help="max length for dataset")
     parser.add_argument("--batch_size", type=int, default=1, help="batch size")
     parser.add_argument("--seed", type=int, default=42, help="random seed")

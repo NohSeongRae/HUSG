@@ -56,6 +56,6 @@ def convert_gpickle_to_json(gpickle_dir, output_path):
 
 
 # Example usage
-gpickle_dir = "C:\\Users\\Dobby\\Downloads\\datasets\\ours_graph_datasets\\train"
-output_path = "C:\\Users\\Dobby\\Downloads\\datasets\\ours_graph_datasets\\instances_train.json"
+gpickle_dir = "C:\\Users\\Dobby\\Downloads\\datasets\\eu_ours_graph_datasets\\train"
+output_path = "C:\\Users\\Dobby\\Downloads\\datasets\\eu_ours_graph_datasets\\instances_train.json"
 convert_gpickle_to_json(gpickle_dir, output_path)

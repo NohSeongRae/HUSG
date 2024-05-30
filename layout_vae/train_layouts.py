@@ -187,8 +187,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser('Box VAE')
     parser.add_argument("--exp", default="box_vae", help="postfix for experiment name")
     parser.add_argument("--log_dir", default="./logs", help="/path/to/logs/dir")
-    parser.add_argument("--train_json", default="./instances_train.json", help="/path/to/train/json")
-    parser.add_argument("--val_json", default="./instances_val.json", help="/path/to/val/json")
+    parser.add_argument("--train_json", default="./eu_instances_train.json", help="/path/to/train/json")
+    parser.add_argument("--val_json", default="./eu_instances_val.json", help="/path/to/val/json")
 
     parser.add_argument("--max_length", type=int, default=128, help="batch size")
 
