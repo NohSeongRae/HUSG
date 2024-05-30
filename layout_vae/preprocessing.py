@@ -24,6 +24,9 @@ def convert_gpickle_to_json(gpickle_dir, output_path):
         })
 
         for node_id, node_attrs in graph.nodes(data=True):
+            if node_attrs['building_masks'] == 0:
+                continue
+
             bbox = node_attrs['node_features'][:4]  # x, y, w, h 값
             category_id = 0
 
@@ -53,6 +56,6 @@ def convert_gpickle_to_json(gpickle_dir, output_path):
 
 
 # Example usage
-gpickle_dir = "C:\\Users\\Dobby\\Downloads\\datasets\\ours_graph_datasets\\val"
-output_path = "C:\\Users\\Dobby\\Downloads\\datasets\\ours_graph_datasets\\instances_val.json"
+gpickle_dir = "C:\\Users\\Dobby\\Downloads\\datasets\\ours_graph_datasets\\train"
+output_path = "C:\\Users\\Dobby\\Downloads\\datasets\\ours_graph_datasets\\instances_train.json"
 convert_gpickle_to_json(gpickle_dir, output_path)
