@@ -1,3 +1,4 @@
+import gc
 import os
 import torch
 import torch.nn as nn
@@ -61,6 +62,9 @@ def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None
     os.makedirs(save_dir, exist_ok=True)
 
     for batch_i, (indexes, target) in tqdm(enumerate(loader)):
+        torch.cuda.empty_cache()
+        gc.collect()
+
         label_set = torch.stack([t.label_set for t in target], dim=0).to(device)
         counts = torch.stack([t.count for t in target], dim=0).to(device)
         boxes = [t.bbox.to(device) for t in target]
