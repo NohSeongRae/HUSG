@@ -110,7 +110,7 @@ def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None
         # Visualize some examples
         if batch_i < 5:  # Save the first 5 batches for visualization
             for i in range(batch_size):
-                img = plot_layout(boxes[i].cpu().numpy(), predicted_boxes[i].cpu().numpy(), labels[i].cpu().numpy(), 500, 500, colors=colors)
+                img = plot_layout(boxes[i].detach().cpu().numpy(), predicted_boxes[i].detach().cpu().numpy(), labels[i].detach().cpu().numpy(), 500, 500, colors=colors)
                 img.save(os.path.join(save_dir, f"batch_{batch_i}_sample_{i}.png"))
 
     average_loss = torch.mean(losses)
