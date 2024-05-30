@@ -110,11 +110,9 @@ def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None
                 h[has_box, :] = state[0][-1]
                 c[has_box, :] = state[1][-1]
 
-        # Visualize some examples
-        if batch_i < 5:  # Save the first 5 batches for visualization
-            for i in range(batch_size):
-                img = plot_layout(boxes[i].detach().cpu().numpy(), predicted_boxes[i].detach().cpu().numpy(), labels[i].detach().cpu().numpy(), 500, 500, colors=colors)
-                img.save(os.path.join(save_dir, f"batch_{batch_i}_sample_{i}.png"))
+        for i in range(batch_size):
+            img = plot_layout(boxes[i].detach().cpu().numpy(), predicted_boxes[i].detach().cpu().numpy(), labels[i].detach().cpu().numpy(), 500, 500, colors=colors)
+            img.save(os.path.join(save_dir, f"batch_{batch_i}_sample_{i}.png"))
 
     average_loss = torch.mean(losses)
     print(f"validation: average loss: {average_loss}")
