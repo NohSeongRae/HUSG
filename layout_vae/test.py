@@ -157,7 +157,7 @@ class AutoregressiveBoxVariationalAutoencoder(nn.Module):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Box VAE Test')
     parser.add_argument("--log_dir", default="./logs", help="/path/to/logs/dir")
-    parser.add_argument("--test_json", default="test_dataset.json", required=True, help="/path/to/test/json")
+    parser.add_argument("--test_json", default="test_dataset.json", help="/path/to/test/json")
     parser.add_argument("--max_length", type=int, default=128, help="max length for dataset")
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
     parser.add_argument("--seed", type=int, default=42, help="random seed")
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         representation_size=32).to(device)
 
     # Load checkpoint
-    checkpoint_path = os.path.join(args.log_dir, "checkpoints", 'epoch_%d.pth' % args.epoch)
+    checkpoint_path = os.path.join(args.log_dir, "checkpoints", 'epoch_%d.pth' % int(args.epoch))
     checkpoint = torch.load(args.evaluate_checkpoint, map_location=device)
     autoencoder.load_state_dict(checkpoint["model_state_dict"], strict=True)
     print(f"Loaded checkpoint from {args.evaluate_checkpoint}")
