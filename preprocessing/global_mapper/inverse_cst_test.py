@@ -54,8 +54,8 @@ def move_polygon_center_to_midpoint(polygon):
     return moved_polygon, (shift_x, shift_y)
 
 count = 1
-for idx in tqdm(range(0, 20032)):
-    path = 'blockplanner_output'
+for idx in tqdm(range(0, 21032)):
+    path = 'eu_blockplanner_output'
     test_gt_graph = f"./{path}/gt/{str(idx)}.gpickle"
     test_pred_graph = f"./{path}/pred/{str(idx)}.gpickle"
 
