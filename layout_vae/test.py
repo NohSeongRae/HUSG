@@ -162,7 +162,6 @@ class AutoregressiveBoxVariationalAutoencoder(nn.Module):
 
         return boxes, kl_divergence, z, state
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Box VAE Test')
     parser.add_argument("--log_dir", default="./logs", help="/path/to/logs/dir")
@@ -171,6 +170,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=32, help="batch size")
     parser.add_argument("--seed", type=int, default=42, help="random seed")
     parser.add_argument("--epoch", required=True, help="checkpoint to evaluate")
+    parser.add_argument("--save_dir", default="./visualization", help="directory to save visualizations")
 
     args = parser.parse_args()
 
@@ -206,6 +206,6 @@ if __name__ == "__main__":
     autoencoder.load_state_dict(checkpoint["model_state_dict"], strict=True)
     print(f"Loaded checkpoint from {checkpoint_path}")
 
-    # Evaluate the model on the test set
+    # Evaluate the model on the test set and visualize results
     test_loss = evaluate_and_visualize(autoencoder, test_loader, box_loss, save_dir=args.save_dir, colors=colors)
     print(f"Test Loss: {test_loss}")
