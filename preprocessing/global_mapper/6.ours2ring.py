@@ -112,10 +112,10 @@ def make_edge():
     return edge_indices
 
 def generate_datasets(idx, data_type):
-    with open(f'C:/Users/Dobby/Downloads/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
+    with open(f'C:/Users/Dobby/Downloads/eu_ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
         buildings = pickle.load(file)
 
-    graph = nx.read_gpickle(f'C:/Users/Dobby/Downloads/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
+    graph = nx.read_gpickle(f'C:/Users/Dobby/Downloads/eu_ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
     n_node = graph.number_of_nodes()
     n_building = len(buildings)
@@ -306,13 +306,13 @@ def generate_datasets(idx, data_type):
         G.graph['block_scale'] = 1 / abs(dx)
         G.graph['building_polygons'] = building_polygons
 
-        output_file_path = f'ring_graph_datasets/{data_type}'
+        output_file_path = f'eu_blockplanner_datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'val'
+    data_type = 'train'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
