@@ -9,11 +9,88 @@ import random
 import argparse
 import numpy as np
 import seaborn as sns
+import matplotlib.pyplot as plt
+import pickle
 
 from box import AutoregressiveBoxEncoder, AutoregressiveBoxDecoder
 from layout import BatchCollator, LayoutDataset
 
+# 기존의 bbox, 회전 관련 함수 추가
+def get_bbox_corners(x, y, w, h):
+    half_w = w / 2
+    half_h = h / 2
 
+    top_left = [x - half_w, y - half_h]
+    top_right = [x + half_w, y - half_h]
+    bottom_left = [x - half_w, y + half_h]
+    bottom_right = [x + half_w, y + half_h]
+
+    return [top_left, top_right, bottom_right, bottom_left]
+
+def rotate_points_around_center(points, center, theta_deg):
+    theta_rad = np.radians(theta_deg)
+
+    rotation_matrix = np.array([
+        [np.cos(theta_rad), -np.sin(theta_rad)],
+        [np.sin(theta_rad), np.cos(theta_rad)]
+    ])
+
+    points = np.array(points)
+    center = np.array(center)
+    translated_points = points - center
+
+    rotated_points = np.dot(translated_points, rotation_matrix.T)
+    rotated_points = rotated_points + center
+
+    return rotated_points
+
+# 기존의 레이아웃 플롯 함수 수정
+def plot_layout(real_boxes, predicted_boxes, labels, width, height, colors=None, save_path_1=None, save_path_2=None):
+    fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))
+    fig, ax2 = plt.subplots(1, 1, figsize=(6, 6))
+
+    rotation_scale = 45  # 각도 스케일 추가
+
+    for i in range(len(real_boxes)):
+        real_box = real_boxes[i].tolist()
+        predicted_box = predicted_boxes[i].tolist()
+        label = int(labels[i])
+
+        # 실제 박스
+        x, y, w, h, theta = real_box[0], real_box[1], real_box[2], real_box[3], (real_box[4] * 2 - 1) * rotation_scale
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
+
+        ax1.plot(rotated_box[:, 0], rotated_box[:, 1], color='k')
+
+        # 예측 박스
+        x, y, w, h, theta = predicted_box[0], predicted_box[1], predicted_box[2], predicted_box[3], (predicted_box[4] * 2 - 1) * rotation_scale
+        points = get_bbox_corners(x, y, w, h)
+        rotated_points = rotate_points_around_center(points, [x, y], theta)
+        rotated_points = np.array(rotated_points)
+        rotated_box = np.concatenate((rotated_points, [rotated_points[0]]), axis=0)
+
+        ax2.plot(rotated_box[:, 0], rotated_box[:, 1], color='k')
+
+    ax1.set_aspect('equal', adjustable='box')
+    ax1.set_xlim([0.0, 1.0])
+    ax1.set_ylim([0.0, 1.0])
+    ax1.set_axis_off()
+    if save_path_1:
+        ax1.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
+    plt.close(ax1.figure)
+
+    ax2.set_aspect('equal', adjustable='box')
+    ax2.set_xlim([0.0, 1.0])
+    ax2.set_ylim([0.0, 1.0])
+    ax2.set_axis_off()
+    if save_path_2:
+        ax2.figure.savefig(save_path_2, dpi=300, bbox_inches='tight')
+    plt.close(ax2.figure)
+
+# 색상 생성 함수 추가
 def gen_colors(num_colors):
     """
     Generate uniformly distributed `num_colors` colors
@@ -23,33 +100,6 @@ def gen_colors(num_colors):
     palette = sns.color_palette(None, num_colors)
     rgb_triples = [[int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)] for x in palette]
     return rgb_triples
-
-
-def plot_layout(real_boxes, predicted_boxes, labels, width, height, colors=None):
-    blank_image = Image.new("RGB", (int(width), int(height)), (255, 255, 255))
-    blank_draw = ImageDraw.Draw(blank_image)
-
-    number_boxes = real_boxes.shape[0]
-    for i in range(number_boxes):
-        real_box = real_boxes[i].tolist()
-        predicted_box = predicted_boxes[i].tolist()
-        label = int(labels[i])
-
-        real_x1, real_y1 = int(real_box[0] * width), int(real_box[1] * height)
-        real_x2, real_y2 = real_x1 + int(real_box[2] * width), real_y1 + int(real_box[3] * height)
-
-        predicted_x1, predicted_y1 = int(predicted_box[0] * width), int(predicted_box[1] * height)
-        predicted_x2, predicted_y2 = predicted_x1 + int(predicted_box[2] * width), predicted_y1 + int(predicted_box[3] * height)
-
-        real_color = (0, 0, 0)
-        if colors is not None and label < len(colors):
-            real_color = tuple(colors[label])
-
-        blank_draw.rectangle([(real_x1, real_y1), (real_x2, real_y2)], outline=real_color)
-        blank_draw.rectangle([(predicted_x1, predicted_y1), (predicted_x2, predicted_y2)], outline=(0, 0, 0))
-
-    return blank_image
-
 
 def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None):
     errors = []
@@ -111,8 +161,26 @@ def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None
                 c[has_box, :] = state[1][-1]
 
         for i in range(batch_size):
-            img = plot_layout(boxes[i].detach().cpu().numpy(), predicted_boxes[i].detach().cpu().numpy(), labels[i].detach().cpu().numpy(), 500, 500, colors=colors)
-            img.save(os.path.join(save_dir, f"batch_{batch_i}_sample_{i}.png"))
+            save_path_1 = os.path.join(save_dir, f"batch_{batch_i}_sample_{i}_prediction.png")  # 예측 결과 저장 경로
+            save_path_2 = os.path.join(save_dir, f"batch_{batch_i}_sample_{i}_ground_truth.png")  # 실제 결과 저장 경로
+
+            plot_layout(
+                boxes[i].detach().cpu().numpy(),
+                predicted_boxes[i].detach().cpu().numpy(),
+                labels[i].detach().cpu().numpy(),
+                500,
+                500,
+                colors=colors,
+                save_path_1=save_path_1,
+                save_path_2=save_path_2
+            )
+
+            # 저장된 결과를 pickle 파일로 저장
+            with open(save_path_1.replace('.png', '.pkl'), 'wb') as file:
+                pickle.dump(predicted_boxes[i].detach().cpu().numpy().tolist(), file)
+
+            with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
+                pickle.dump(boxes[i].detach().cpu().numpy().tolist(), file)
 
     average_loss = torch.mean(losses)
     print(f"validation: average loss: {average_loss}")
