@@ -112,6 +112,9 @@ def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None
     os.makedirs(save_dir, exist_ok=True)
 
     for batch_i, (indexes, target, filename) in tqdm(enumerate(loader)):
+        if batch_i > 1000:
+            break
+
         torch.cuda.empty_cache()
         gc.collect()
 
