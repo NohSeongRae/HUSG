@@ -38,11 +38,10 @@ def plot_layout(real_boxes, predicted_boxes, labels, width, height, colors=None)
         real_x2, real_y2 = real_x1 + int(real_box[2] * width), real_y1 + int(real_box[3] * height)
 
         predicted_x1, predicted_y1 = int(predicted_box[0] * width), int(predicted_box[1] * height)
-        predicted_x2, predicted_y2 = predicted_x1 + int(predicted_box[2] * width), predicted_y1 + int(
-            predicted_box[3] * height)
+        predicted_x2, predicted_y2 = predicted_x1 + int(predicted_box[2] * width), predicted_y1 + int(predicted_box[3] * height)
 
         real_color = (0, 0, 0)
-        if colors is not None:
+        if colors is not None and label < len(colors):
             real_color = tuple(colors[label])
 
         blank_draw.rectangle([(real_x1, real_y1), (real_x2, real_y2)], outline=real_color)
