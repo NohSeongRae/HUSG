@@ -115,7 +115,6 @@ def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None
         torch.cuda.empty_cache()
         gc.collect()
 
-        filename = target.filename
         label_set = torch.stack([t.label_set for t in target], dim=0).to(device)
         counts = torch.stack([t.count for t in target], dim=0).to(device)
         boxes = [t.bbox.to(device) for t in target]
@@ -162,8 +161,8 @@ def evaluate_and_visualize(model, loader, loss, save_dir, prefix='', colors=None
                 c[has_box, :] = state[1][-1]
 
         for i in range(batch_size):
-            save_path_1 = os.path.join(save_dir, f"{filename}_ground_truth.png")    # 실제 결과 저장 경로
-            save_path_2 = os.path.join(save_dir, f"{filename}_prediction.png")      # 예측 결과 저장 경로
+            save_path_1 = os.path.join(save_dir, f"batch_{batch_i}_sample_{i}_ground_truth.png")    # 실제 결과 저장 경로
+            save_path_2 = os.path.join(save_dir, f"batch_{batch_i}_sample_{i}_prediction.png")      # 예측 결과 저장 경로
 
             plot_layout(
                 boxes[i].detach().cpu().numpy(),

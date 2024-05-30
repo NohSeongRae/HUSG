@@ -14,7 +14,7 @@ class BatchCollator(object):
 
 
 class TargetLayout(object):
-    def __init__(self, label_set, count, bbox, label, width, height, annotation_id, permutation, image_id, filename):
+    def __init__(self, label_set, count, bbox, label, width, height, annotation_id, permutation, image_id):
         device = bbox.device if isinstance(bbox, torch.Tensor) else torch.device("cpu")
 
         self.label_set = torch.as_tensor(label_set, dtype=torch.float32, device=device)
@@ -26,7 +26,6 @@ class TargetLayout(object):
         self.annotation_id = torch.as_tensor(annotation_id, device=device)
         self.permutation = torch.as_tensor(permutation, device=device)
         self.image_id = image_id
-        self.filename = filename
 
     def to(self, device):
         result = TargetLayout(
@@ -38,8 +37,7 @@ class TargetLayout(object):
             self.height,
             self.annotation_id.to(device),
             self.permutation.to(device),
-            self.image_id,
-            self.filename)
+            self.image_id)
 
         return result
 
@@ -178,8 +176,8 @@ class LayoutDataset(Dataset):
         annotation_id = torch.from_numpy(self.annotation_ids[index])
         image_id = self.image_ids[index]
         permutation = self.permutations[index]
-        filename = self.filenames[index]
+        print(self.filenames[index])
 
-        target = TargetLayout(label_set, count, box, label, width, height, annotation_id, permutation, image_id, filename)
+        target = TargetLayout(label_set, count, box, label, width, height, annotation_id, permutation, image_id)
 
         return index, target
