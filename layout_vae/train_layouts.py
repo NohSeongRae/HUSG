@@ -278,7 +278,7 @@ if __name__ == "__main__":
         autoencoder.train()
 
         with tqdm(enumerate(train_loader)) as tq:
-            for batch_i, (indexes, target) in tq:
+            for batch_i, (indexes, target, filename) in tq:
                 autoencoder.zero_grad()
                 box_loss.zero_grad()
                 label_set = torch.stack([t.label_set for t in target], dim=0).to(device)
