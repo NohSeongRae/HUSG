@@ -193,9 +193,9 @@ if __name__ == "__main__":
 
     # Load checkpoint
     checkpoint_path = os.path.join(args.log_dir, "checkpoints", 'epoch_%d.pth' % int(args.epoch))
-    checkpoint = torch.load(args.evaluate_checkpoint, map_location=device)
+    checkpoint = torch.load(checkpoint_path, map_location=device)
     autoencoder.load_state_dict(checkpoint["model_state_dict"], strict=True)
-    print(f"Loaded checkpoint from {args.evaluate_checkpoint}")
+    print(f"Loaded checkpoint from {checkpoint_path}")
 
     # Evaluate the model on the test set
     test_loss = evaluate(autoencoder, test_loader, box_loss, colors=colors)
