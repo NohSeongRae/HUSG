@@ -76,9 +76,9 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                      save_dir_path,
                      data_path[0])
 
-            count += 1
-            if count % 1001 == 0:
-                return
+            # count += 1
+            # if count % 1001 == 0:
+            #     return
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initializes a GraphCVAE model with user-defined hyperparameters for testing.")
