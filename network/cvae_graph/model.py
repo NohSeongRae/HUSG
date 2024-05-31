@@ -187,8 +187,8 @@ class GraphDecoder(nn.Module):
 
         super(GraphDecoder, self).__init__()
 
-        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
-        # self.dec_feature_init = nn.Linear(latent_dim, feature_dim)
+        # self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
+        self.dec_feature_init = nn.Linear(latent_dim, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -244,7 +244,7 @@ class GraphDecoder(nn.Module):
         - Tuple[Tensor, Tensor, Tensor]: Predicted positions, sizes, and angles for each node.
         """
 
-        z = torch.cat([z, condition], dim=1)
+        # z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
 

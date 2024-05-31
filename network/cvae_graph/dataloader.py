@@ -23,11 +23,11 @@ class GraphDataset(Dataset):
         self.data_type = data_type
 
         if condition_type == 'graph':
-            self.folder_path = '/local_datasets/urban_datasets/datasets/eu_ours_graph_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/urban_datasets/datasets/ours_graph_datasets/' + self.data_type
         elif condition_type == 'image':
-            self.folder_path = '/local_datasets/urban_datasets/datasets/eu_ours_graph_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/urban_datasets/datasets/ours_graph_datasets/' + self.data_type
         elif condition_type == 'image_resnet34':
-            self.folder_path = '/local_datasets/urban_datasets/datasets/eu_ours_graph_datasets/' + self.data_type
+            self.folder_path = '/local_datasets/urban_datasets/datasets/ours_graph_datasets/' + self.data_type
 
         # if self.data_type == 'test':
         #     self.folder_path = './synthetic_datasets_eu/'
