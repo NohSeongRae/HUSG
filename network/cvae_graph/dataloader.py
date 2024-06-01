@@ -31,6 +31,7 @@ class GraphDataset(Dataset):
 
         if self.data_type == 'test':
             self.folder_path = './synthetic_datasets/'
+            self.folder_path = './large_scale_datasets/image_condition_train_datasets/'
 
         file_extension = '.gpickle'
 
