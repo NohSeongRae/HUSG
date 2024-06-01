@@ -19,7 +19,6 @@ transformed_data = pd.read_pickle(file_path)
 
 unit_length = 0.04
 reference_angle = 30
-boundary_scale = 1
 
 def merge_geometries_by_index(bounding_boxs, geometries):
     merged_geometries = {}
@@ -57,7 +56,7 @@ def plot_bbox(building_bboxs, unit_road_bboxs, unit_road_street_indcies):
     plt.show()
 
 
-def process_block(block_info):
+def process_block(block_info, temp_data):
     building_polygons = [Polygon(bbox['coordinates'][0]) for bbox in block_info['buildings_bbox']]
     boundary_polygon = Polygon(block_info['block_polygon']['coordinates'][0])
 
@@ -154,6 +153,7 @@ def process_block(block_info):
             edge_index.append([unit_road_idx, unit_road_idx + 1])
             edge_index.append([unit_road_idx + 1, unit_road_idx])
 
+    boundary_scale = 10 / temp_data.get('scale_factor', 1)
     scale = 500 * boundary_scale
     buildnig_street_count = np.zeros((len(building_bboxs), unit_road_street_indcies[-1] + 1))
     for unit_road_idx, unit_road in enumerate(unit_roads):
@@ -309,7 +309,7 @@ def process_block(block_info):
 
     return {
         'node_features': node_features,
-        'edge_index': edge_index,
+        'edge_indices': edge_index,
         'unit_road_street_indices': unit_road_street_indcies,
         'building_polygons': building_polygons
     }
@@ -317,13 +317,14 @@ def process_block(block_info):
 # Process each block in the transformed data
 processed_blocks = []
 for idx, block_info in tqdm(transformed_data.iterrows(), total=transformed_data.shape[0]):
-    processed_data = process_block(block_info)
+    processed_data = process_block(block_info, transformed_data.iloc[idx])
     if processed_data:
         processed_blocks.append(processed_data)
 
 # Save processed data
 output_file = 'processed_block_building_info.pkl'
 with open(output_file, 'wb') as f:
+    print(processed_blocks)
     pickle.dump(processed_blocks, f)
 
 print("Processing complete. Data saved to:", output_file)
