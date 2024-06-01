@@ -82,8 +82,6 @@ if __name__ == '__main__':
         with open(load_path, 'rb') as f:
             graph = pickle.load(f)
 
-        adj_matrix_original = nx.to_numpy_array(graph)
-
         ffile = file_path.replace('.gpickle', '.pkl')
         with open(f'C:/Users/Dobby/Downloads/large_scale_datasets/graph_condition_train_datasets/{ffile}', 'rb') as file:
             buildings = pickle.load(file)
@@ -94,7 +92,7 @@ if __name__ == '__main__':
 
         adj_matrix = nx.adjacency_matrix(graph).todense()
         boundary_adj_matrix = adj_matrix[:n_chunk, :n_chunk]
-        building_adj_matrix = adj_matrix_original[n_chunk:, n_chunk:]
+        building_adj_matrix = adj_matrix[n_chunk:, n_chunk:]
         bb_adj_matrix = adj_matrix[n_chunk:, :n_chunk]
         boundary_pos_feature = []
 
@@ -104,7 +102,7 @@ if __name__ == '__main__':
         boundary_pos_feature = np.array(boundary_pos_feature)
 
         data = {'boundary_adj_matrix': boundary_adj_matrix,
-                'building_adj_matrix': adj_matrix_original,
+                'building_adj_matrix': building_adj_matrix,
                 'bb_adj_matrix': bb_adj_matrix,
                 'boundary_pos_feature': boundary_pos_feature,
                 'n_boundary': n_chunk,
