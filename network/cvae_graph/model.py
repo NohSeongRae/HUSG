@@ -187,8 +187,8 @@ class GraphDecoder(nn.Module):
 
         super(GraphDecoder, self).__init__()
 
-        # self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
-        self.dec_feature_init = nn.Linear(latent_dim, feature_dim)
+        self.dec_feature_init = nn.Linear(latent_dim + bottleneck, feature_dim)
+        # self.dec_feature_init = nn.Linear(latent_dim, feature_dim)
 
         if convlayer == 'gat':
             self.convlayer = torch_geometric.nn.GATConv
@@ -244,7 +244,7 @@ class GraphDecoder(nn.Module):
         - Tuple[Tensor, Tensor, Tensor]: Predicted positions, sizes, and angles for each node.
         """
 
-        # z = torch.cat([z, condition], dim=1)
+        z = torch.cat([z, condition], dim=1)
         z = self.dec_feature_init(z)
         z = z[batch]
 
@@ -336,13 +336,13 @@ class GraphCVAE(nn.Module):
         mu, log_var = self.encoder(data, edge_index)
         z = self.reparameterize(mu, log_var)
 
-        # if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
-        #     condition = self.condition_encoder(data.condition)
-        # else:
-        #     condition = Batch.from_data_list(data.condition)
-        #     condition = self.condition_encoder(condition, condition.edge_index)
+        if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
+            condition = self.condition_encoder(data.condition)
+        else:
+            condition = Batch.from_data_list(data.condition)
+            condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, None, edge_index, data.batch)
+        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, edge_index, data.batch)
 
         return output_pos, output_size, output_theta, mu, log_var
 
@@ -359,12 +359,12 @@ class GraphCVAE(nn.Module):
 
         z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
 
-        # if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
-        #     condition = self.condition_encoder(data.condition)
-        # else:
-        #     condition = Batch.from_data_list(data.condition)
-        #     condition = self.condition_encoder(condition, condition.edge_index)
+        if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
+            condition = self.condition_encoder(data.condition)
+        else:
+            condition = Batch.from_data_list(data.condition)
+            condition = self.condition_encoder(condition, condition.edge_index)
 
-        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, None, data.edge_index, data.batch)
+        output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, data.edge_index, data.batch)
 
         return output_pos, output_size, output_theta
