@@ -94,7 +94,8 @@ if __name__ == '__main__':
 
         adj_matrix = nx.adjacency_matrix(graph).todense()
         boundary_adj_matrix = adj_matrix[:n_chunk, :n_chunk]
-        bb_adj_matrix = np.zeros((n_building, n_chunk))
+        building_adj_matrix = adj_matrix_original[n_chunk:, n_chunk:]
+        bb_adj_matrix = adj_matrix[n_chunk:, :n_chunk]
         boundary_pos_feature = []
 
         for node in graph.nodes():
