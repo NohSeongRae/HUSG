@@ -14,15 +14,16 @@ def preprocesing_dataset(condition_type='graph'):
         data = pickle.load(f)
 
     dataset_names = [
-        'edge_index',
+        'edge_indices',
         'node_features',
-        'boundary_filenames',
+        'boundary_mask',
         'building_polygons'
     ]
 
     for file_idx in range(len(data)):
         edge_indices = data[file_idx][dataset_names[0]]
         node_features = data[file_idx][dataset_names[1]]
+        boundary_mask = data[file_idx][dataset_names[2]]
         building_polygons = data[file_idx][dataset_names[3]]
 
         graph = nx.Graph()
@@ -42,6 +43,8 @@ def preprocesing_dataset(condition_type='graph'):
                 street_graph.nodes[node]['chunk_features'] = chunk_feature[node]
 
             graph.graph['condition'] = street_graph
+        elif condition_type == 'image':
+            graph.graph['condition'] = boundary_mask
 
         for node in graph.nodes():
             graph.nodes[node]['node_features'] = node_features[node]
@@ -66,7 +69,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Initialize a transformer with user-defined hyperparameters.")
 
     parser.add_argument("--seed", type=int, default=327, help="Random seed for reproducibility across runs.")
-    parser.add_argument("--condition_type", type=str, default="graph", help="Random seed for reproducibility across runs.")
+    parser.add_argument("--condition_type", type=str, default="image", help="Random seed for reproducibility across runs.")
 
     opt = parser.parse_args()
 
