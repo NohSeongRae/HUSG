@@ -100,7 +100,8 @@ for idx, block_info in enumerate(data):
     # Add the transformed block and buildings to the list
     transformed_data.append({
         'block_polygon': normalized_block,
-        'buildings_bbox': normalized_buildings
+        'buildings_bbox': normalized_buildings,
+        'scale_factor': scale_factor
     })
 
     # Set limits and labels
