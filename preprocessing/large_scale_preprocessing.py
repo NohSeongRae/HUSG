@@ -179,7 +179,7 @@ def process_block(block_info, temp_data):
         unit_road_coords = unit_road[1]
         p1 = np.array(unit_road_coords[0])
         p2 = np.array(unit_road_coords[1])
-        v_rotated = rotated_line_90(p1, p2, unit_length, scale=scale)
+        v_rotated = rotated_line_90(p1, p2, unit_length, scale=scale * 1.5)
 
         v_rotated_start = v_rotated - np.mean((p1, p2), axis=0) + p1
         v_rotated_end = v_rotated - np.mean((p1, p2), axis=0) + p2
