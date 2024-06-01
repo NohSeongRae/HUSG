@@ -4,9 +4,11 @@ import pickle
 import numpy as np
 from shapely.geometry import Polygon, LineString
 from shapely.ops import unary_union, nearest_points
+from shapely import affinity
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pandas as pd
+from skimage.draw import polygon as draw_polygon
 
 from gemoetry_utils import *
 from general_utils import *
@@ -55,6 +57,23 @@ def plot_bbox(building_bboxs, unit_road_bboxs, unit_road_street_indcies):
         ax.plot(x, y, color='blue')
     plt.show()
 
+
+def create_mask(boundary_polygon, mask_size=(224, 224)):
+    # Create a blank mask
+    mask = np.zeros(mask_size, dtype=np.uint8)
+
+    # Get the coordinates of the polygon's exterior
+    x, y = boundary_polygon.exterior.xy
+
+    # Scale coordinates from [0, 1] to the size of the mask
+    x = np.array(x) * (mask_size[1] - 1)
+    y = np.array(y) * (mask_size[0] - 1)
+
+    # Draw the polygon on the mask
+    rr, cc = draw_polygon(y, x, mask.shape)
+    mask[rr, cc] = 1
+
+    return mask
 
 def process_block(block_info, temp_data):
     building_polygons = [Polygon(bbox['coordinates'][0]) for bbox in block_info['buildings_bbox']]
@@ -186,7 +205,7 @@ def process_block(block_info, temp_data):
 
                         center_1 = (building_bbox.centroid.x, building_bbox.centroid.y)
                         center_2 = (
-                        unit_road_bboxs[unit_road_idx].centroid.x, unit_road_bboxs[unit_road_idx].centroid.y)
+                            unit_road_bboxs[unit_road_idx].centroid.x, unit_road_bboxs[unit_road_idx].centroid.y)
                         if building_polygons[building_bbox_idx_][2].intersects(LineString([center_1, center_2])):
                             is_invalid = True
                             break
@@ -199,7 +218,8 @@ def process_block(block_info, temp_data):
 
                         for unit_road_idx_, unit_road_ in enumerate(unit_roads):
                             if [unit_road_idx_, len(unit_roads) + building_bbox_idx] in edge_index and \
-                                    unit_road_street_indcies[unit_road_idx] == unit_road_street_indcies[unit_road_idx_]:
+                                    unit_road_street_indcies[unit_road_idx] == unit_road_street_indcies[
+                                unit_road_idx_]:
                                 distance = LineString(unit_road_[1]).distance(building_bbox)
                                 if cur_distance < distance:
                                     edge_index.remove([unit_road_idx_, len(unit_roads) + building_bbox_idx])
@@ -307,11 +327,20 @@ def process_block(block_info, temp_data):
     edge_index = np.array(edge_index)
     unit_road_street_indcies = np.array(unit_road_street_indcies)
 
+    # Create and save boundary mask
+    boundary_mask = create_mask(boundary_polygon)
+    # plt.figure(figsize=(8, 8))
+    # plt.imshow(boundary_mask, cmap='gray')
+    # plt.title('Condition Image from Graph Attributes')
+    # plt.axis('off')
+    # plt.show()
+
     return {
         'node_features': node_features,
         'edge_indices': edge_index,
         'unit_road_street_indices': unit_road_street_indcies,
-        'building_polygons': building_polygons
+        'building_polygons': building_polygons,
+        'boundary_mask': boundary_mask
     }
 
 # Process each block in the transformed data
@@ -324,7 +353,6 @@ for idx, block_info in tqdm(transformed_data.iterrows(), total=transformed_data.
 # Save processed data
 output_file = 'processed_block_building_info.pkl'
 with open(output_file, 'wb') as f:
-    print(processed_blocks)
     pickle.dump(processed_blocks, f)
 
 print("Processing complete. Data saved to:", output_file)
