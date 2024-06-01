@@ -21,7 +21,7 @@ class GraphDataset(Dataset):
         if data_type == 'test':
             self.folder_path = f'/local_datasets/urban_datasets/datasets/eu_graph_generation_datasets/{data_type}'
             self.folder_path = f'/local_datasets/urban_datasets/datasets/eu_graph_generation_datasets/val'
-            self.folder_path = f'cvae_graph/large_scale_datasets/image_condition_train_datasets/'
+            self.folder_path = f'cvae_graph/large_scale_datasets/graph_generation_datasets/'
 
         file_extension = '.pickle'
         count = 0
@@ -34,7 +34,7 @@ class GraphDataset(Dataset):
             for filename in os.listdir(self.folder_path):
                 if filename.endswith(file_extension):
                     count += 1
-        self.pkl_files = [f for f in os.listdir(self.folder_path) if f.endswith('.pickle') or f.endswith('.pkl')]
+        self.pkl_files = [f for f in os.listdir(self.folder_path) if f.endswith('.pickle')]
         self.pkl_files.sort()
 
         self.data_length = len(self.pkl_files)
