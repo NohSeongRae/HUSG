@@ -7,13 +7,11 @@ import math
 import random
 from tqdm import tqdm
 
-
 # Function to calculate the centroid of a polygon
 def calculate_centroid(polygon):
     shapely_polygon = Polygon(polygon['coordinates'][0])
     centroid = shapely_polygon.centroid
     return centroid.x, centroid.y
-
 
 # Function to restore predictions using scale_factor, rotation_angle, and centroid
 def restore_predictions(predictions, scale_factor, rotation_angle, centroid):
@@ -34,7 +32,6 @@ def restore_predictions(predictions, scale_factor, rotation_angle, centroid):
         restored_predictions.append(original_coords.tolist() + scaled_size.tolist() + theta)
     return restored_predictions
 
-
 # Function to create a rotated rectangle polygon
 def create_rotated_rectangle(x, y, w, h, theta):
     dx = w / 2
@@ -50,14 +47,12 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
-
 # Function to check if a polygon overlaps with any in a list of polygons
 def is_overlapping(polygon, polygon_list):
     for poly in polygon_list:
         if polygon.intersects(poly):
             return True
     return False
-
 
 # Function to check if a point overlaps with any in a list of polygons
 def is_centroid_overlapping(centroid, polygon_list):
@@ -67,14 +62,12 @@ def is_centroid_overlapping(centroid, polygon_list):
             return True
     return False
 
-
 # Function to generate a pastel color
 def generate_pastel_color():
     base_color = np.array([random.random(), random.random(), random.random()])
     white = np.array([1.0, 1.0, 1.0])
     pastel_color = (base_color + white) / 2
     return pastel_color
-
 
 # Load block building information and transformed block building information
 block_building_info = pd.read_pickle('C:/Users/Dobby/Downloads/block_building_info.pkl')
@@ -103,6 +96,20 @@ for prediction_file in tqdm(prediction_files, desc='Processing prediction files'
         centroid = centroids[idx]
         restored_prediction = restore_predictions([prediction], scale_factor, rotation_angle, centroid)
         all_restored_predictions.append((idx, restored_prediction[0]))
+
+# Extract all coordinates from block polygons
+all_x_coords = []
+all_y_coords = []
+
+for block in block_building_info:
+    block_polygon = Polygon(block['block_polygon']['coordinates'][0])
+    x_coords, y_coords = block_polygon.exterior.coords.xy
+    all_x_coords.extend(x_coords)
+    all_y_coords.extend(y_coords)
+
+# Calculate min and max values for x and y coordinates
+minx, maxx = min(all_x_coords), max(all_x_coords)
+miny, maxy = min(all_y_coords), max(all_y_coords)
 
 # Visualization of all predictions
 fig, ax = plt.subplots(1, 1, figsize=(15, 15))
@@ -153,9 +160,10 @@ for block in block_building_info:
     bx, by = block_polygon.exterior.coords.xy
     ax.plot(bx, by, 'gray', linewidth=2)
 
+# Set dynamic limits for the plot
+ax.set_xlim([minx, maxx])
+ax.set_ylim([miny, maxy])
 ax.set_aspect('equal', adjustable='box')
-ax.set_xlim([-71.425158872, -71.404870643])
-ax.set_ylim([41.7963455875, 41.8075265791])
 ax.set_axis_off()
 
 # Save the plot as an image file for verification
