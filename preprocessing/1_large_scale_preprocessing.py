@@ -9,6 +9,10 @@ import pickle
 # Define the coordinates for the bounding box
 north, south, east, west = 27.9510075145, 27.9458517384, -82.4931926234, -82.5015503867
 north, south, east, west = 28.8072097729, 28.8026094475, -81.2638223259, -81.2680548517
+north, south, east, west = 28.8080997878, 28.8026094475, -81.2607834513, -81.2731967147
+north, south, east, west = 28.8108448495, 28.8034245995, -81.2573493648, -81.2732709575
+north, south, east, west = 28.8118765659, 28.8024754626, -81.2546626686, -81.2732450126
+north, south, east, west = 28.8118765659, 28.7938256985, -81.2546626686, -81.2732450126
 
 # Create the bounding box
 bbox = (north, south, east, west)
