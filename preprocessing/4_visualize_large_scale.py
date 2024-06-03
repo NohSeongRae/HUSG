@@ -81,7 +81,7 @@ block_building_info = pd.read_pickle('C:/Users/Dobby/Downloads/block_building_in
 transformed_block_building_info = pd.read_pickle('C:/Users/Dobby/Downloads/transformed_block_building_info.pkl')
 
 # Predict file directory and file list
-prediction_files_dir = 'C:/Users/Dobby/Downloads/synthetic_images_large_scale/cvae_graph_20240528_203924/'  # Example directory
+prediction_files_dir = 'C:/Users/Dobby/Downloads/gt_images_large_scale/cvae_graph_20240528_203924/'  # Example directory
 prediction_files = [f for f in os.listdir(prediction_files_dir) if f.startswith('pred') and f.endswith('.pkl')]
 
 # List to store all restored predictions
