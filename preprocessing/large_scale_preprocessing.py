@@ -172,8 +172,8 @@ def process_block(block_info, temp_data):
             edge_index.append([unit_road_idx, unit_road_idx + 1])
             edge_index.append([unit_road_idx + 1, unit_road_idx])
 
-    boundary_scale = 10 / temp_data.get('scale_factor', 1)
-    scale = 500 * boundary_scale
+    scale = temp_data.get('scale_factor', 1) / 200
+    print(scale)
     buildnig_street_count = np.zeros((len(building_bboxs), unit_road_street_indcies[-1] + 1))
     for unit_road_idx, unit_road in enumerate(unit_roads):
         unit_road_coords = unit_road[1]
