@@ -95,10 +95,9 @@ for block in block_building_info:
     ax.plot(bx, by, 'r-', linewidth=2)
 
 ax.set_aspect('equal', adjustable='box')
-ax.set_xlim([-82.5014547871, -82.4846695231])
-ax.set_ylim([27.967424055, 27.9740948558])
+ax.set_xlim([-82.518138613, -82.4986335891])
+ax.set_ylim([27.9114301093, 27.9227874812])
 ax.set_axis_off()
-
 
 # Save the plot as an image file for verification
 plt.savefig('restored_predictions_map.png', dpi=300, bbox_inches='tight')
