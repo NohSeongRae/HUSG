@@ -29,7 +29,7 @@ def restore_predictions(predictions, scale_factor, rotation_angle, centroid):
         original_coords = original_coords + centroid
 
         theta = np.deg2rad(pred[4:])  # Convert theta to radians
-        theta = np.rad2deg([theta + angle]).tolist()
+        theta = np.rad2deg([theta - angle]).tolist()
 
         restored_predictions.append(original_coords.tolist() + scaled_size.tolist() + theta)
     return restored_predictions
@@ -40,7 +40,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     dy = h / 2
     corners = [(-dx, -dy), (-dx, dy), (dx, dy), (dx, -dy)]
 
-    theta = np.radians(theta)
+    theta = -np.radians(theta)
     rotated_corners = [
         (math.cos(theta) * cx - math.sin(theta) * cy + x,
          math.sin(theta) * cx + math.cos(theta) * cy + y) for cx, cy in corners
