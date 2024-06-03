@@ -2,20 +2,12 @@ import folium
 import osmnx as ox
 import random
 import pandas as pd
-from shapely.ops import unary_union, polygonize
-from shapely.geometry import mapping, shape, box
+from shapely.ops import unary_union, polygonize, transform
+from shapely.geometry import mapping, shape
 import pickle
+import pyproj
 
 # Define the coordinates for the bounding box
-north, south, east, west = 27.9510075145, 27.9458517384, -82.4931926234, -82.5015503867
-north, south, east, west = 28.8072097729, 28.8026094475, -81.2638223259, -81.2680548517
-north, south, east, west = 28.8080997878, 28.8026094475, -81.2607834513, -81.2731967147
-north, south, east, west = 28.8108448495, 28.8034245995, -81.2573493648, -81.2732709575
-north, south, east, west = 28.8118765659, 28.8024754626, -81.2546626686, -81.2732450126
-north, south, east, west = 28.8118765659, 28.7938256985, -81.2546626686, -81.2732450126
-north, south, east, west = 27.9227874812, 27.9114301093, -82.4986335891, -82.518138613
-north, south, east, west = 33.771452, 33.73163, -84.364965, -84.416463
-north, south, east, west = 42.2894327485, 42.2757483703, -71.2119247425, -71.2310113419
 north, south, east, west = 41.8075265791, 41.7963455875, -71.404870643, -71.425158872
 
 # Create the bounding box
@@ -27,15 +19,29 @@ G = ox.graph_from_bbox(north, south, east, west, network_type='all')
 # Get the buildings within the bounding box
 buildings = ox.features_from_bbox(bbox=bbox, tags={'building': True})
 
-# Create a folium map centered around the midpoint of the bounding box
-midpoint = [(north + south) / 2, (east + west) / 2]
-m = folium.Map(location=midpoint, zoom_start=16)
+# Define a function to transform geometries to a common coordinate system (UTM zone 19N for Rhode Island)
+def transform_to_utm(geom):
+    project = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:32619", always_xy=True).transform
+    return transform(project, geom)
+
+def transform_to_wgs84(geom):
+    project = pyproj.Transformer.from_crs("EPSG:32619", "EPSG:4326", always_xy=True).transform
+    return transform(project, geom)
+
+# Transform the geometries to UTM
+G_utm = ox.project_graph(G, to_crs="EPSG:32619")
+buildings_utm = buildings.copy()
+buildings_utm['geometry'] = buildings_utm['geometry'].apply(transform_to_utm)
 
 # Extract edges from the graph and use them to form polygons
-edges = ox.graph_to_gdfs(G, nodes=False, edges=True)
+edges = ox.graph_to_gdfs(G_utm, nodes=False, edges=True)
 lines = [line for line in edges.geometry]
 merged_lines = unary_union(lines)
 polygons = list(polygonize(merged_lines))
+
+# Create a folium map centered around the midpoint of the bounding box
+midpoint = [(north + south) / 2, (east + west) / 2]
+m = folium.Map(location=midpoint, zoom_start=16)
 
 # Function to add a polygon to the map
 def add_polygon(map_obj, polygon, color):
@@ -54,24 +60,32 @@ if not polygons:
 else:
     # Add each block with a random color to the map if it contains buildings
     for polygon in polygons:
-        buildings_in_block = buildings[buildings.intersects(polygon)]
+        buildings_in_block = buildings_utm[buildings_utm.intersects(polygon)]
         if not buildings_in_block.empty:
             color = random_color()
-            add_polygon(m, polygon.__geo_interface__, color)
+            block_polygon_wgs84 = transform_to_wgs84(polygon)
+            add_polygon(m, block_polygon_wgs84.__geo_interface__, color)
             block_info = {
                 "block_polygon": mapping(polygon),
                 "buildings_bbox": []
             }
             for building in buildings_in_block.geometry:
-                building_bbox = box(*building.bounds)
-                block_info["buildings_bbox"].append(mapping(building_bbox))
+                # Calculate the minimum rotated bounding box
+                building_min_rot_bbox = building.minimum_rotated_rectangle
+                building_bbox_wgs84 = transform_to_wgs84(building_min_rot_bbox)
+                block_info["buildings_bbox"].append(mapping(building_min_rot_bbox))
+                add_polygon(m, building_bbox_wgs84.__geo_interface__, 'blue')
             block_data.append(block_info)
 
     # Add the street network to the map
-    folium.GeoJson(edges.to_json(), name='streets', style_function=lambda x: {'color': 'black'}).add_to(m)
+    edges_wgs84 = edges.copy()
+    edges_wgs84['geometry'] = edges_wgs84['geometry'].apply(transform_to_wgs84)
+    folium.GeoJson(edges_wgs84.to_json(), name='streets', style_function=lambda x: {'color': 'black'}).add_to(m)
 
     # Add the buildings to the map
-    folium.GeoJson(buildings.to_json(), name='buildings', style_function=lambda x: {'color': 'gray'}).add_to(m)
+    buildings_wgs84 = buildings.copy()
+    buildings_wgs84['geometry'] = buildings_wgs84['geometry'].apply(transform_to_wgs84)
+    folium.GeoJson(buildings_wgs84.to_json(), name='buildings', style_function=lambda x: {'color': 'gray'}).add_to(m)
 
     # Add layer control to toggle streets and buildings
     folium.LayerControl().add_to(m)
@@ -93,11 +107,13 @@ m = folium.Map(location=midpoint, zoom_start=16)
 # Iterate through the loaded block data and add polygons to the map
 for block_info in loaded_block_data:
     block_polygon = shape(block_info["block_polygon"])
-    add_polygon(m, block_polygon.__geo_interface__, 'red')
+    block_polygon_wgs84 = transform_to_wgs84(block_polygon)
+    add_polygon(m, block_polygon_wgs84.__geo_interface__, 'red')
 
     for bbox in block_info["buildings_bbox"]:
         building_bbox = shape(bbox)
-        add_polygon(m, building_bbox.__geo_interface__, 'blue')
+        building_bbox_wgs84 = transform_to_wgs84(building_bbox)
+        add_polygon(m, building_bbox_wgs84.__geo_interface__, 'blue')
 
 # Save the map with loaded data as an HTML file
 m.save('blocks_with_buildings_loaded_map.html')
