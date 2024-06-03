@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from shapely.geometry import Polygon, box
+from shapely.geometry import Polygon
 import matplotlib.patches as patches
 import pandas as pd
 import numpy as np
@@ -21,18 +21,27 @@ def calculate_centroid(polygon):
     poly = Polygon(coords)
     return poly.centroid
 
-# Function to calculate the angle to rotate the longest side to be horizontal
+# Function to calculate the angle to rotate the longest side of the minimum rotated bounding box to be horizontal
 def calculate_rotation_angle(polygon):
     coords = polygon['coordinates'][0]
     poly = Polygon(coords)
-    min_x, min_y, max_x, max_y = poly.bounds
-    bbox_width = max_x - min_x
-    bbox_height = max_y - min_y
+    min_rot_rect = poly.minimum_rotated_rectangle
+    exterior_coords = list(min_rot_rect.exterior.coords)
 
-    if bbox_width >= bbox_height:
-        return 0  # No rotation needed
-    else:
-        return np.pi / 2  # 90 degrees rotation
+    # Find the longest side
+    max_length = 0
+    angle = 0
+    for i in range(len(exterior_coords) - 1):
+        p1 = exterior_coords[i]
+        p2 = exterior_coords[i + 1]
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
+        length = np.sqrt(dx**2 + dy**2)
+        if length > max_length:
+            max_length = length
+            angle = np.arctan2(dy, dx)  # Angle in radians
+
+    return -angle  # Negative angle to rotate to horizontal
 
 # Function to rotate a polygon
 def rotate_polygon(polygon, angle, center_x, center_y):
@@ -70,7 +79,7 @@ for idx, block_info in enumerate(data):
     centroid = calculate_centroid(block_info['block_polygon'])
     center_x, center_y = centroid.x, centroid.y
 
-    # Calculate the rotation angle
+    # Calculate the rotation angle based on the longest side of the minimum rotated bounding box
     rotation_angle = calculate_rotation_angle(block_info['block_polygon'])
 
     # Rotate the block polygon
@@ -79,10 +88,13 @@ for idx, block_info in enumerate(data):
     # Calculate the bounding box of the rotated block
     block_coords = rotated_block['coordinates'][0]
     block_poly = Polygon(block_coords)
-    min_x, min_y, max_x, max_y = block_poly.bounds
+    min_rot_rect = block_poly.minimum_rotated_rectangle
+    min_x, min_y, max_x, max_y = min_rot_rect.bounds
 
     # Determine the scale factor to normalize the longest side to 1
-    max_length = max(max_x - min_x, max_y - min_y)
+    bbox_width = max_x - min_x
+    bbox_height = max_y - min_y
+    max_length = max(bbox_width, bbox_height)
     scale_factor = 1 / max_length
 
     # Normalize the rotated block polygon
