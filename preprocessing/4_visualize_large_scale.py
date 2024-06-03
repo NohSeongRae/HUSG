@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 import math
 import random
 from tqdm import tqdm
@@ -59,9 +59,21 @@ def is_overlapping(polygon, polygon_list):
     return False
 
 
-# Function to generate a random color
-def generate_random_color():
-    return [random.random(), random.random(), random.random()]
+# Function to check if a point overlaps with any in a list of polygons
+def is_centroid_overlapping(centroid, polygon_list):
+    point = Point(centroid)
+    for poly in polygon_list:
+        if poly.contains(point):
+            return True
+    return False
+
+
+# Function to generate a pastel color
+def generate_pastel_color():
+    base_color = np.array([random.random(), random.random(), random.random()])
+    white = np.array([1.0, 1.0, 1.0])
+    pastel_color = (base_color + white) / 2
+    return pastel_color
 
 
 # Load block building information and transformed block building information
@@ -69,14 +81,14 @@ block_building_info = pd.read_pickle('C:/Users/Dobby/Downloads/block_building_in
 transformed_block_building_info = pd.read_pickle('C:/Users/Dobby/Downloads/transformed_block_building_info.pkl')
 
 # Predict file directory and file list
-prediction_files_dir = 'C:/Users/Dobby/Downloads/gt_images_large_scale/cvae_graph_20240528_203924/'  # Example directory
+prediction_files_dir = 'C:/Users/Dobby/Downloads/synthetic_images_large_scale/cvae_graph_20240528_203924/'  # Example directory
 prediction_files = [f for f in os.listdir(prediction_files_dir) if f.startswith('pred') and f.endswith('.pkl')]
 
 # List to store all restored predictions
 all_restored_predictions = []
 
 # Process each prediction file
-for prediction_file in prediction_files:
+for prediction_file in tqdm(prediction_files, desc='Processing prediction files'):
     idx = int(prediction_file.split('_')[-1].split('.')[0])
     # Load prediction file
     predictions = pd.read_pickle(os.path.join(prediction_files_dir, prediction_file))
@@ -102,31 +114,48 @@ block_colors = {}
 drawn_polygons = []
 
 # Draw restored building predictions
-for idx, pred in all_restored_predictions:
+for idx, pred in tqdm(all_restored_predictions, desc='Drawing predictions'):
     x, y, w, h, theta = pred
     building_polygon = create_rotated_rectangle(x, y, w, h, theta)
 
     # Get the block boundary
     block_polygon = Polygon(block_building_info[idx]['block_polygon']['coordinates'][0])
 
+    # Check if the centroid overlaps with any existing building polygons
+    if is_centroid_overlapping((x, y), drawn_polygons):
+        continue
+
+    n = 0
     # Check for overlap and if the building is within the block boundary
-    if not is_overlapping(building_polygon, drawn_polygons) and block_polygon.contains(building_polygon):
-        if idx not in block_colors:
-            block_colors[idx] = generate_random_color()
-        facecolor = block_colors[idx]
-        px, py = building_polygon.exterior.coords.xy
-        ax.fill(px, py, edgecolor='black', facecolor=facecolor)
-        drawn_polygons.append(building_polygon)
+    while is_overlapping(building_polygon, drawn_polygons) or not block_polygon.contains(building_polygon):
+        w *= 0.95  # Reduce width by 5%
+        h *= 0.95  # Reduce height by 5%
+        building_polygon = create_rotated_rectangle(x, y, w, h, theta)
+
+        n += 1
+        if n > 10:
+            n = -1
+            break
+
+    if n == -1:
+        continue
+
+    if idx not in block_colors:
+        block_colors[idx] = generate_pastel_color()
+    facecolor = block_colors[idx]
+    px, py = building_polygon.exterior.coords.xy
+    ax.fill(px, py, edgecolor='black', facecolor=facecolor)
+    drawn_polygons.append(building_polygon)
 
 # Draw block boundaries
 for block in block_building_info:
     block_polygon = Polygon(block['block_polygon']['coordinates'][0])
     bx, by = block_polygon.exterior.coords.xy
-    ax.plot(bx, by, 'r-', linewidth=2)
+    ax.plot(bx, by, 'gray', linewidth=2)
 
 ax.set_aspect('equal', adjustable='box')
-ax.set_xlim([-71.2310113419, -71.2119247425])
-ax.set_ylim([42.2757483703, 42.2894327485])
+ax.set_xlim([-71.425158872, -71.404870643])
+ax.set_ylim([41.7963455875, 41.8075265791])
 ax.set_axis_off()
 
 # Save the plot as an image file for verification
