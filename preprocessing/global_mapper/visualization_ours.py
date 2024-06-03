@@ -21,7 +21,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
-path = "C:/Users/Dobby/Downloads/synthetic_images_large_scale/cvae_graph_20240528_203924"
+path = "C:/Users/Dobby/Downloads/gt_images_large_scale/cvae_graph_20240528_203924"
 model = path.split('/')[-1]
 
 list_output_all = os.listdir(path)
