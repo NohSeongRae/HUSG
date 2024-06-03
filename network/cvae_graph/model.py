@@ -371,3 +371,10 @@ class GraphCVAE(nn.Module):
         output_pos, output_size, output_theta = self.decoder(z, data.building_mask, condition, data.edge_index, data.batch)
 
         return output_pos, output_size, output_theta
+
+    def test_latent_vector(self, data):
+        edge_index = data.edge_index
+        mu, log_var = self.encoder(data, edge_index)
+        z = self.reparameterize(mu, log_var)
+
+        return z
