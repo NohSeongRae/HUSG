@@ -17,13 +17,21 @@ def calculate_centroid(polygon):
 def restore_predictions(predictions, scale_factor, rotation_angle, centroid):
     restored_predictions = []
     for pred in predictions:
+        print(pred, rotation_angle)
+
         scaled_pos = np.array([pred[0] - 0.5, pred[1] - 0.5]) / scale_factor  # Scale position
         scaled_size = np.array(pred[2:4]) / scale_factor  # Scale size
+
         angle = -rotation_angle  # Rotate back by the negative angle
+
         rotation_matrix = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
         original_coords = np.dot(rotation_matrix, scaled_pos)
         original_coords = original_coords + centroid
-        restored_predictions.append(original_coords.tolist() + scaled_size.tolist() + pred[4:])
+
+        theta = np.deg2rad(pred[4:])  # Convert theta to radians
+        theta = np.rad2deg([theta + angle]).tolist()
+
+        restored_predictions.append(original_coords.tolist() + scaled_size.tolist() + theta)
     return restored_predictions
 
 # Function to create a rotated rectangle polygon
@@ -87,8 +95,8 @@ for block in block_building_info:
     ax.plot(bx, by, 'r-', linewidth=2)
 
 ax.set_aspect('equal', adjustable='box')
-ax.set_xlim([-81.2680548517, -81.2638223259])  # Adjusted to match example coordinates range
-ax.set_ylim([28.8026094475, 28.8072097729])    # Adjusted to match example coordinates range
+ax.set_xlim([-81.2732450126, -81.2546626686])
+ax.set_ylim([28.7938256985, 28.8118765659])
 ax.set_axis_off()
 
 # Save the plot as an image file for verification
