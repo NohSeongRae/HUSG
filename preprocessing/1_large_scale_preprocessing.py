@@ -15,6 +15,7 @@ north, south, east, west = 28.8118765659, 28.8024754626, -81.2546626686, -81.273
 north, south, east, west = 28.8118765659, 28.7938256985, -81.2546626686, -81.2732450126
 north, south, east, west = 27.9227874812, 27.9114301093, -82.4986335891, -82.518138613
 north, south, east, west = 33.771452, 33.73163, -84.364965, -84.416463
+north, south, east, west = 42.2894327485, 42.2757483703, -71.2119247425, -71.2310113419
 
 # Create the bounding box
 bbox = (north, south, east, west)
