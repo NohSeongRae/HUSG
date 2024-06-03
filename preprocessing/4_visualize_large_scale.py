@@ -4,8 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon
 import math
-import networkx as nx
+import random
 from tqdm import tqdm
+
 
 # Function to calculate the centroid of a polygon
 def calculate_centroid(polygon):
@@ -13,12 +14,11 @@ def calculate_centroid(polygon):
     centroid = shapely_polygon.centroid
     return centroid.x, centroid.y
 
+
 # Function to restore predictions using scale_factor, rotation_angle, and centroid
 def restore_predictions(predictions, scale_factor, rotation_angle, centroid):
     restored_predictions = []
     for pred in predictions:
-        print(pred, rotation_angle)
-
         scaled_pos = np.array([pred[0] - 0.5, pred[1] - 0.5]) / scale_factor  # Scale position
         scaled_size = np.array(pred[2:4]) / scale_factor  # Scale size
 
@@ -33,6 +33,7 @@ def restore_predictions(predictions, scale_factor, rotation_angle, centroid):
 
         restored_predictions.append(original_coords.tolist() + scaled_size.tolist() + theta)
     return restored_predictions
+
 
 # Function to create a rotated rectangle polygon
 def create_rotated_rectangle(x, y, w, h, theta):
@@ -49,12 +50,26 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
+
+# Function to check if a polygon overlaps with any in a list of polygons
+def is_overlapping(polygon, polygon_list):
+    for poly in polygon_list:
+        if polygon.intersects(poly):
+            return True
+    return False
+
+
+# Function to generate a random color
+def generate_random_color():
+    return [random.random(), random.random(), random.random()]
+
+
 # Load block building information and transformed block building information
 block_building_info = pd.read_pickle('C:/Users/Dobby/Downloads/block_building_info.pkl')
 transformed_block_building_info = pd.read_pickle('C:/Users/Dobby/Downloads/transformed_block_building_info.pkl')
 
 # Predict file directory and file list
-prediction_files_dir = 'C:/Users/Dobby/Downloads/synthetic_images_large_scale/cvae_graph_20240528_203924/'  # Example directory
+prediction_files_dir = 'C:/Users/Dobby/Downloads/gt_images_large_scale/cvae_graph_20240528_203924/'  # Example directory
 prediction_files = [f for f in os.listdir(prediction_files_dir) if f.startswith('pred') and f.endswith('.pkl')]
 
 # List to store all restored predictions
@@ -75,18 +90,33 @@ for prediction_file in prediction_files:
         rotation_angle = transformed_block_building_info.iloc[idx]['rotation_angle']
         centroid = centroids[idx]
         restored_prediction = restore_predictions([prediction], scale_factor, rotation_angle, centroid)
-        all_restored_predictions.append(restored_prediction[0])
+        all_restored_predictions.append((idx, restored_prediction[0]))
 
 # Visualization of all predictions
 fig, ax = plt.subplots(1, 1, figsize=(15, 15))
 
+# Dictionary to keep track of random colors for each block
+block_colors = {}
+
+# List to keep track of drawn building polygons
+drawn_polygons = []
+
 # Draw restored building predictions
-for pred in all_restored_predictions:
+for idx, pred in all_restored_predictions:
     x, y, w, h, theta = pred
     building_polygon = create_rotated_rectangle(x, y, w, h, theta)
-    px, py = building_polygon.exterior.coords.xy
-    facecolor = [120/256, 179/256, 125/256]
-    ax.fill(px, py, edgecolor='black', facecolor=facecolor)
+
+    # Get the block boundary
+    block_polygon = Polygon(block_building_info[idx]['block_polygon']['coordinates'][0])
+
+    # Check for overlap and if the building is within the block boundary
+    if not is_overlapping(building_polygon, drawn_polygons) and block_polygon.contains(building_polygon):
+        if idx not in block_colors:
+            block_colors[idx] = generate_random_color()
+        facecolor = block_colors[idx]
+        px, py = building_polygon.exterior.coords.xy
+        ax.fill(px, py, edgecolor='black', facecolor=facecolor)
+        drawn_polygons.append(building_polygon)
 
 # Draw block boundaries
 for block in block_building_info:
@@ -98,7 +128,6 @@ ax.set_aspect('equal', adjustable='box')
 ax.set_xlim([-71.2310113419, -71.2119247425])
 ax.set_ylim([42.2757483703, 42.2894327485])
 ax.set_axis_off()
-
 
 # Save the plot as an image file for verification
 plt.savefig('restored_predictions_map.png', dpi=300, bbox_inches='tight')
