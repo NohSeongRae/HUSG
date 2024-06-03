@@ -357,10 +357,10 @@ class GraphCVAE(nn.Module):
         - Tuple[Tensor, Tensor, Tensor]: Generated positions, sizes, and angles for each node.
         """
 
-        # z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
-        edge_index = data.edge_index
-        mu, log_var = self.encoder(data, edge_index)
-        z = self.reparameterize(mu, log_var)
+        z = torch.normal(mean=0, std=1, size=(1, self.latent_dim)).to(device=data.edge_index.device)
+        # edge_index = data.edge_index
+        # mu, log_var = self.encoder(data, edge_index)
+        # z = self.reparameterize(mu, log_var)
 
         if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
             condition = self.condition_encoder(data.condition)
