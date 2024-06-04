@@ -19,9 +19,8 @@ def normalize_coordinates(building_polygon, min_x, min_y, max_x, max_y, target_m
 
     # Normalize the coordinates
     normalized_coords = [(normalize(vx, min_x, max_x, target_min, target_max),
-                          normalize(vy, min_y, max_y, target_min, target_max))
+                          normalize(vy, min_y, max_y, target_min, target_max) * (max_y - min_y) / (max_x - min_x))
                          for vx, vy in zip(x_coords, y_coords)]
-
     return normalized_coords
 
 
@@ -259,7 +258,6 @@ def create_delaunay_mesh(polygon):
     for idx, triangle in enumerate(tri.simplices):
         face_polygon = Polygon([vertices[triangle[0]], vertices[triangle[1]], vertices[triangle[2]]])
         if face_polygon.intersects(polygon):
-            print((face_polygon.intersection(polygon).area/face_polygon.area)*100)
             if (face_polygon.intersection(polygon).area/face_polygon.area)*100 > 50:
                 new_faces.append((triangle[0], triangle[1], triangle[2], triangle[0]))
 
