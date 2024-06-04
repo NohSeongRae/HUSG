@@ -59,7 +59,6 @@ def get_color_by_tag(row):
         return 'orange'
     return 'gray'  # Default color
 
-
 # Define a function to get category label
 def get_category_label(row):
     if row.get('landuse') == 'forest':
@@ -180,6 +179,10 @@ for prediction_file in tqdm(prediction_files, desc='Processing prediction files'
         restored_prediction = restore_predictions([prediction], scale_factor, rotation_angle, centroid)
         all_restored_predictions.append((idx, restored_prediction[0]))
 
+# 저장된 예측값을 파일로 저장
+with open('restored_predictions.pkl', 'wb') as f:
+    pickle.dump(all_restored_predictions, f)
+
 # Extract all coordinates from block polygons
 all_x_coords = []
 all_y_coords = []
@@ -246,9 +249,9 @@ if isinstance(other_elements_utm, gpd.GeoDataFrame):
             x, y = geometry.exterior.xy
             if color != 'gray':
                 ax.fill(x, y, color=color, alpha=0.5)
-            # # Label the category
-            # centroid = geometry.centroid
-            # ax.text(centroid.x, centroid.y, get_category_label(row), fontsize=8, ha='center')
+            # Label the category
+            centroid = geometry.centroid
+            ax.text(centroid.x, centroid.y, get_category_label(row), fontsize=8, ha='center')
 
 # Draw block boundaries
 for block in block_building_info:
