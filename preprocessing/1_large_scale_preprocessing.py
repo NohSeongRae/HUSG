@@ -11,6 +11,7 @@ import pyproj
 north, south, east, west = 41.8075265791, 41.7963455875, -71.404870643, -71.425158872
 north, south, east, west = 40.8772895974, 40.8686900945, -74.0427050295, -74.0543780031
 north, south, east, west = 41.2125143307, 41.2015207154, -73.206770667, -73.2269837941
+north, south, east, west = 42.3135016086, 42.3015126779, -71.776687313, -71.8023506888
 
 # Create the bounding box
 bbox = (north, south, east, west)
