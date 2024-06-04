@@ -87,7 +87,10 @@ def process_block(block_info, temp_data):
         return
 
     _, boundary_lines = get_boundary_building_polygon_with_index(groups, boundary_polygon, unit_length, reference_angle)
-    unit_roads, closest_unit_index = split_into_unit_roads(boundary_lines, unit_length)
+    try:
+        unit_roads, closest_unit_index = split_into_unit_roads(boundary_lines, unit_length)
+    except:
+        return
 
     if len(unit_roads) >= 200:
         print("len(unit_roads) >= 200")
