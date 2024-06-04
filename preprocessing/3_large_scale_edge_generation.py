@@ -110,6 +110,8 @@ if __name__ == '__main__':
 
         output_file_path = 'C:/Users/Dobby/Downloads/large_scale_datasets/graph_generation_datasets/'
         ffile = file_path.replace('.gpickle', '.pickle')
+        if not os.path.exists(output_file_path):
+            os.makedirs(output_file_path)
         with open(f'{output_file_path}/{ffile}', 'wb') as f:
             pickle.dump(data, f)
 
