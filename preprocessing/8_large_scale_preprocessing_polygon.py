@@ -81,7 +81,7 @@ else:
             }
             for building in buildings_in_block.geometry:
                 # Calculate the minimum rotated bounding box
-                building_min_rot_bbox = building.minimum_rotated_rectangle
+                building_min_rot_bbox = building
                 building_bbox_wgs84 = transform_to_wgs84(building_min_rot_bbox)
                 block_info["buildings_bbox"].append(mapping(building_min_rot_bbox))
                 add_polygon(m, building_bbox_wgs84.__geo_interface__, 'blue')
