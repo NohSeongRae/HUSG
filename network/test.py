@@ -107,11 +107,7 @@ if __name__ == '__main__':
             graph = nx.read_gpickle(path)
 
             graph.remove_edges_from(list(graph.edges()))
-
-            for i, row in enumerate(pred_adj_matrix):
-                for j, val in enumerate(row):
-                    if val == 1:
-                        graph.add_edge(i, j)
+            graph.remove_nodes_from(list(graph.nodes()))
 
             # random graph
             for node in range(n_boundary + n_building):
@@ -120,6 +116,10 @@ if __name__ == '__main__':
                 else:
                     graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
 
+            for i, row in enumerate(pred_adj_matrix):
+                for j, val in enumerate(row):
+                    if val == 1:
+                        graph.add_edge(i, j)
             path = f'./outputs/synthetic_datasets/{file}.gpickle'
 
             directory = os.path.dirname(path)
