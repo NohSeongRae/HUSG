@@ -64,14 +64,6 @@ def create_grid_graph_file(path):
     graph = nx.read_gpickle(path_)
     n_boundary = len(graph.nodes) - n_building
 
-    if path == '10921':
-        edges_to_remove = [(78, 79), (79, 78),
-                           (77, 86), (86, 77),
-                           (79, 85), (85, 79),
-                           (80, 86), (86, 80),
-                           (80, 84), (84, 80),
-                           (82, 84), (84, 82)]
-        graph.remove_edges_from(edges_to_remove)
 
     nodes_to_remove = [node for node in graph.nodes() if node < n_boundary]
     graph.remove_nodes_from(nodes_to_remove)
@@ -112,76 +104,97 @@ def create_grid_graph_ring_based():
     edges = create_ring_graph(8)
     edges.append((0, 8))
     edges.append((8, 0))
+    edges.append((0, 2))
+    edges.append((2, 0))
+    edges.append((1, 8))
+    edges.append((8, 1))
     edges.append((2, 8))
     edges.append((8, 2))
+    edges.append((2, 4))
+    edges.append((4, 2))
+    edges.append((3, 8))
+    edges.append((8, 3))
     edges.append((4, 8))
     edges.append((8, 4))
+    edges.append((4, 6))
+    edges.append((6, 4))
+    edges.append((5, 8))
+    edges.append((8, 5))
     edges.append((6, 8))
     edges.append((8, 6))
+    edges.append((6, 0))
+    edges.append((0, 6))
+    edges.append((7, 8))
+    edges.append((8, 7))
 
     return edges
 
 if __name__ == '__main__':
     data_type = 'test'
-    indicis = [11028, 10921, 10507, 1041]
-    graphs = [create_ring_graph(6),
+    graphs = [create_line_graph(5), create_line_graph(10),
+              create_ring_graph(10), create_ring_graph(6),
               create_grid_graph_file('10921'), create_grid_graph_ring_based(),
-              create_random_graph(5, 0.3)]
+              create_random_graph(7, 0.3), create_random_graph(5, 0.3)]
+    types = ['line', 'line', 'ring', 'ring', 'grid', 'grid', 'random', 'random']
 
-    for idx, building_edge in enumerate(graphs):
-        # 에지 리스트를 사용하여 NetworkX 그래프 객체 생성
-        G_visualized = nx.Graph()
-        G_visualized.add_edges_from(building_edge)
-        pos = nx.spring_layout(G_visualized)
+    for idx in tqdm(range(1000)):
+        for building_edge, graph_type in zip(graphs, types):
+            try:
+                # 에지 리스트를 사용하여 NetworkX 그래프 객체 생성
+                G_visualized = nx.Graph()
+                G_visualized.add_edges_from(building_edge)
+                pos = nx.spring_layout(G_visualized)
 
-        node_angles = {node: np.arctan2(pos[node][1], pos[node][0]) for node in pos}
-        sorted_nodes = sorted(node_angles, key=lambda node: node_angles[node], reverse=True)
+                node_angles = {node: np.arctan2(pos[node][1], pos[node][0]) for node in pos}
+                sorted_nodes = sorted(node_angles, key=lambda node: node_angles[node], reverse=True)
 
-        adj_matrix_original = nx.to_numpy_array(G_visualized)
+                adj_matrix_original = nx.to_numpy_array(G_visualized)
 
-        node_mapping = {node: i for i, node in enumerate(sorted_nodes)}
-        new_indices = [node_mapping[node] for node in G_visualized.nodes()]
+                node_mapping = {node: i for i, node in enumerate(sorted_nodes)}
+                new_indices = [node_mapping[node] for node in G_visualized.nodes()]
 
-        if idx >= len(graphs) / 2 + 2:
-            building_adj_matrix = adj_matrix_original[np.ix_(new_indices, new_indices)]
-        else:
-            building_adj_matrix = adj_matrix_original
+                if idx >= len(graphs) / 2 + 2:
+                    building_adj_matrix = adj_matrix_original[np.ix_(new_indices, new_indices)]
+                else:
+                    building_adj_matrix = adj_matrix_original
 
 
-        with open(f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(indicis[idx])}.pkl', 'rb') as file:
-            buildings = pickle.load(file)
+                with open(f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
+                    buildings = pickle.load(file)
 
-        graph = nx.read_gpickle(f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(indicis[idx])}.gpickle')
+                graph = nx.read_gpickle(f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
-        n_node = graph.number_of_nodes()
-        n_building = len(buildings)
-        n_chunk = n_node - n_building
+                n_node = graph.number_of_nodes()
+                n_building = len(buildings)
+                n_chunk = n_node - n_building
 
-        n_building = max(max(edge) for edge in building_edge) + 1
+                n_building = max(max(edge) for edge in building_edge) + 1
 
-        adj_matrix = nx.adjacency_matrix(graph).todense()
-        boundary_adj_matrix = adj_matrix[:n_chunk, :n_chunk]
-        bb_adj_matrix = np.zeros((n_building, n_chunk))
-        boundary_pos_feature = []
+                adj_matrix = nx.adjacency_matrix(graph).todense()
+                boundary_adj_matrix = adj_matrix[:n_chunk, :n_chunk]
+                bb_adj_matrix = np.zeros((n_building, n_chunk))
+                boundary_pos_feature = []
 
-        for node in graph.nodes():
-            if node < n_chunk:
-                boundary_pos_feature.append(graph.nodes[node]['node_features'][:2])
-        boundary_pos_feature = np.array(boundary_pos_feature)
+                for node in graph.nodes():
+                    if node < n_chunk:
+                        boundary_pos_feature.append(graph.nodes[node]['node_features'][:2])
+                boundary_pos_feature = np.array(boundary_pos_feature)
 
-        data = {'boundary_adj_matrix': boundary_adj_matrix,
-                'building_adj_matrix': building_adj_matrix,
-                'bb_adj_matrix': bb_adj_matrix,
-                'boundary_pos_feature': boundary_pos_feature,
-                'n_boundary': n_chunk,
-                'n_building': n_building}
+                data = {'boundary_adj_matrix': boundary_adj_matrix,
+                        'building_adj_matrix': building_adj_matrix,
+                        'bb_adj_matrix': bb_adj_matrix,
+                        'boundary_pos_feature': boundary_pos_feature,
+                        'n_boundary': n_chunk,
+                        'n_building': n_building}
 
-        output_file_path = f'random_graph_generation_datasets/'
-        with open(f'{output_file_path}/{indicis[idx]}.pickle', 'wb') as f:
-            pickle.dump(data, f)
-
-        # 그래프 시각화
-        plt.figure(figsize=(8, 6))
-        nx.draw(G_visualized, pos, with_labels=True, node_color='skyblue', node_size=700, edge_color='k')
-        plt.title("Random Graph Visualization")
-        plt.show()
+                output_file_path = f'random_graph_generation_datasets/'
+                with open(f'{output_file_path}/{graph_type}/{idx}.pickle', 'wb') as f:
+                    pickle.dump(data, f)
+                #
+                # # 그래프 시각화
+                # plt.figure(figsize=(8, 6))
+                # nx.draw(G_visualized, pos, with_labels=True, node_color='skyblue', node_size=700, edge_color='k')
+                # plt.title("Random Graph Visualization")
+                # plt.show()
+            except:
+                continue
