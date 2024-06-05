@@ -105,7 +105,7 @@ class GraphDataset(Dataset):
             with open(load_path, 'rb') as f:
                 self.graph = pickle.load(f)
             graph = self.graph
-
+            print(load_path, graph)
             node_features = torch.tensor(np.array([graph.nodes[node]['node_features'] for node in graph.nodes()]),
                                          dtype=torch.float32)
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
