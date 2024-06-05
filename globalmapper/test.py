@@ -1,3 +1,4 @@
+import os
 import argparse
 import torch
 import torch.nn.functional as F
@@ -39,6 +40,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                 graph = pickle.load(f)
 
             output_file_path = './output/gt'
+            if not os.path.exists(output_file_path):
+                os.makedirs(output_file_path)
             file_name = graph_file[0].replace('.gpickle', '')
             with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
@@ -65,6 +68,8 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                     graph.nodes[node]['iou'] = 0.0
 
             output_file_path = './output/pred'
+            if not os.path.exists(output_file_path):
+                os.makedirs(output_file_path)
             with open(f'{output_file_path}/{file_name}.gpickle', 'wb') as f:
                 nx.write_gpickle(graph, f)
             idx += 1
