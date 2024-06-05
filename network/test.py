@@ -102,8 +102,8 @@ if __name__ == '__main__':
             gt_adj_matrix[n_boundary:, n_boundary:] = building_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_building]
             gt_adj_matrix[n_boundary:, :n_boundary] = bb_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_boundary]
 
-            path = f'/local_datasets/urban_datasets/datasets/eu_ours_graph_datasets/val/{file}.gpickle'
-            path = f'cvae_graph/large_scale_datasets/image_condition_train_datasets/{file}.gpickle'
+            path = f'/local_datasets/urban_datasets/datasets/ours_graph_datasets/test/{file}.gpickle'
+            # path = f'cvae_graph/large_scale_datasets/image_condition_train_datasets/{file}.gpickle'
             graph = nx.read_gpickle(path)
 
             graph.remove_edges_from(list(graph.edges()))
