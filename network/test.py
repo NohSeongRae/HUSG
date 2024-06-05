@@ -113,6 +113,7 @@ if __name__ == '__main__':
                     if val == 1:
                         graph.add_edge(i, j)
 
+            # random graph
             for node in range(n_boundary + n_building):
                 if node < n_boundary:
                     graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
