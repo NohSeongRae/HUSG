@@ -102,28 +102,31 @@ if __name__ == '__main__':
             gt_adj_matrix[n_boundary:, n_boundary:] = building_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_building]
             gt_adj_matrix[n_boundary:, :n_boundary] = bb_adj_matrix_padded.squeeze(0).detach().cpu().numpy()[:n_building, :n_boundary]
 
-            path = f'/local_datasets/urban_datasets/datasets/ours_graph_datasets/test/{file}.gpickle'
-            # path = f'cvae_graph/large_scale_datasets/image_condition_train_datasets/{file}.gpickle'
-            graph = nx.read_gpickle(path)
+            try:
+                path = f'/local_datasets/urban_datasets/datasets/ours_graph_datasets/test/{file}.gpickle'
+                # path = f'cvae_graph/large_scale_datasets/image_condition_train_datasets/{file}.gpickle'
+                graph = nx.read_gpickle(path)
 
-            graph.remove_edges_from(list(graph.edges()))
-            graph.remove_nodes_from(list(graph.nodes()))
+                graph.remove_edges_from(list(graph.edges()))
+                graph.remove_nodes_from(list(graph.nodes()))
 
-            # random graph
-            for node in range(n_boundary + n_building):
-                if node < n_boundary:
-                    graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
-                else:
-                    graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
+                # random graph
+                for node in range(n_boundary + n_building):
+                    if node < n_boundary:
+                        graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
+                    else:
+                        graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
 
-            for i, row in enumerate(pred_adj_matrix):
-                for j, val in enumerate(row):
-                    if val == 1:
-                        graph.add_edge(i, j)
-            path = f'./outputs/synthetic_datasets/{file}.gpickle'
+                for i, row in enumerate(pred_adj_matrix):
+                    for j, val in enumerate(row):
+                        if val == 1:
+                            graph.add_edge(i, j)
+                path = f'./outputs/synthetic_datasets/{file}.gpickle'
 
-            directory = os.path.dirname(path)
-            if not os.path.exists(directory):
-                os.makedirs(directory, exist_ok=True)
+                directory = os.path.dirname(path)
+                if not os.path.exists(directory):
+                    os.makedirs(directory, exist_ok=True)
 
-            nx.write_gpickle(graph, path)
+                nx.write_gpickle(graph, path)
+            except:
+                continue
