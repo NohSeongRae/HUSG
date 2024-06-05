@@ -55,6 +55,41 @@ def create_grid_graph(n1, n2):
 
     return edges
 
+def create_grid_graph_file(path):
+    with open(f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/test/{path}.pkl', 'rb') as file:
+        buildings = pickle.load(file)
+    n_building = len(buildings)
+
+    path_ = f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/test/{path}.gpickle'
+    graph = nx.read_gpickle(path_)
+    n_boundary = len(graph.nodes) - n_building
+
+    if path == '10921':
+        edges_to_remove = [(78, 79), (79, 78),
+                           (77, 86), (86, 77),
+                           (79, 85), (85, 79),
+                           (80, 86), (86, 80),
+                           (80, 84), (84, 80),
+                           (82, 84), (84, 82)]
+        graph.remove_edges_from(edges_to_remove)
+
+    nodes_to_remove = [node for node in graph.nodes() if node < n_boundary]
+    graph.remove_nodes_from(nodes_to_remove)
+
+    # pos = nx.spring_layout(graph)
+    #
+    # plt.figure(figsize=(8, 6))
+    # nx.draw(graph, pos, with_labels=True, node_color='skyblue', node_size=700, edge_color='k')
+    # plt.title("Random Graph Visualization")
+    # plt.show()
+
+    adj_matrix = nx.adjacency_matrix(graph).todense()
+    edges = []
+    for i in range(adj_matrix.shape[0]):
+        for j in range(adj_matrix.shape[1]):
+            if adj_matrix[i, j] == 1:
+                edges.append((i, j))
+    return edges
 
 def edges_to_adj_matrix(edges):
     # 가장 큰 노드 번호 찾기
@@ -73,15 +108,29 @@ def edges_to_adj_matrix(edges):
 
     return adj_matrix
 
+def create_grid_graph_ring_based():
+    edges = create_ring_graph(8)
+    edges.append((0, 8))
+    edges.append((8, 0))
+    edges.append((2, 8))
+    edges.append((8, 2))
+    edges.append((4, 8))
+    edges.append((8, 4))
+    edges.append((6, 8))
+    edges.append((8, 6))
+
+    return edges
+
 if __name__ == '__main__':
     data_type = 'test'
-    indicis = [106, 1063, 10377, 10215, 10339, 10507, 10450, 10802]
+    indicis = [106, 1063, 10377, 10215, 10921, 10507, 1041, 10506]
     graphs = [create_line_graph(5), create_line_graph(10),
-              create_ring_graph(10), create_ring_graph(8),
-              create_grid_graph(4, 4), create_grid_graph(3, 4),
-              create_random_graph(6, 0.5), create_random_graph(6, 0.4)]
+              create_ring_graph(10), create_ring_graph(6),
+              create_grid_graph_file('10921'), create_grid_graph_ring_based(),
+              create_random_graph(5, 0.3), create_random_graph(5, 0.3)]
 
     for idx, building_edge in enumerate(graphs):
+        print(idx)
         # 에지 리스트를 사용하여 NetworkX 그래프 객체 생성
         G_visualized = nx.Graph()
         G_visualized.add_edges_from(building_edge)
@@ -94,10 +143,12 @@ if __name__ == '__main__':
 
         node_mapping = {node: i for i, node in enumerate(sorted_nodes)}
         new_indices = [node_mapping[node] for node in G_visualized.nodes()]
-        if idx >= len(graphs) / 2:
+
+        if idx >= len(graphs) / 2 + 2:
             building_adj_matrix = adj_matrix_original[np.ix_(new_indices, new_indices)]
         else:
             building_adj_matrix = adj_matrix_original
+
 
         with open(f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(indicis[idx])}.pkl', 'rb') as file:
             buildings = pickle.load(file)
@@ -132,7 +183,8 @@ if __name__ == '__main__':
             pickle.dump(data, f)
 
         # 그래프 시각화
-        plt.figure(figsize=(8, 6))
-        nx.draw(G_visualized, pos, with_labels=True, node_color='skyblue', node_size=700, edge_color='k')
-        plt.title("Random Graph Visualization")
-        plt.show()
+        if idx > 5:
+            plt.figure(figsize=(8, 6))
+            nx.draw(G_visualized, pos, with_labels=True, node_color='skyblue', node_size=700, edge_color='k')
+            plt.title("Random Graph Visualization")
+            plt.show()
