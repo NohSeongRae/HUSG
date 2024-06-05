@@ -69,6 +69,30 @@ for idx in tqdm(range(0, 21032)):
     polygon = pred_G.graph['polygon']
 
     node_size, node_pos, node_attr, edge_list, node_idx, asp_rto, longside, b_shape, b_iou, building_polygons = graph2vector_processed(pred_G)
+    # for i in range(0, 120):
+    #     if 45 <= i < 85 and i % 3 == 0:
+    #         continue
+    #     node_pos[i, 0] = 0
+    #     node_pos[i, 1] = 0
+    #     node_size[i, 0] = 0
+    #     node_size[i, 1] = 0
+
+    # ring_list = [6, 14, 22, 29, 35, 45, 73, 85, 90, 98, 106, 114]
+    # for i in range(0, 120):
+    #     if i not in ring_list:
+    #         node_pos[i, 0] = 0
+    #         node_pos[i, 1] = 0
+    #         node_size[i, 0] = 0
+    #         node_size[i, 1] = 0
+
+    import random
+    random_list = random.sample(range(121), 5)
+    for i in range(0, 120):
+        if i not in random_list:
+            node_pos[i, 0] = 0
+            node_pos[i, 1] = 0
+            node_size[i, 0] = 0
+            node_size[i, 1] = 0
 
     org_bldg, org_pos, org_size = inverse_warp_bldg_by_midaxis(node_pos, node_size, midaxis, aspect_rto,
                                                                rotate_bldg_by_midaxis=True,
@@ -152,7 +176,8 @@ for idx in tqdm(range(0, 21032)):
 
     with open(save_path_2.replace('.png', '.pkl'), 'wb') as file:
         pickle.dump(gt_output_list, file)
-
+    plt.clf()
+    plt.close('all')
     count += 1
     if count % 1001 == 0:
         break
