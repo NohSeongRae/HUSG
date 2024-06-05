@@ -24,7 +24,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
-base = './globalmapper_figure'
+base = './blockplanner_figure'
 path = ''
 path = os.path.join(base, path)
 
@@ -51,14 +51,14 @@ for output in tqdm(list_output):
         building_polygon = create_rotated_rectangle(t[0], t[1], t[2], t[3], t[4])
 
         x, y = building_polygon.exterior.coords.xy
-        facecolor = [135, 159, 201]
+        facecolor = [196, 100, 100]
         for i in range(3):
             facecolor[i] /= 256
         ax.fill(x, y, edgecolor='black', facecolor=facecolor)
 
     file_idx = file_path.split('/')[-1].replace('prediction_', '').replace('.pkl', '')
 
-    boundary_path = f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/test/{file_idx}.gpickle'
+    boundary_path = f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/eu_ours_city_datasets/graph_condition_train_datasets/test/{file_idx}.gpickle'
     graph = nx.read_gpickle(boundary_path)
 
     boundary_points = []
@@ -76,12 +76,12 @@ for output in tqdm(list_output):
     plt.xlim([-0.1, 1.1])
     plt.ylim([-0.1, 1.1])
 
-    directory = path.replace(base, 'gm_figure_pred_sample')
+    directory = path.replace(base, 'bp_figure_pred_sample')
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlim([-0.1, 1.1])
     ax.set_ylim([-0.1, 1.1])
     ax.set_axis_off()
     save_path_1 = os.path.join(directory, file_idx + ".png")
-    if os.path.isfile(f'./badge_figure_pred_sample/{file_idx}.png'):
+    if os.path.isfile(f'./gb_figure_pred_sample/{file_idx}.png'):
         ax.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
         plt.close(ax.figure)

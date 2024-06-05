@@ -101,6 +101,13 @@ for prediction_file in tqdm(prediction_files, desc='Processing prediction files'
         restored_prediction = restore_predictions([prediction], scale_factor, rotation_angle, centroid)
         all_restored_predictions.append((idx, restored_prediction[0]))
 
+# Group predictions by block index
+grouped_predictions = {}
+for idx, pred in all_restored_predictions:
+    if idx not in grouped_predictions:
+        grouped_predictions[idx] = []
+    grouped_predictions[idx].append(pred)
+
 # Extract all coordinates from block polygons
 all_x_coords = []
 all_y_coords = []
@@ -115,63 +122,62 @@ for block in block_building_info:
 minx, maxx = min(all_x_coords), max(all_x_coords)
 miny, maxy = min(all_y_coords), max(all_y_coords)
 
-# Visualization of all predictions
-fig, ax = plt.subplots(1, 1, figsize=(15, 15))
-
-# Dictionary to keep track of random colors for each block
 block_colors = {}
 
-# List to keep track of drawn building polygons
-drawn_polygons = []
+# Visualization of all predictions for each block
+for block_idx, predictions in grouped_predictions.items():
+    fig, ax = plt.subplots(1, 1, figsize=(15, 15))
 
-# Draw restored building predictions
-for idx, pred in tqdm(all_restored_predictions, desc='Drawing predictions'):
-    x, y, w, h, theta = pred
-    building_polygon = create_rotated_rectangle(x, y, w, h, theta)
+    # List to keep track of drawn building polygons
+    drawn_polygons = []
 
-    # Get the block boundary
-    block_polygon = Polygon(block_building_info[idx]['block_polygon']['coordinates'][0])
-
-    # Check if the centroid overlaps with any existing building polygons
-    if is_centroid_overlapping((x, y), drawn_polygons):
-        continue
-
-    n = 0
-    # Check for overlap and if the building is within the block boundary
-    while is_overlapping(building_polygon, drawn_polygons) or not block_polygon.contains(building_polygon):
-        w *= 0.95  # Reduce width by 5%
-        h *= 0.95  # Reduce height by 5%
+    # Draw restored building predictions
+    for pred in predictions:
+        x, y, w, h, theta = pred
         building_polygon = create_rotated_rectangle(x, y, w, h, theta)
 
-        n += 1
-        if n > 10:
-            n = -1
-            break
+        # Get the block boundary
+        block_polygon = Polygon(block_building_info[block_idx]['block_polygon']['coordinates'][0])
 
-    if n == -1:
-        continue
+        # Check if the centroid overlaps with any existing building polygons
+        if is_centroid_overlapping((x, y), drawn_polygons):
+            continue
 
-    if idx not in block_colors:
-        block_colors[idx] = generate_pastel_color()
-    facecolor = block_colors[idx]
-    px, py = building_polygon.exterior.coords.xy
-    ax.fill(px, py, edgecolor='black', facecolor=facecolor)
-    drawn_polygons.append(building_polygon)
+        n = 0
+        # Check for overlap and if the building is within the block boundary
+        while is_overlapping(building_polygon, drawn_polygons) or not block_polygon.contains(building_polygon):
+            w *= 0.95  # Reduce width by 5%
+            h *= 0.95  # Reduce height by 5%
+            building_polygon = create_rotated_rectangle(x, y, w, h, theta)
 
-# Draw block boundaries
-for block in block_building_info:
-    block_polygon = Polygon(block['block_polygon']['coordinates'][0])
+            n += 1
+            if n > 10:
+                n = -1
+                break
+
+        if n == -1:
+            continue
+
+        if block_idx not in block_colors:
+            block_colors[block_idx] = generate_pastel_color()
+        facecolor = block_colors[block_idx]
+        px, py = building_polygon.exterior.coords.xy
+        ax.fill(px, py, edgecolor='black', facecolor=facecolor)
+        drawn_polygons.append(building_polygon)
+
+    # Draw block boundary
+    block_polygon = Polygon(block_building_info[block_idx]['block_polygon']['coordinates'][0])
     bx, by = block_polygon.exterior.coords.xy
     ax.plot(bx, by, 'gray', linewidth=2)
 
-# Set dynamic limits for the plot
-ax.set_xlim([minx, maxx])
-ax.set_ylim([miny, maxy])
-ax.set_aspect('equal', adjustable='box')
-ax.set_axis_off()
+    # Set dynamic limits for the plot
+    ax.set_xlim([minx, maxx])
+    ax.set_ylim([miny, maxy])
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_axis_off()
 
-# Save the plot as an image file for verification
-plt.savefig('restored_predictions_map.png', dpi=300, bbox_inches='tight')
+    # Save the plot as an image file for each block
+    plt.savefig(f'restored_predictions_map_block_{block_idx}.png', dpi=300, bbox_inches='tight')
 
-# Display the plot
-plt.show()
+    # Display the plot
+    plt.show()

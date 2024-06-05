@@ -8,6 +8,9 @@ import random
 from tqdm import tqdm
 from scipy.spatial import Delaunay
 
+seed = 327
+random.seed(seed)
+np.random.seed(seed)
 
 def normalize_coordinates(building_polygon, min_x, min_y, max_x, max_y, target_min=-10, target_max=10):
     # Get the exterior coordinates of the polygon
