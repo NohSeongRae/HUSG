@@ -12,17 +12,18 @@ class GraphDataset(Dataset):
         self.condition_type = condition_type
         self.data_type = data_type
 
-        if condition_type == 'graph':
-            self.folder_path = '/local_datasets/graph_condition_train_datasets/'
-        elif condition_type == 'image':
-            # self.folder_path = f'/local_datasets/gt_graph_datasets/{data_type}'
-            self.folder_path = f'/local_datasets/eu_gt_graph_datasets/{data_type}'
-
-            if data_type == 'test':
-                # self.folder_path = f'../preprocessing/global_mapper/gt_graph_datasets/{data_type}'
-                self.folder_path = f'../preprocessing/global_mapper/eu_gt_graph_datasets/{data_type}'
-        elif condition_type == 'image_resnet34':
-            self.folder_path = '/local_datasets/globalmapper_datasets/'
+        # if condition_type == 'graph':
+        #     self.folder_path = '/local_datasets/graph_condition_train_datasets/'
+        # elif condition_type == 'image':
+        #     # self.folder_path = f'/local_datasets/gt_graph_datasets/{data_type}'
+        #     self.folder_path = f'/local_datasets/eu_gt_graph_datasets/{data_type}'
+        #
+        #     if data_type == 'test':
+        #         # self.folder_path = f'../preprocessing/global_mapper/gt_graph_datasets/{data_type}'
+        #         self.folder_path = f'../preprocessing/global_mapper/eu_gt_graph_datasets/{data_type}'
+        # elif condition_type == 'image_resnet34':
+        #     self.folder_path = '/local_datasets/globalmapper_datasets/'
+        self.folder_path = f'/local_datasets/urban_datasets/global_mapper_datasets/{data_type}'
         file_extension = '.gpickle'
 
         count = 0
