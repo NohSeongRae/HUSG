@@ -113,6 +113,12 @@ if __name__ == '__main__':
                     if val == 1:
                         graph.add_edge(i, j)
 
+            for node in range(n_boundary + n_building):
+                if node < n_boundary:
+                    graph.add_node(node, building_masks=[0], node_features=[0, 0, 0, 0, 0])
+                else:
+                    graph.add_node(node, building_masks=[1], node_features=[0, 0, 0, 0, 0])
+
             path = f'./outputs/synthetic_datasets/{file}.gpickle'
 
             directory = os.path.dirname(path)
