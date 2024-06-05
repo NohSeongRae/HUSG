@@ -123,14 +123,12 @@ def create_grid_graph_ring_based():
 
 if __name__ == '__main__':
     data_type = 'test'
-    indicis = [106, 1063, 10377, 10215, 10921, 10507, 1041, 10506]
-    graphs = [create_line_graph(5), create_line_graph(10),
-              create_ring_graph(10), create_ring_graph(6),
+    indicis = [11028, 10921, 10507, 1041]
+    graphs = [create_ring_graph(6),
               create_grid_graph_file('10921'), create_grid_graph_ring_based(),
-              create_random_graph(5, 0.3), create_random_graph(5, 0.3)]
+              create_random_graph(5, 0.3)]
 
     for idx, building_edge in enumerate(graphs):
-        print(idx)
         # 에지 리스트를 사용하여 NetworkX 그래프 객체 생성
         G_visualized = nx.Graph()
         G_visualized.add_edges_from(building_edge)
@@ -179,12 +177,11 @@ if __name__ == '__main__':
                 'n_building': n_building}
 
         output_file_path = f'random_graph_generation_datasets/'
-        with open(f'{output_file_path}/{idx}_{indicis[idx]}.pickle', 'wb') as f:
+        with open(f'{output_file_path}/{indicis[idx]}.pickle', 'wb') as f:
             pickle.dump(data, f)
 
         # 그래프 시각화
-        if idx > 5:
-            plt.figure(figsize=(8, 6))
-            nx.draw(G_visualized, pos, with_labels=True, node_color='skyblue', node_size=700, edge_color='k')
-            plt.title("Random Graph Visualization")
-            plt.show()
+        plt.figure(figsize=(8, 6))
+        nx.draw(G_visualized, pos, with_labels=True, node_color='skyblue', node_size=700, edge_color='k')
+        plt.title("Random Graph Visualization")
+        plt.show()
