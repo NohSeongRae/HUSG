@@ -5,6 +5,7 @@ from shapely.geometry import shape
 from shapely.geometry import Polygon, Point, LineString
 import pickle
 
+
 seed = 327
 random.seed(seed)
 np.random.seed(seed)
@@ -107,11 +108,40 @@ for block_idx, block_info in enumerate(loaded_block_data):
     # Draw block boundary
     # block_polygon = Polygon(block_info['block_polygon']['coordinates'][0])
     # bx, by = block_polygon.exterior.coords.xy
-    sub_coord = np.array(subdivide_polygon_exterior(block_polygon, distance=2))
+    b_x, b_y = [], []
+    bx, by = block_polygon.exterior.coords.xy
+    is_stop = False
+    for x, y in zip(bx, by):
+        if x == 299560.6885822376:
+            b_x.append(299580)
+            b_y.append(4630886)
+            b_x.append(299572)
+            b_y.append(4630915)
+            b_x.append(299489)
+            b_y.append(4630892)
+            b_x.append(299497)
+            b_y.append(4630862)
+            is_stop = True
+        elif x == 299421.4822845354:
+            b_x.append(299428)
+            b_y.append(4630894)
+            b_x.append(299459)
+            b_y.append(4630903)
+            b_x.append(299453)
+            b_y.append(4630928)
+
+        elif not is_stop:
+            b_x.append(x)
+            b_y.append(y)
+        else:
+            is_stop = False
+    coords = np.array([b_x, b_y])
+    coords = np.transpose(coords)
+    polygon = Polygon(coords)
+    sub_coord = np.array(subdivide_polygon_exterior(polygon, distance=2))
     for idx in range(len(sub_coord) - 1):
         draw_line_with_thickness(sub_coord[idx, 0], sub_coord[idx, 1],
                                  sub_coord[idx + 1, 0], sub_coord[idx + 1, 1], thickness=1)
-
 
     # Set dynamic limits for the plot
     ax.set_xlim([minx - 1, maxx + 1])
@@ -121,4 +151,4 @@ for block_idx, block_info in enumerate(loaded_block_data):
 
     # Save the plot as an image file for each block
     plt.savefig(f'restored_predictions_map_block_{block_idx}.png', dpi=300, bbox_inches='tight')
-
+    plt.show()

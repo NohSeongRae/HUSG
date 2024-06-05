@@ -131,11 +131,11 @@ def create_grid_graph_ring_based():
 
 if __name__ == '__main__':
     data_type = 'test'
-    graphs = [create_line_graph(5), create_line_graph(10),
-              create_ring_graph(10), create_ring_graph(6),
-              create_grid_graph_file('10921'), create_grid_graph_ring_based(),
-              create_random_graph(7, 0.3), create_random_graph(5, 0.3)]
-    types = ['line', 'line', 'ring', 'ring', 'grid', 'grid', 'random', 'random']
+    graphs = [create_line_graph(10),
+              create_ring_graph(10),
+              create_grid_graph_file('10921'),
+              create_random_graph(5, 0.3)]
+    types = ['line', 'ring', 'grid', 'random']
 
     for idx in tqdm(range(1000)):
         for building_edge, graph_type in zip(graphs, types):
