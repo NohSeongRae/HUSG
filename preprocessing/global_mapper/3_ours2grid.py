@@ -103,10 +103,10 @@ def create_rotated_rectangle(x, y, w, h, theta):
     return rotated_rectangle
 
 def generate_datasets(idx, data_type):
-    with open(f'datasets/eu_graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
+    with open(f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.pkl', 'rb') as file:
         buildings = pickle.load(file)
 
-    graph = nx.read_gpickle(f'datasets/eu_graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
+    graph = nx.read_gpickle(f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/{data_type}/{str(idx)}.gpickle')
 
     n_node = graph.number_of_nodes()
     n_building = len(buildings)
@@ -294,13 +294,13 @@ def generate_datasets(idx, data_type):
         G.graph['block_scale'] = 1 / abs(dx)
         G.graph['building_polygons'] = building_polygons
 
-        output_file_path = f'eu_grid_graph_datasets/{data_type}'
+        output_file_path = f'global_mapper_datasets/{data_type}'
         with open(f'{output_file_path}/{idx}.gpickle', 'wb') as f:
             nx.write_gpickle(G, f)
 
 if __name__ == '__main__':
     end_index = 208622 + 1
-    data_type = 'test'
+    data_type = 'train'
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
