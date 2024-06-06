@@ -41,7 +41,7 @@ class GraphDataset(Dataset):
             return int(file_name.split('.')[0])
 
         self.gpickle_files = [f for f in os.listdir(self.folder_path) if f.endswith('.gpickle')]
-        self.gpickle_files.sort(key=extract_number)
+        self.gpickle_files.sort()
 
         self.data_length = len(self.gpickle_files)
         print(self.data_length)
