@@ -55,7 +55,7 @@ def move_polygon_center_to_midpoint(polygon):
 
 count = 1
 for idx in tqdm(range(0, 21032)):
-    path = 'global_mapper_output'
+    path = 'eu_global_mapper_output'
     test_gt_graph = f"./{path}/gt/{str(idx)}.gpickle"
     test_pred_graph = f"./{path}/pred/{str(idx)}.gpickle"
 
@@ -85,14 +85,14 @@ for idx in tqdm(range(0, 21032)):
     #         node_size[i, 0] = 0
     #         node_size[i, 1] = 0
 
-    import random
-    random_list = random.sample(range(121), 5)
-    for i in range(0, 120):
-        if i not in random_list:
-            node_pos[i, 0] = 0
-            node_pos[i, 1] = 0
-            node_size[i, 0] = 0
-            node_size[i, 1] = 0
+    # import random
+    # random_list = random.sample(range(121), 5)
+    # for i in range(0, 120):
+    #     if i not in random_list:
+    #         node_pos[i, 0] = 0
+    #         node_pos[i, 1] = 0
+    #         node_size[i, 0] = 0
+    #         node_size[i, 1] = 0
 
     org_bldg, org_pos, org_size = inverse_warp_bldg_by_midaxis(node_pos, node_size, midaxis, aspect_rto,
                                                                rotate_bldg_by_midaxis=True,
