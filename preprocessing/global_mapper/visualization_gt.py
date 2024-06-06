@@ -24,7 +24,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
-base = './blockplanner_figure'
+base = './eu_global_mapper_figure'
 path = ''
 path = os.path.join(base, path)
 
@@ -82,6 +82,6 @@ for output in tqdm(list_output):
     ax.set_ylim([-0.1, 1.1])
     ax.set_axis_off()
     save_path_1 = os.path.join(directory, file_idx + ".png")
-    if os.path.isfile(f'./gb_figure_pred_sample/{file_idx}.png'):
+    if os.path.isfile(f'./badge_figure_pred_sample/{file_idx}.png'):
         ax.figure.savefig(save_path_1, dpi=300, bbox_inches='tight')
         plt.close(ax.figure)

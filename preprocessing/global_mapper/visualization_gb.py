@@ -48,7 +48,7 @@ for output in tqdm(list_output):
         tmp = pickle.load(f)
 
     for t in tmp:
-        building_polygon = create_rotated_rectangle(t[0], t[1], t[2], t[3], (t[4] * 2 - 1) * 45)
+        building_polygon = create_rotated_rectangle(t[0], t[1], t[2], t[3], t[4])
 
         x, y = building_polygon.exterior.coords.xy
         facecolor = [135, 159, 201]
