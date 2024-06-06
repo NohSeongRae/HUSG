@@ -24,7 +24,7 @@ def create_rotated_rectangle(x, y, w, h, theta):
     rotated_rectangle = Polygon(rotated_corners)
     return rotated_rectangle
 
-base = './globalmapper_figure'
+base = './eu_global_mapper_figure'
 path = ''
 path = os.path.join(base, path)
 
@@ -58,7 +58,7 @@ for output in tqdm(list_output):
 
     file_idx = file_path.split('/')[-1].replace('prediction_', '').replace('.pkl', '')
 
-    boundary_path = f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/ours_city_datasets/graph_condition_train_datasets/test/{file_idx}.gpickle'
+    boundary_path = f'C:/Users/Dobby/Downloads/graph_condition_city_datasets/eu_ours_city_datasets/graph_condition_train_datasets/test/{file_idx}.gpickle'
     graph = nx.read_gpickle(boundary_path)
 
     boundary_points = []
