@@ -111,8 +111,10 @@ for idx, pred in all_restored_predictions:
 # Extract all coordinates from block polygons
 all_x_coords = []
 all_y_coords = []
+for block_idx, block in enumerate(block_building_info):
+    if block_idx != 47:
+        continue
 
-for block in block_building_info:
     block_polygon = Polygon(block['block_polygon']['coordinates'][0])
     x_coords, y_coords = block_polygon.exterior.coords.xy
     all_x_coords.extend(x_coords)
@@ -126,6 +128,9 @@ block_colors = {}
 
 # Visualization of all predictions for each block
 for block_idx, predictions in grouped_predictions.items():
+    if block_idx != 47:
+        continue
+
     fig, ax = plt.subplots(1, 1, figsize=(15, 15))
 
     # List to keep track of drawn building polygons
@@ -180,4 +185,5 @@ for block_idx, predictions in grouped_predictions.items():
     plt.savefig(f'restored_predictions_map_block_{block_idx}.png', dpi=300, bbox_inches='tight')
 
     # Display the plot
-    plt.show()
+    plt.plot()
+    plt.savefig('myfigure.png', transparent = True)
