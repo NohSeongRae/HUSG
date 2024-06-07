@@ -125,14 +125,13 @@ minx, maxx = min(all_x_coords), max(all_x_coords)
 miny, maxy = min(all_y_coords), max(all_y_coords)
 
 block_colors = {}
-
+block_colors[47] = generate_pastel_color()
+facecolor = block_colors[47]
+fig, ax = plt.subplots(1, 1, figsize=(15, 15))
 # Visualization of all predictions for each block
-for block_idx, predictions in grouped_predictions.items():
-    if block_idx != 47:
+for block_idx, predictions in tqdm(grouped_predictions.items()):
+    if block_idx == 47:
         continue
-
-    fig, ax = plt.subplots(1, 1, figsize=(15, 15))
-
     # List to keep track of drawn building polygons
     drawn_polygons = []
 
@@ -173,17 +172,186 @@ for block_idx, predictions in grouped_predictions.items():
     # Draw block boundary
     block_polygon = Polygon(block_building_info[block_idx]['block_polygon']['coordinates'][0])
     bx, by = block_polygon.exterior.coords.xy
-    ax.plot(bx, by, 'gray', linewidth=2)
 
-    # Set dynamic limits for the plot
-    ax.set_xlim([minx, maxx])
-    ax.set_ylim([miny, maxy])
-    ax.set_aspect('equal', adjustable='box')
-    ax.set_axis_off()
+    if block_idx == 47:
+        b_x, b_y = [], []
+        is_stop = False
+        for x, y in zip(bx, by):
+            if x == 299560.6885822376:
+                b_x.append(299580)
+                b_y.append(4630886)
+                b_x.append(299572)
+                b_y.append(4630915)
+                b_x.append(299489)
+                b_y.append(4630892)
+                b_x.append(299497.1)
+                b_y.append(4630861.5)
+                is_stop = True
+            elif x == 299421.4822845354:
+                b_x.append(299429)
+                b_y.append(4630894.4)
+                b_x.append(299452)
+                b_y.append(4630901)
+                b_x.append(299445)
+                b_y.append(4630926)
 
-    # Save the plot as an image file for each block
-    plt.savefig(f'restored_predictions_map_block_{block_idx}.png', dpi=300, bbox_inches='tight')
+            elif not is_stop:
+                b_x.append(x)
+                b_y.append(y)
+            else:
+                is_stop = False
+        coords = np.array([b_x, b_y])
+        coords = np.transpose(coords)
+        polygon = Polygon(coords)
+        bx, by = polygon.exterior.coords.xy
 
-    # Display the plot
-    plt.plot()
-    plt.savefig('myfigure.png', transparent = True)
+    if block_idx == 45:
+        print(bx, by)
+        b_x, b_y = [], []
+        is_stop = False
+        for x, y in zip(bx, by):
+            if x == 299651.3242622429:
+                b_x.append(299620.2)
+                b_y.append(4631021.9)
+                b_x.append(299631)
+                b_y.append(4630992)
+                b_x.append(299660.5)
+                b_y.append(4630999.7)
+                is_stop = True
+            elif not is_stop:
+                b_x.append(x)
+                b_y.append(y)
+            else:
+                is_stop = False
+        coords = np.array([b_x, b_y])
+        coords = np.transpose(coords)
+        polygon = Polygon(coords)
+        bx, by = polygon.exterior.coords.xy
+    # 299621, 4631021
+    # 299631, 4630992
+    # 299659, 4630999
+
+    if block_idx == 47:
+        ax.plot(bx, by, 'red', linewidth=4)
+    else:
+        ax.plot(bx, by, 'gray', linewidth=2)
+
+for block_idx, predictions in tqdm(grouped_predictions.items()):
+    if block_idx != 47:
+        continue
+    # List to keep track of drawn building polygons
+    drawn_polygons = []
+
+    # Draw restored building predictions
+    for pred in predictions:
+        x, y, w, h, theta = pred
+        building_polygon = create_rotated_rectangle(x, y, w, h, theta)
+
+        # Get the block boundary
+        block_polygon = Polygon(block_building_info[block_idx]['block_polygon']['coordinates'][0])
+
+        # Check if the centroid overlaps with any existing building polygons
+        if is_centroid_overlapping((x, y), drawn_polygons):
+            continue
+
+        n = 0
+        # Check for overlap and if the building is within the block boundary
+        while is_overlapping(building_polygon, drawn_polygons) or not block_polygon.contains(building_polygon):
+            w *= 0.95  # Reduce width by 5%
+            h *= 0.95  # Reduce height by 5%
+            building_polygon = create_rotated_rectangle(x, y, w, h, theta)
+
+            n += 1
+            if n > 10:
+                n = -1
+                break
+
+        if n == -1:
+            continue
+
+        if block_idx not in block_colors:
+            block_colors[block_idx] = generate_pastel_color()
+        facecolor = block_colors[block_idx]
+        px, py = building_polygon.exterior.coords.xy
+        ax.fill(px, py, edgecolor='black', facecolor=facecolor)
+        drawn_polygons.append(building_polygon)
+
+    # Draw block boundary
+    block_polygon = Polygon(block_building_info[block_idx]['block_polygon']['coordinates'][0])
+    bx, by = block_polygon.exterior.coords.xy
+
+    if block_idx == 47:
+        b_x, b_y = [], []
+        is_stop = False
+        for x, y in zip(bx, by):
+            if x == 299560.6885822376:
+                b_x.append(299580)
+                b_y.append(4630886)
+                b_x.append(299572)
+                b_y.append(4630915)
+                b_x.append(299489)
+                b_y.append(4630892)
+                b_x.append(299497.1)
+                b_y.append(4630861.5)
+                is_stop = True
+            elif x == 299421.4822845354:
+                b_x.append(299429)
+                b_y.append(4630894.4)
+                b_x.append(299452)
+                b_y.append(4630901)
+                b_x.append(299445)
+                b_y.append(4630926)
+
+            elif not is_stop:
+                b_x.append(x)
+                b_y.append(y)
+            else:
+                is_stop = False
+        coords = np.array([b_x, b_y])
+        coords = np.transpose(coords)
+        polygon = Polygon(coords)
+        bx, by = polygon.exterior.coords.xy
+
+    if block_idx == 45:
+        print(bx, by)
+        b_x, b_y = [], []
+        is_stop = False
+        for x, y in zip(bx, by):
+            if x == 299651.3242622429:
+                b_x.append(299620.2)
+                b_y.append(4631021.9)
+                b_x.append(299631)
+                b_y.append(4630992)
+                b_x.append(299660.5)
+                b_y.append(4630999.7)
+                is_stop = True
+            elif not is_stop:
+                b_x.append(x)
+                b_y.append(y)
+            else:
+                is_stop = False
+        coords = np.array([b_x, b_y])
+        coords = np.transpose(coords)
+        polygon = Polygon(coords)
+        bx, by = polygon.exterior.coords.xy
+    # 299621, 4631021
+    # 299631, 4630992
+    # 299659, 4630999
+
+    if block_idx == 47:
+        print(bx.tolist(), '\n', by.tolist())
+        ax.plot(bx, by, 'red', linewidth=4)
+    else:
+        ax.plot(bx, by, 'gray', linewidth=2)
+
+# Set dynamic limits for the plot
+ax.set_xlim([minx - 100, maxx + 100])
+ax.set_ylim([miny - 100, maxy + 100])
+ax.set_aspect('equal', adjustable='box')
+ax.set_axis_off()
+
+# Display the plot
+plt.plot()
+plt.savefig('myfigure.png', transparent = True, dpi=300, bbox_inches='tight')
+
+plt.show()

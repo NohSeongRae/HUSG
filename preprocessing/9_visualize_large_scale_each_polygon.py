@@ -73,9 +73,6 @@ all_x_coords = []
 all_y_coords = []
 
 for block_idx, block in enumerate(loaded_block_data):
-    if block_idx != 47:
-        continue
-
     block_polygon = Polygon(block['block_polygon']['coordinates'][0])
     x_coords, y_coords = block_polygon.exterior.coords.xy
     all_x_coords.extend(x_coords)
@@ -89,8 +86,6 @@ block_colors = {}
 
 # Iterate through the loaded block data and add polygons to the map
 for block_idx, block_info in enumerate(loaded_block_data):
-    if block_idx != 47:
-        continue
     fig, ax = plt.subplots(1, 1, figsize=(15, 15))
 
     block_polygon = shape(block_info["block_polygon"])
@@ -106,39 +101,39 @@ for block_idx, block_info in enumerate(loaded_block_data):
         ax.fill(px, py, edgecolor='black', facecolor=facecolor)
 
     # Draw block boundary
-    # block_polygon = Polygon(block_info['block_polygon']['coordinates'][0])
-    # bx, by = block_polygon.exterior.coords.xy
-    b_x, b_y = [], []
+    block_polygon = Polygon(block_info['block_polygon']['coordinates'][0])
     bx, by = block_polygon.exterior.coords.xy
-    is_stop = False
-    for x, y in zip(bx, by):
-        if x == 299560.6885822376:
-            b_x.append(299580)
-            b_y.append(4630886)
-            b_x.append(299572)
-            b_y.append(4630915)
-            b_x.append(299489)
-            b_y.append(4630892)
-            b_x.append(299497)
-            b_y.append(4630862)
-            is_stop = True
-        elif x == 299421.4822845354:
-            b_x.append(299428)
-            b_y.append(4630894)
-            b_x.append(299459)
-            b_y.append(4630903)
-            b_x.append(299453)
-            b_y.append(4630928)
-
-        elif not is_stop:
-            b_x.append(x)
-            b_y.append(y)
-        else:
-            is_stop = False
-    coords = np.array([b_x, b_y])
-    coords = np.transpose(coords)
-    polygon = Polygon(coords)
-    sub_coord = np.array(subdivide_polygon_exterior(polygon, distance=2))
+    # b_x, b_y = [], []
+    # bx, by = block_polygon.exterior.coords.xy
+    # is_stop = False
+    # for x, y in zip(bx, by):
+    #     if x == 299560.6885822376:
+    #         b_x.append(299580)
+    #         b_y.append(4630886)
+    #         b_x.append(299572)
+    #         b_y.append(4630915)
+    #         b_x.append(299489)
+    #         b_y.append(4630892)
+    #         b_x.append(299497)
+    #         b_y.append(4630862)
+    #         is_stop = True
+    #     elif x == 299421.4822845354:
+    #         b_x.append(299428)
+    #         b_y.append(4630894)
+    #         b_x.append(299459)
+    #         b_y.append(4630903)
+    #         b_x.append(299453)
+    #         b_y.append(4630928)
+    #
+    #     elif not is_stop:
+    #         b_x.append(x)
+    #         b_y.append(y)
+    #     else:
+    #         is_stop = False
+    # coords = np.array([b_x, b_y])
+    # coords = np.transpose(coords)
+    # polygon = Polygon(coords)
+    sub_coord = np.array(subdivide_polygon_exterior(block_polygon, distance=2))
     for idx in range(len(sub_coord) - 1):
         draw_line_with_thickness(sub_coord[idx, 0], sub_coord[idx, 1],
                                  sub_coord[idx + 1, 0], sub_coord[idx + 1, 1], thickness=1)
