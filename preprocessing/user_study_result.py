@@ -20,7 +20,14 @@ rgb_colors = [
     [196/255, 100/255, 100/255],
     [135/255, 159/255, 201/255]
 ]
-plt.rcParams.update({'font.size': 16, 'axes.titlesize': 20, 'axes.labelsize': 18, 'xtick.labelsize': 14, 'ytick.labelsize': 16})
+
+# Update font to Times New Roman
+plt.rcParams.update({'font.size': 16,
+                     'axes.titlesize': 20,
+                     'axes.labelsize': 18,
+                     'xtick.labelsize': 14,
+                     'ytick.labelsize': 16,
+                     'font.family': 'Times New Roman'})
 
 # Plotting the means with standard errors as a bar graph
 plt.figure(figsize=(10, 10))
