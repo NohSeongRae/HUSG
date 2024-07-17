@@ -335,7 +335,7 @@ class GraphCVAE(nn.Module):
         edge_index = data.edge_index
         # mu, log_var = self.encoder(data, edge_index)
         # z = self.reparameterize(mu, log_var)
-        z = torch.normal(mean=0, std=1, size=(32, self.latent_dim)).to(device=data.edge_index.device)
+        z = torch.normal(mean=0, std=1, size=(data.condition.shape[0], self.latent_dim)).to(device=data.edge_index.device)
 
         if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
             condition = self.condition_encoder(data.condition)

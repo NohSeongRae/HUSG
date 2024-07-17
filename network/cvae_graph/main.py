@@ -350,7 +350,7 @@ class Trainer:
                             # wandb.log({"Validation kl loss": loss_kl_mean}, step=epoch + 1)
                             wandb.log({"Validation distance loss": loss_distance_mean}, step=epoch + 1)
 
-                            loss_total = loss_pos_mean + loss_size_mean + loss_theta_mean + loss_kl_mean + loss_distance_mean
+                            loss_total = loss_pos_mean + loss_size_mean + loss_theta_mean + loss_distance_mean
                             wandb.log({"Validation total loss": loss_total}, step=epoch + 1)
 
                             if min_loss > loss_total:
