@@ -35,7 +35,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
         for data in tqdm(test_dataloader):
             data, graph_file = data
             import pickle
-            load_path = f'/local_datasets/urban_datasets/eu_global_mapper_datasets/test/{graph_file[0]}'
+            load_path = f'/local_datasets/urban_datasets/global_mapper_datasets/test/{graph_file[0]}'
             with open(load_path, 'rb') as f:
                 graph = pickle.load(f)
 
