@@ -47,10 +47,11 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                 nx.write_gpickle(graph, f)
 
             data = data.to(device=device)
-            output_pos, output_size = cvae.test(data)
+            output_pos, output_size, output_exist = cvae.test(data)
+            output_exist = output_exist.detach().cpu().numpy()
 
             for node in graph.nodes():
-                if graph.nodes[node]['exist'] > 0.5:
+                if output_exist[node] > 0.5:
                     graph.nodes[node]['posx'] = output_pos[node][0].detach().cpu().numpy()
                     graph.nodes[node]['posy'] = output_pos[node][1].detach().cpu().numpy()
                     graph.nodes[node]['exist'] = 1.0
