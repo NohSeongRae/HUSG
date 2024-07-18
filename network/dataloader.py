@@ -23,6 +23,7 @@ class GraphDataset(Dataset):
             self.folder_path = f'/local_datasets/urban_datasets/datasets/eu_graph_generation_datasets/val'
             self.folder_path = f'cvae_graph/large_scale_datasets/graph_generation_datasets/'
             self.folder_path = f'random_graph_generation_datasets/'
+            self.folder_path = f'rebuttal_random_graph_generation_datasets/'
 
         file_extension = '.pickle'
         count = 0
