@@ -151,7 +151,7 @@ class GraphDataset(Dataset):
             pooled_adj_matrix[:pooled_n_boundary, pooled_n_boundary:] = pooled_bb_adj_matrix.T
 
             import scipy.sparse as sp
-            sparse_matrix = sp.csr_matrix(adj_matrix)
+            sparse_matrix = sp.csr_matrix(pooled_adj_matrix)
             coo_matrix = sparse_matrix.tocoo()
             edge_index = torch.tensor(np.vstack((coo_matrix.row, coo_matrix.col)), dtype=torch.long)
             data = Data(node_features=pooled_node_features,
