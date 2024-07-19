@@ -77,6 +77,15 @@ class GraphDataset(Dataset):
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
+            boundary_n = building_masks.shape[0] - torch.sum(building_masks)
+            pooled_boundary_n = (boundary_n + 1) // 2
+
+            pooled_node_features = torch.zeros((pooled_boundary_n, 5))
+            for i in range(pooled_boundary_n):
+                for ii in range(2):
+                    if i * 2 + ii < boundary_n:
+                        pooled_node_features[i, 0] = node_features[i * 2 + ii]
+
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
                 condition = condition.unsqueeze(0)
