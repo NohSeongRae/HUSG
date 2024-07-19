@@ -17,7 +17,7 @@ class GraphDataset(Dataset):
 
         self.data_type = data_type
 
-        self.folder_path = f'/local_datasets/urban_datasets/datasets/eu_graph_generation_datasets/{data_type}'
+        self.folder_path = f'/local_datasets/urban_datasets/datasets/graph_generation_datasets/{data_type}'
         if data_type == 'test':
             self.folder_path = f'/local_datasets/urban_datasets/datasets/eu_graph_generation_datasets/{data_type}'
             self.folder_path = f'/local_datasets/urban_datasets/datasets/eu_graph_generation_datasets/val'
