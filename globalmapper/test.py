@@ -47,7 +47,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
                 nx.write_gpickle(graph, f)
 
             data = data.to(device=device)
-            output_pos, output_size, output_exist = cvae.test(data)
+            output_pos, output_size = cvae.test(data)
             # output_exist = output_exist.detach().cpu().numpy()
 
             exponential_dist = torch.distributions.Exponential(0.1)
