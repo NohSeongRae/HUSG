@@ -154,9 +154,9 @@ class GraphDataset(Dataset):
             edge_index = np.vstack((row, col))
             edge_index = torch.tensor(edge_index, dtype=torch.long)
 
-            data = Data(node_features=node_features,
-                        building_mask=building_masks, condition=condition,
-                        edge_index=edge_index, num_nodes=graph.number_of_nodes())
+            data = Data(node_features=pooled_node_features,
+                        building_mask=pooled_building_masks, condition=condition,
+                        edge_index=edge_index, num_nodes=pooled_n_boundary + building_n)
 
             return data
         else:
