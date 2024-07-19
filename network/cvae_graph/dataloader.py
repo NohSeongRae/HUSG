@@ -97,8 +97,8 @@ class GraphDataset(Dataset):
                         pooled_node_features[i, 2] /= 2
                         pooled_node_features[i, 3] /= 2
 
-            pooled_building_masks = torch.zeros((pooled_boundary_n + building_n), dtype=torch.long)
-            pooled_building_masks[pooled_boundary_n:] = 1
+            pooled_building_masks = torch.zeros((pooled_boundary_n + building_n, 1), dtype=torch.long)
+            pooled_building_masks[pooled_boundary_n:, 0] = 1
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
