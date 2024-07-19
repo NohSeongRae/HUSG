@@ -221,25 +221,25 @@ class GraphDataset(Dataset):
             bb_adj_matrix = adj_matrix[boundary_n:, :boundary_n]
 
             unpooled_n_boundary = (boundary_n + 1) // 2
-            unpooled_boundary_adj_matrix = np.zeros((unpooled_n_boundary, unpooled_n_boundary))
-            for i in range(unpooled_n_boundary):
-                for j in range(unpooled_n_boundary):
+            unpooled_boundary_adj_matrix = np.zeros((x, x))
+            for i in range(x):
+                for j in range(x):
                     unpooled_boundary_adj_matrix[i, j] = boundary_adj_matrix[i // 2, j // 2]
 
-            unpooled_bb_adj_matrix = np.zeros((building_n, unpooled_n_boundary))
+            unpooled_bb_adj_matrix = np.zeros((building_n, x))
             for i in range(building_n):
-                for j in range(unpooled_n_boundary):
+                for j in range(x):
                     unpooled_bb_adj_matrix[i, j] = bb_adj_matrix[i, j // 2]
 
             if unpooled_n_boundary > 200:
                 unpooled_boundary_adj_matrix = unpooled_boundary_adj_matrix[:200, :200]
                 unpooled_bb_adj_matrix = unpooled_bb_adj_matrix[:, :200]
 
-            unpooled_adj_matrix = np.zeros((unpooled_n_boundary + building_n, unpooled_n_boundary + building_n))
-            unpooled_adj_matrix[:unpooled_n_boundary, :unpooled_n_boundary] = unpooled_boundary_adj_matrix
-            unpooled_adj_matrix[unpooled_n_boundary:, unpooled_n_boundary:] = building_adj_matrix
-            unpooled_adj_matrix[unpooled_n_boundary:, :unpooled_n_boundary] = unpooled_bb_adj_matrix
-            unpooled_adj_matrix[:unpooled_n_boundary, unpooled_n_boundary:] = unpooled_bb_adj_matrix.T
+            unpooled_adj_matrix = np.zeros((x + building_n, x + building_n))
+            unpooled_adj_matrix[:x, :x] = unpooled_boundary_adj_matrix
+            unpooled_adj_matrix[x:, x:] = building_adj_matrix
+            unpooled_adj_matrix[x:, :x] = unpooled_bb_adj_matrix
+            unpooled_adj_matrix[:x, x:] = unpooled_bb_adj_matrix.T
 
             import scipy.sparse as sp
             sparse_matrix = sp.csr_matrix(unpooled_adj_matrix)
