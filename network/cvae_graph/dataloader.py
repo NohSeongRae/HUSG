@@ -99,6 +99,7 @@ class GraphDataset(Dataset):
 
             pooled_building_masks = torch.zeros((pooled_boundary_n + building_n, 1), dtype=torch.long)
             pooled_building_masks[pooled_boundary_n:, 0] = 1
+            print(pooled_building_masks)
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
