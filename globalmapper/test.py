@@ -58,7 +58,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             if k > 120:
                 k = 120
 
-            print(k, output_exist.shape)
+            print(k)
 
             # output_exist 값을 기준으로 상위 k개의 노드를 선택
             # top_k_indices = torch.topk(output_exist.view(-1), k=k, largest=True).indices
