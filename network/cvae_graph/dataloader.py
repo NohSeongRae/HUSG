@@ -145,10 +145,10 @@ class GraphDataset(Dataset):
                                 pooled_bb_adj_matrix[i, j] = 1
 
             pooled_adj_matrix = np.zeros((pooled_n_boundary + building_n, pooled_n_boundary + building_n))
-            pooled_n_boundary[:pooled_n_boundary, :pooled_n_boundary] = pooled_boundary_adj_matrix
-            pooled_n_boundary[pooled_n_boundary:, pooled_n_boundary:] = building_adj_matrix
-            pooled_n_boundary[pooled_n_boundary:, :pooled_n_boundary] = pooled_bb_adj_matrix
-            pooled_n_boundary[:pooled_n_boundary, pooled_n_boundary:] = pooled_bb_adj_matrix.T
+            pooled_adj_matrix[:pooled_n_boundary, :pooled_n_boundary] = pooled_boundary_adj_matrix
+            pooled_adj_matrix[pooled_n_boundary:, pooled_n_boundary:] = building_adj_matrix
+            pooled_adj_matrix[pooled_n_boundary:, :pooled_n_boundary] = pooled_bb_adj_matrix
+            pooled_adj_matrix[:pooled_n_boundary, pooled_n_boundary:] = pooled_bb_adj_matrix.T
 
             row, col = np.where(adj_matrix != 0)
             edge_index = np.vstack((row, col))
