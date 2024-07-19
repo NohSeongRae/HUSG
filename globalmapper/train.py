@@ -196,7 +196,7 @@ class Trainer:
                     continue
 
                 loss_total = loss_pos * self.pos_weight + loss_size * self.size_weight + \
-                             loss_kl * self.kl_weight + loss_exist + loss_exist_sum
+                             loss_kl * self.kl_weight + loss_exist * 3 + loss_exist_sum * 2
 
                 loss_total.backward()
                 self.optimizer.step()
@@ -349,12 +349,12 @@ if __name__ == '__main__':
     parser.add_argument("--save_dir_path", type=str, default="cvae_graph", help="save dir path")
     parser.add_argument("--lr", type=float, default=3e-5, help="save dir path")
     parser.add_argument("--weight_decay", type=float, default=5e-4, help="save dir path")
-    parser.add_argument("--pos_weight", type=float, default=1, help="save dir path")
-    parser.add_argument("--size_weight", type=float, default=1, help="save dir path")
+    parser.add_argument("--pos_weight", type=float, default=4, help="save dir path")
+    parser.add_argument("--size_weight", type=float, default=4, help="save dir path")
     parser.add_argument("--iou_weight", type=float, default=1.0, help="save dir path")
     parser.add_argument("--exist_weight", type=float, default=3.0, help="save dir path")
     parser.add_argument("--exist_sum_weight", type=float, default=2.0, help="save dir path")
-    parser.add_argument("--kl_weight", type=float, default=1, help="save dir path")
+    parser.add_argument("--kl_weight", type=float, default=0.5, help="save dir path")
     parser.add_argument("--shape_weight", type=float, default=0.05, help="save dir path")
     parser.add_argument("--condition_type", type=str, default='image', help="save dir path")
     parser.add_argument("--convlayer", type=str, default='gat', help="save dir path")
