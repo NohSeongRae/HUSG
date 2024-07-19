@@ -171,15 +171,12 @@ class GraphDataset(Dataset):
                 x = unpooled_boundary_n
 
             unpooled_node_features = torch.zeros((x + building_n, 5))
-            for i in range(unpooled_boundary_n):
+            for i in range(x):
                 unpooled_node_features[i, 0] += node_features[i // 2, 0]
                 unpooled_node_features[i, 1] += node_features[i // 2, 1]
                 unpooled_node_features[i, 2] += node_features[i // 2, 2]
                 unpooled_node_features[i, 3] += node_features[i // 2, 3]
                 unpooled_node_features[i, 4] += node_features[i // 2, 4]
-
-                if i > 200:
-                    continue
 
             for i in range(building_n):
                 if unpooled_boundary_n > 200:
