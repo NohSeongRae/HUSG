@@ -96,7 +96,13 @@ class GraphDataset(Dataset):
                         pooled_node_features[i, 1] /= 2
                         pooled_node_features[i, 2] /= 2
                         pooled_node_features[i, 3] /= 2
-            print(pooled_node_features)
+            for i in range(building_n):
+                pooled_node_features[i + pooled_boundary_n, 0] += node_features[i, 0]
+                pooled_node_features[i + pooled_boundary_n, 1] += node_features[i, 1]
+                pooled_node_features[i + pooled_boundary_n, 2] += node_features[i, 2]
+                pooled_node_features[i + pooled_boundary_n, 3] += node_features[i, 3]
+                pooled_node_features[i + pooled_boundary_n, 4] += node_features[i, 4]
+
             pooled_building_masks = torch.zeros((pooled_boundary_n + building_n, 1), dtype=torch.long)
             pooled_building_masks[pooled_boundary_n:, 0] = 1
 
