@@ -53,10 +53,16 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
             exponential_dist = torch.distributions.Exponential(0.1)
             samples = exponential_dist.sample((1,)).numpy()[0]
             k = int(np.round(samples))
+            if k < 1:
+                k = 1
+            if k > 120:
+                k = 120
+
             print(k, output_exist.shape)
 
             # output_exist 값을 기준으로 상위 k개의 노드를 선택
-            top_k_indices = torch.topk(output_exist.view(-1), k=k, largest=True).indices
+            # top_k_indices = torch.topk(output_exist.view(-1), k=k, largest=True).indices
+            top_k_indices = torch.randperm(120)[:k]
 
             for node in graph.nodes():
                 if node in top_k_indices:
