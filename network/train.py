@@ -326,7 +326,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=32, help="The batch size used during training.")
     parser.add_argument("--max_epoch", type=int, default=1000, help="The maximum number of epochs to train for.")
     parser.add_argument("--d_model", type=int, default=512, help="The dimensionality of the model's embeddings.")
-    parser.add_argument("--n_layer", type=int, default=6, help="The number of layers in the transformer model.")
+    parser.add_argument("--n_layer", type=int, default=4, help="The number of layers in the transformer model.")
     parser.add_argument("--n_head", type=int, default=8, help="The number of attention heads in the transformer model.")
     parser.add_argument("--dropout", type=float, default=0.1, help="The dropout rate used in the transformer model.")
     parser.add_argument("--seed", type=int, default=327, help="A seed for random number generation to ensure reproducibility.")
