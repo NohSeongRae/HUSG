@@ -148,18 +148,22 @@ class GraphDataset(Dataset):
         #     }
 
         unpooled_n_boundary = n_boundary * 2
-        unpooled_boundary_adj_matrix = np.zeros((unpooled_n_boundary, unpooled_n_boundary))
-        for i in range(unpooled_n_boundary):
-            for j in range(unpooled_n_boundary):
+        if unpooled_n_boundary >= 200:
+            x = 200
+        else:
+            x = unpooled_n_boundary
+        unpooled_boundary_adj_matrix = np.zeros((x, x))
+        for i in range(x):
+            for j in range(x):
                 unpooled_boundary_adj_matrix[i, j] = boundary_adj_matrix[i // 2, j // 2]
 
-        unpooled_bb_adj_matrix = np.zeros((n_building, unpooled_n_boundary))
+        unpooled_bb_adj_matrix = np.zeros((n_building, x))
         for i in range(n_building):
-            for j in range(unpooled_n_boundary):
+            for j in range(x):
                 unpooled_bb_adj_matrix[i, j] = bb_adj_matrix[i, j // 2]
 
-        unpooled_boundary_pos_feature = np.zeros((unpooled_n_boundary, 2))
-        for i in range(unpooled_n_boundary):
+        unpooled_boundary_pos_feature = np.zeros((x, 2))
+        for i in range(x):
             unpooled_boundary_pos_feature[i, 0] += boundary_pos_feature[i // 2, 0]
             unpooled_boundary_pos_feature[i, 1] += boundary_pos_feature[i // 2, 1]
 
