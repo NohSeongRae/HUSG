@@ -165,7 +165,12 @@ class GraphDataset(Dataset):
             boundary_n = building_masks.shape[0] - building_n
             unpooled_boundary_n = boundary_n * 2
 
-            unpooled_node_features = torch.zeros((unpooled_boundary_n + building_n, 5))
+            if unpooled_boundary_n > 200:
+                x = 200
+            else:
+                x = unpooled_boundary_n
+
+            unpooled_node_features = torch.zeros((x + building_n, 5))
             for i in range(unpooled_boundary_n):
                 unpooled_node_features[i, 0] += node_features[i // 2, 0]
                 unpooled_node_features[i, 1] += node_features[i // 2, 1]
@@ -173,15 +178,26 @@ class GraphDataset(Dataset):
                 unpooled_node_features[i, 3] += node_features[i // 2, 3]
                 unpooled_node_features[i, 4] += node_features[i // 2, 4]
 
-            for i in range(building_n):
-                unpooled_node_features[i + unpooled_boundary_n, 0] += node_features[i, 0]
-                unpooled_node_features[i + unpooled_boundary_n, 1] += node_features[i, 1]
-                unpooled_node_features[i + unpooled_boundary_n, 2] += node_features[i, 2]
-                unpooled_node_features[i + unpooled_boundary_n, 3] += node_features[i, 3]
-                unpooled_node_features[i + unpooled_boundary_n, 4] += node_features[i, 4]
+                if i > 200:
+                    continue
 
-            unpooled_building_masks = torch.zeros((unpooled_boundary_n + building_n, 1), dtype=torch.long)
-            unpooled_building_masks[unpooled_boundary_n:, 0] = 1
+            for i in range(building_n):
+                if unpooled_boundary_n > 200:
+                    x = 200
+                else:
+                    x = unpooled_boundary_n
+                unpooled_node_features[i + x, 0] += node_features[i, 0]
+                unpooled_node_features[i + x, 1] += node_features[i, 1]
+                unpooled_node_features[i + x, 2] += node_features[i, 2]
+                unpooled_node_features[i + x, 3] += node_features[i, 3]
+                unpooled_node_features[i + x, 4] += node_features[i, 4]
+
+            if unpooled_boundary_n > 200:
+                x = 200
+            else:
+                x = unpooled_boundary_n
+            unpooled_building_masks = torch.zeros((x + building_n, 1), dtype=torch.long)
+            unpooled_building_masks[x:, 0] = 1
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
@@ -217,6 +233,10 @@ class GraphDataset(Dataset):
             for i in range(building_n):
                 for j in range(unpooled_n_boundary):
                     unpooled_bb_adj_matrix[i, j] = bb_adj_matrix[i, j // 2]
+
+            if unpooled_n_boundary > 200:
+                unpooled_boundary_adj_matrix = unpooled_boundary_adj_matrix[:200, :200]
+                unpooled_bb_adj_matrix = unpooled_bb_adj_matrix[:, :200]
 
             unpooled_adj_matrix = np.zeros((unpooled_n_boundary + building_n, unpooled_n_boundary + building_n))
             unpooled_adj_matrix[:unpooled_n_boundary, :unpooled_n_boundary] = unpooled_boundary_adj_matrix
