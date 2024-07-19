@@ -48,7 +48,7 @@ def test(d_feature, d_latent, n_head, T, checkpoint_epoch, save_dir_path, condit
 
             data = data.to(device=device)
             output_pos, output_size, output_exist = cvae.test(data)
-            output_exist = output_exist.detach().cpu().numpy()
+            # output_exist = output_exist.detach().cpu().numpy()
 
             exponential_dist = torch.distributions.Exponential(0.1)
             samples = exponential_dist.sample((1,)).numpy()[0]
