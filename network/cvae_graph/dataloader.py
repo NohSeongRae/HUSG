@@ -77,14 +77,28 @@ class GraphDataset(Dataset):
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
-            boundary_n = building_masks.shape[0] - torch.sum(building_masks)
+            building_n = torch.sum(building_masks)
+            boundary_n = building_masks.shape[0] - building_n
             pooled_boundary_n = (boundary_n + 1) // 2
 
-            pooled_node_features = torch.zeros((pooled_boundary_n, 5))
+            pooled_node_features = torch.zeros((pooled_boundary_n + building_n, 5))
             for i in range(pooled_boundary_n):
                 for ii in range(2):
                     if i * 2 + ii < boundary_n:
-                        pooled_node_features[i, 0] = node_features[i * 2 + ii]
+                        pooled_node_features[i, 0] += node_features[i * 2 + ii, 0]
+                        pooled_node_features[i, 1] += node_features[i * 2 + ii, 1]
+                        pooled_node_features[i, 2] += node_features[i * 2 + ii, 2]
+                        pooled_node_features[i, 3] += node_features[i * 2 + ii, 3]
+                        if pooled_node_features[i, 4] == 0:
+                            pooled_node_features[i, 4] += node_features[i * 2 + ii, 4]
+                    if ii == 1:
+                        pooled_node_features[i, 0] /= 2
+                        pooled_node_features[i, 1] /= 2
+                        pooled_node_features[i, 2] /= 2
+                        pooled_node_features[i, 3] /= 2
+
+            pooled_building_masks = torch.zeros((pooled_boundary_n + building_n))
+            pooled_building_masks[pooled_boundary_n:] = 1
 
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
@@ -103,8 +117,42 @@ class GraphDataset(Dataset):
                                  edge_index=condition_edge_index,
                                  num_nodes=condition_graph.number_of_nodes())
 
-            edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
-            edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
+            # edge_index = nx.to_scipy_sparse_matrix(graph).tocoo()
+            # edge_index = torch.tensor(np.vstack((edge_index.row, edge_index.col)), dtype=torch.long)
+            adj_matrix = nx.to_numpy_array(graph)
+            boundary_adj_matrix = adj_matrix[:boundary_n, :boundary_n]
+            building_adj_matrix = adj_matrix[boundary_n:, boundary_n:]
+            bb_adj_matrix = adj_matrix[boundary_n:, :boundary_n]
+
+            pooled_n_boundary = (boundary_n + 1) // 2
+            pooled_boundary_adj_matrix = np.zeros((pooled_n_boundary, pooled_n_boundary))
+            for i in range(pooled_n_boundary):
+                for j in range(pooled_n_boundary):
+                    for ii in range(2):
+                        for jj in range(2):
+                            if i * 2 + ii < boundary_n and j * 2 + jj < boundary_n:
+                                pooled_boundary_adj_matrix[i, j] += boundary_adj_matrix[i * 2 + ii, j * 2 + jj]
+                                if pooled_boundary_adj_matrix[i, j] > 1:
+                                    pooled_boundary_adj_matrix[i, j] = 1
+
+            pooled_bb_adj_matrix = np.zeros((building_n, pooled_n_boundary))
+            for i in range(building_n):
+                for j in range(pooled_n_boundary):
+                    for ii in range(2):
+                        if j * 2 + ii < boundary_n:
+                            pooled_bb_adj_matrix[i, j] += bb_adj_matrix[i, j * 2 + ii]
+                            if pooled_bb_adj_matrix[i, j] > 1:
+                                pooled_bb_adj_matrix[i, j] = 1
+
+            pooled_adj_matrix = np.zeros((pooled_n_boundary + building_n, pooled_n_boundary + building_n))
+            pooled_n_boundary[:pooled_n_boundary, :pooled_n_boundary] = pooled_boundary_adj_matrix
+            pooled_n_boundary[pooled_n_boundary:, pooled_n_boundary:] = building_adj_matrix
+            pooled_n_boundary[pooled_n_boundary:, :pooled_n_boundary] = pooled_bb_adj_matrix
+            pooled_n_boundary[:pooled_n_boundary, pooled_n_boundary:] = pooled_bb_adj_matrix.T
+
+            row, col = np.where(adj_matrix != 0)
+            edge_index = np.vstack((row, col))
+            edge_index = torch.tensor(edge_index, dtype=torch.long)
 
             data = Data(node_features=node_features,
                         building_mask=building_masks, condition=condition,
