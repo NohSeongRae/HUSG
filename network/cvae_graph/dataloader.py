@@ -248,7 +248,7 @@ class GraphDataset(Dataset):
 
             data = Data(node_features=unpooled_node_features,
                         building_mask=unpooled_building_masks, condition=condition,
-                        edge_index=edge_index, num_nodes=unpooled_n_boundary + building_n)
+                        edge_index=edge_index, num_nodes=x + building_n)
 
             return data
         else:
