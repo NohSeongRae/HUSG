@@ -95,6 +95,8 @@ class GraphDataset(Dataset):
                     for jj in range(2):
                         if i * 2 + ii < n_boundary and j * 2 + jj < n_boundary:
                             pooled_boundary_adj_matrix[i, j] += boundary_adj_matrix[i * 2 + ii, j * 2 + jj]
+                            if pooled_boundary_adj_matrix[i, j] > 1:
+                                pooled_boundary_adj_matrix[i, j] = 1
 
         pooled_bb_adj_matrix = np.zeros((n_building, pooled_n_boundary))
         for i in range(n_building):
@@ -102,6 +104,8 @@ class GraphDataset(Dataset):
                 for ii in range(2):
                     if j * 2 + ii < n_boundary:
                         pooled_bb_adj_matrix[i, j] += bb_adj_matrix[i, j * 2 + ii]
+                        if pooled_bb_adj_matrix[i, j] > 1:
+                            pooled_bb_adj_matrix[i, j] = 1
 
         pooled_boundary_pos_feature = np.zeros((pooled_n_boundary, 2))
         for i in range(pooled_n_boundary):
