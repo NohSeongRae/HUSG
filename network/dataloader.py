@@ -186,7 +186,7 @@ class GraphDataset(Dataset):
                 'boundary_pad_mask': torch.tensor(boundary_pad_mask, dtype=torch.bool)[:, 0],
                 'building_pad_mask': torch.tensor(building_pad_mask, dtype=torch.bool)[:, 0],
                 'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool),
-                'n_boundary': unpooled_n_boundary,
+                'n_boundary': x,
                 'n_building': n_building
             }, self.pkl_files[idx]
         else:
@@ -198,7 +198,7 @@ class GraphDataset(Dataset):
                 'boundary_pad_mask': torch.tensor(boundary_pad_mask, dtype=torch.bool)[:, 0],
                 'building_pad_mask': torch.tensor(building_pad_mask, dtype=torch.bool)[:, 0],
                 'bb_pad_mask': torch.tensor(bb_pad_mask, dtype=torch.bool),
-                'n_boundary': unpooled_n_boundary,
+                'n_boundary': x,
                 'n_building': n_building
             }
 
