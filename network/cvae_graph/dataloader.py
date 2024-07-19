@@ -77,7 +77,7 @@ class GraphDataset(Dataset):
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
-            building_n = torch.sum(building_masks)
+            building_n = torch.sum(building_masks).item()
             boundary_n = building_masks.shape[0] - building_n
             pooled_boundary_n = (boundary_n + 1) // 2
             print(building_n, boundary_n, pooled_boundary_n)
