@@ -80,7 +80,6 @@ class GraphDataset(Dataset):
             building_n = torch.sum(building_masks).item()
             boundary_n = building_masks.shape[0] - building_n
             pooled_boundary_n = (boundary_n + 1) // 2
-            print(building_n, boundary_n, pooled_boundary_n)
 
             pooled_node_features = torch.zeros((pooled_boundary_n + building_n, 5))
             for i in range(pooled_boundary_n):
