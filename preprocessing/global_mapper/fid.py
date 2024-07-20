@@ -11,8 +11,8 @@ from torchmetrics.image.fid import FrechetInceptionDistance
 # path = os.path.join(base, path)
 # path = 'output/without_image_condition_spatial_graph_ariel-k1/cvae_graph_20240306_115843'
 path = "C:/Users/Dobby/Downloads/gt_images_image_resnet34/cvae_graph_20240529_135822_GIN"
-path = "C:/Users/Dobby/Downloads/usa_gnn_decoder_output/cvae_graph_20240717_145920"
-path = 'globalmapper_usa_rebuttal_figure'
+path = "C:/Users/Dobby/Downloads/segment_pool/cvae_graph_20240719_165751"
+# path = 'globalmapper_usa_rebuttal_figure'
 list_output_all = os.listdir(path)
 
 list_output = []
