@@ -262,7 +262,8 @@ class GraphDataset(Dataset):
             building_masks = torch.tensor(np.array([graph.nodes[node]['building_masks'] for node in graph.nodes()]),
                                           dtype=torch.long)
 
-            print(node_features[0])
+            print(building_masks)
+            print('\n\n-----\n')
             if self.condition_type == 'image' or self.condition_type == 'image_resnet34':
                 condition = torch.tensor(np.array(graph.graph['condition']), dtype=torch.float32)
                 condition = condition.unsqueeze(0)
