@@ -246,9 +246,9 @@ class GraphDataset(Dataset):
             # coo_matrix = sparse_matrix.tocoo()
             # edge_index = torch.tensor(np.vstack((coo_matrix.row, coo_matrix.col)), dtype=torch.long)
 
-            data = Data(node_features=unpooled_node_features,
-                        building_mask=unpooled_building_masks, condition=condition,
-                        edge_index=edge_index, num_nodes=x + building_n)
+            data = Data(node_features=pooled_node_features,
+                        building_mask=pooled_building_masks, condition=condition,
+                        edge_index=edge_index, num_nodes=pooled_n_boundary + building_n)
 
             return data
         else:
