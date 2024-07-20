@@ -33,7 +33,7 @@ class GraphDataset(Dataset):
             # self.folder_path = './large_scale_datasets/image_condition_train_datasets/'
             # self.folder_path = './synthetic_datasets_large_scale/'
             self.folder_path = './synthetic_datasets/'
-            self.folder_path = './rebuttal_random_graph_generation_outputs/'
+            # self.folder_path = './rebuttal_random_graph_generation_outputs/'
             # self.folder_path = '/local_datasets/urban_datasets/datasets/ours_graph_datasets/' + self.data_type
             # self.folder_path = './random_graph_generation_datasets'
 
